@@ -1,0 +1,13 @@
+com\focusflow\pomodoro\PomodoroIT.class
+com\focusflow\support\MutableClock.class
+com\focusflow\support\IntegrationTest.class
+com\focusflow\transfer\ImportExportIT.class
+com\focusflow\statistics\StatisticsAndArchivesIT.class
+com\focusflow\task\ArchiveSectionTest.class
+com\focusflow\support\MutableClock$1.class
+com\focusflow\task\TaskTimingTest.class
+com\focusflow\support\IntegrationTest$TestClockConfig.class
+com\focusflow\task\TaskLifecycleIT.class
+com\focusflow\task\MatrixAndPrioritiesIT.class
+com\focusflow\pomodoro\PomodoroSessionTest.class
+com\focusflow\transfer\CsvEscapingTest.class

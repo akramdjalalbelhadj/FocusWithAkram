@@ -1,0 +1,19 @@
+# Developpement : uniquement PostgreSQL (le backend et le frontend tournent en local).
+#   docker compose -f docker-compose.dev.yml up -d
+#   cd backend && mvn spring-boot:run          # utilise jdbc:postgresql://localhost:5432/focusflow
+name: focusflow-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: focusflow
+      POSTGRES_USER: focusflow
+      POSTGRES_PASSWORD: focusflow
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - focusflow-dev-db:/var/lib/postgresql/data
+
+volumes:
+  focusflow-dev-db:

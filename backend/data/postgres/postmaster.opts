@@ -1,0 +1,1 @@
+C:/Users/a952790/AppData/Local/Temp/embedded-pg/PG-3942d5a1dcdbfebc27772e9e670d5d85/bin/postgres.exe "-D" "C:/Users/a952790/Projets/focusflow/backend/./data/postgres" "-p" "54329" "-F" "-c" "synchronous_commit=off" "-c" "max_connections=300" "-c" "timezone=UTC"

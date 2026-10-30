@@ -1,0 +1,36 @@
+❯ Building...
+✔ Building...
+Initial chunk files | Names           |  Raw size
+chunk-GOCRIASC.js   | -               | 122.07 kB | 
+styles.css          | styles          |  57.36 kB | 
+main.js             | main            |  55.02 kB | 
+chunk-OEMWRH2B.js   | -               |  30.03 kB | 
+chunk-IDNHRGT2.js   | -               |  18.18 kB | 
+chunk-K55FAVQZ.js   | -               |   3.30 kB | 
+chunk-VUJOFXKG.js   | -               | 987 bytes | 
+chunk-66P6D3CD.js   | -               | 801 bytes | 
+
+                    | Initial total   | 287.75 kB
+
+Lazy chunk files    | Names           |  Raw size
+chunk-KO5Z5KJX.js   | focus-page      |  50.04 kB | 
+chunk-YST632NQ.js   | dashboard-page  |  46.82 kB | 
+chunk-X6GVCSCZ.js   | statistics-page |  44.51 kB | 
+chunk-4E2DHH7W.js   | calendar-page   |  41.11 kB | 
+chunk-OPYMZR7I.js   | archives-page   |  37.25 kB | 
+chunk-TKVWMD32.js   | settings-page   |  36.14 kB | 
+chunk-UFWASFNQ.js   | matrix-page     |  31.52 kB | 
+chunk-SUBGH2Q2.js   | projects-page   |  29.90 kB | 
+chunk-O2WV7FHY.js   | -               |  26.84 kB | 
+chunk-47RP2HB3.js   | tasks-page      |  19.46 kB | 
+chunk-VHKVTUHW.js   | -               |   5.90 kB | 
+chunk-DVG3TUSF.js   | -               |   5.24 kB | 
+chunk-JA3CEIAG.js   | -               |   1.37 kB | 
+chunk-QAZFU4R3.js   | echarts-setup   | 739 bytes | 
+chunk-WHNUARGE.js   | -               | 420 bytes | 
+
+Application bundle generation complete. [13.377 seconds] - 2026-10-30T08:00:49.900Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
