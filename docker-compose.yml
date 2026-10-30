@@ -1,0 +1,44 @@
+# Production locale : PostgreSQL + backend + frontend (nginx).
+#   cp .env.example .env   # puis changez le mot de passe
+#   docker compose up -d --build
+# L'application est publiee uniquement sur 127.0.0.1 : elle n'a pas d'authentification (usage personnel).
+name: focusflow
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: focusflow
+      POSTGRES_USER: focusflow
+      POSTGRES_PASSWORD: ${FOCUSFLOW_DB_PASSWORD:?Definissez FOCUSFLOW_DB_PASSWORD dans .env}
+    volumes:
+      - focusflow-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U focusflow -d focusflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FOCUSFLOW_DB_URL: jdbc:postgresql://db:5432/focusflow
+      FOCUSFLOW_DB_USER: focusflow
+      FOCUSFLOW_DB_PASSWORD: ${FOCUSFLOW_DB_PASSWORD}
+      FOCUSFLOW_CORS_ORIGINS: http://localhost:${FOCUSFLOW_PORT:-8088}
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:${FOCUSFLOW_PORT:-8088}:80"
+
+volumes:
+  focusflow-db:

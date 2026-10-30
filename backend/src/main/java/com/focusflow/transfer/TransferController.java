@@ -1,0 +1,63 @@
+package com.focusflow.transfer;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1")
+public class TransferController {
+
+    private final TransferService service;
+
+    public TransferController(TransferService service) {
+        this.service = service;
+    }
+
+    @GetMapping("/export/tasks")
+    public ResponseEntity<?> exportTasks(@RequestParam(defaultValue = "json") String format,
+                                         @RequestParam(defaultValue = "ALL") TransferService.Scope scope) {
+        String base = "focusflow-taches-" + scope.name().toLowerCase();
+        if ("csv".equalsIgnoreCase(format)) {
+            return download(service.exportCsv(scope).getBytes(StandardCharsets.UTF_8), base + ".csv",
+                    MediaType.parseMediaType("text/csv;charset=UTF-8"));
+        }
+        List<BackupFile.TaskData> data = service.exportTasks(scope);
+        return attachment(data, base + ".json");
+    }
+
+    @GetMapping("/export/backup")
+    public ResponseEntity<?> backup() {
+        return attachment(service.backup(), "focusflow-sauvegarde.json");
+    }
+
+    @PostMapping("/import")
+    public TransferService.ImportReport importBackup(@RequestBody BackupFile file,
+                                                     @RequestParam(defaultValue = "false") boolean dryRun) {
+        return service.importBackup(file, dryRun);
+    }
+
+    private static ResponseEntity<byte[]> download(byte[] body, String filename, MediaType type) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(filename).build().toString())
+                .contentType(type)
+                .body(body);
+    }
+
+    private static <T> ResponseEntity<T> attachment(T body, String filename) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(filename).build().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body);
+    }
+}

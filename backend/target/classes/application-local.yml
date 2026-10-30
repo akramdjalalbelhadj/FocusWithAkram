@@ -1,0 +1,10 @@
+# Profil "local" : PostgreSQL embarque (aucun Docker ni installation requise).
+# Les donnees sont conservees dans ./data/postgres entre deux lancements.
+focusflow:
+  embedded-postgres:
+    port: 54329
+    data-dir: ./data/postgres
+
+logging:
+  level:
+    com.focusflow: DEBUG
