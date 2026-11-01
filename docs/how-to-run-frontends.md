@@ -86,3 +86,9 @@ Le seed crée une fois les exemples explicites de recette. Les tests suppriment 
 Rapports dans `docs/test-results/`, captures dans `docs/screenshots/`. Exécuter les captures après les suites mutantes pour comparer un état identique : Chromium, fr-FR, Europe/Paris, 1440×900, 768×1024 et 390×844.
 
 API inaccessible : vérifier `/actuator/health`, port et proxy. 403 en écriture : vérifier Origin/CORS. PostgreSQL embarqué verrouillé : attendre l’arrêt du précédent processus, sans effacer son répertoire. Aucune clé ni compte externe requis.
+
+## Configurer le minuteur
+
+Dans les deux interfaces : **Focus / Pomodoro → Configurer**. Le panneau « Minuteur Pomodoro » regroupe les durées de travail et des pauses, le nombre de sessions avant pause longue, l’objectif quotidien, les démarrages automatiques, le son et les notifications. Ces options ne sont plus dans les paramètres généraux.
+
+Angular enregistre chaque modification automatiquement ; React propose le bouton « Enregistrer le minuteur ». Une session en cours conserve sa durée. Les paramètres généraux peuvent être enregistrés indépendamment sans réinitialiser ceux du minuteur.

@@ -45,12 +45,14 @@ docker compose up -d --build
 ## Architecture
 
 Organisation des deux interfaces : [architecture frontend](docs/frontend-architecture.md).
+Organisation du serveur : [architecture backend, DTO et exceptions](backend/README.md).
 
 Monolithe modulaire, découpé par domaine puis par responsabilité.
 
 ```
 backend/   Java 25 · Spring Boot 4.1 · JPA/Hibernate · PostgreSQL · Flyway · springdoc
-  com.focusflow.task        domain (Task, Subtask, TaskExecution, Quadrant…) · application · api · infrastructure
+  com.focusflow.<domaine>   controller · dto · entity · enums · mapper · model · repository · service
+  com.focusflow.common      dto · exception · util
   com.focusflow.pomodoro    PomodoroSession (machine à états), service, API
   com.focusflow.eisenhower  matrice
   com.focusflow.dashboard · statistics · project · settings · transfer · search · common · config

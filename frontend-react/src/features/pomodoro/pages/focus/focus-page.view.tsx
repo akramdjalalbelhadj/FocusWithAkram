@@ -1,3 +1,4 @@
+import { PomodoroSettings } from "../../components/pomodoro-settings/pomodoro-settings";
 import {
   Maximize,
   Pause,
@@ -32,7 +33,13 @@ export function FocusPageView({
   return (
     <>
       <Header title="Focus / Pomodoro" icon={<Timer />}>
-        <button onClick={() => setConfig(!config)}>Configurer</button>
+        <button
+          aria-expanded={config}
+          aria-controls="pomodoro-settings"
+          onClick={() => setConfig(!config)}
+        >
+          Configurer
+        </button>
         <button
           aria-label="Plein écran"
           onClick={() => {
@@ -50,44 +57,7 @@ export function FocusPageView({
         </h2>
         <p>Choisis ta tâche et offre-lui toute ton attention.</p>
       </div>
-      {config && (
-        <section className="card">
-          <h2>Durées des sessions</h2>
-          <div className="form-grid">
-            {(
-              [
-                "workMinutes",
-                "shortBreakMinutes",
-                "longBreakMinutes",
-                "sessionsBeforeLong",
-              ] as const
-            ).map((k) => (
-              <label key={k}>
-                {
-                  {
-                    workMinutes: "Concentration",
-                    shortBreakMinutes: "Pause courte",
-                    longBreakMinutes: "Pause longue",
-                    sessionsBeforeLong: "Sessions avant pause longue",
-                  }[k]
-                }
-                <input
-                  type="number"
-                  min={1}
-                  defaultValue={cfg[k]}
-                  onBlur={(e) =>
-                    safely(
-                      app.mutate("settings", "PATCH", {
-                        [k]: Number(e.target.value),
-                      }),
-                    )
-                  }
-                />
-              </label>
-            ))}
-          </div>
-        </section>
-      )}
+      {config && <PomodoroSettings />}
       <div className="focus-layout">
         <section className="card timer-card">
           <div className="tabs">

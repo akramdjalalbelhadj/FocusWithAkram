@@ -3,12 +3,12 @@
     <span class="page-icon"><ff-icon name="settings" [size]="24" /></span>Paramètres
   </h1>
   <p class="page-sub">
-    Personnalisez l’apparence, le minuteur et vos données. Les changements sont enregistrés
+    Personnalisez l’apparence, la région et vos données. Les changements sont enregistrés
     automatiquement.
   </p>
 </header>
 
-<div class="grid lg:grid-cols-2 gap-6 items-start">
+<div class="settings-layout">
   <section class="card p-5 space-y-5" aria-labelledby="s-look">
     <h2 id="s-look" class="font-bold text-lg">Apparence et région</h2>
     <fieldset>
@@ -88,104 +88,7 @@
     >
   </section>
 
-  <section class="card p-5 space-y-5" aria-labelledby="s-pomo">
-    <h2 id="s-pomo" class="font-bold text-lg">Minuteur Pomodoro</h2>
-    <div class="grid grid-cols-2 gap-3">
-      @for (f of fields; track f.key) {
-        <div>
-          <label class="field-label" [for]="'p-' + f.key">{{ f.label }}</label>
-          <input
-            class="input"
-            type="number"
-            [id]="'p-' + f.key"
-            [min]="f.min"
-            [max]="f.max"
-            [value]="s()[f.key]"
-            (change)="num(f.key, $any($event.target).value, f.min, f.max)"
-          />
-        </div>
-      }
-      <div class="col-span-2">
-        <label class="field-label" for="p-goal"
-          >Objectif quotidien de concentration (minutes)</label
-        >
-        <input
-          class="input"
-          id="p-goal"
-          type="number"
-          min="0"
-          max="720"
-          [value]="s().dailyFocusGoalMinutes"
-          (change)="num('dailyFocusGoalMinutes', $any($event.target).value, 0, 720)"
-        />
-      </div>
-    </div>
-    <label class="flex items-center gap-3"
-      ><input
-        type="checkbox"
-        class="size-4 accent-[var(--brand)]"
-        [checked]="s().autoStartBreaks"
-        (change)="set({ autoStartBreaks: $any($event.target).checked })"
-      />Démarrer automatiquement les pauses</label
-    >
-    <label class="flex items-center gap-3"
-      ><input
-        type="checkbox"
-        class="size-4 accent-[var(--brand)]"
-        [checked]="s().autoStartWork"
-        (change)="set({ autoStartWork: $any($event.target).checked })"
-      />Enchaîner automatiquement la session suivante</label
-    >
-    <div class="grid grid-cols-2 gap-3 items-end">
-      <div>
-        <label class="field-label" for="p-sound">Son de fin de session</label>
-        <select
-          id="p-sound"
-          class="input"
-          [value]="s().soundName"
-          [disabled]="!s().soundEnabled"
-          (change)="set({ soundName: $any($event.target).value })"
-        >
-          <option value="bell">Cloche</option>
-          <option value="chime">Carillon</option>
-          <option value="soft">Doux</option>
-        </select>
-      </div>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        [disabled]="!s().soundEnabled"
-        (click)="sound.play(s().soundName)"
-      >
-        <ff-icon name="volume" />Écouter
-      </button>
-    </div>
-    <label class="flex items-center gap-3"
-      ><input
-        type="checkbox"
-        class="size-4 accent-[var(--brand)]"
-        [checked]="s().soundEnabled"
-        (change)="set({ soundEnabled: $any($event.target).checked })"
-      />Activer le son</label
-    >
-    <div>
-      <label class="flex items-center gap-3"
-        ><input
-          type="checkbox"
-          class="size-4 accent-[var(--brand)]"
-          [checked]="s().notificationsEnabled"
-          (change)="toggleNotifications($any($event.target).checked)"
-        />Notifications du navigateur</label
-      >
-      @if (permission() === 'denied') {
-        <p class="field-error">
-          Les notifications sont bloquées dans votre navigateur : autorisez-les pour ce site.
-        </p>
-      }
-    </div>
-  </section>
-
-  <section class="card p-5 space-y-4 lg:col-span-2" aria-labelledby="s-data">
+  <section class="card p-5 space-y-4" aria-labelledby="s-data">
     <h2 id="s-data" class="font-bold text-lg">Données : export et import</h2>
     <div class="flex flex-wrap gap-2">
       <button type="button" class="btn btn-secondary" (click)="export('csv', 'ALL')">
@@ -245,7 +148,7 @@
     </div>
   </section>
 
-  <section class="card p-5 lg:col-span-2" aria-labelledby="s-keys">
+  <section class="card p-5" aria-labelledby="s-keys">
     <h2 id="s-keys" class="font-bold text-lg mb-3">Raccourcis clavier</h2>
     <ul class="grid sm:grid-cols-2 gap-x-8 divide-y sm:divide-y-0 divide-line">
       @for (k of shortcuts; track k.label) {

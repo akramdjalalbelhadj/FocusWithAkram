@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.focusflow.pomodoro.PomodoroIT
--------------------------------------------------------------------------------
-Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 75.68 s -- in com.focusflow.pomodoro.PomodoroIT

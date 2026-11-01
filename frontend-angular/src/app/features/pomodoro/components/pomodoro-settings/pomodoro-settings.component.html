@@ -1,0 +1,98 @@
+<section class="card pomodoro-settings" id="pomodoro-settings" aria-labelledby="s-pomo">
+  <h2 id="s-pomo" class="pomodoro-settings-title">Minuteur Pomodoro</h2>
+  <p class="field-hint">
+    Enregistrement automatique. Les nouvelles durées s’appliquent aux prochaines sessions ; la
+    session en cours conserve sa durée.
+  </p>
+  <div class="pomodoro-settings-grid">
+    @for (f of fields; track f.key) {
+      <div>
+        <label class="field-label" [for]="'p-' + f.key">{{ f.label }}</label>
+        <input
+          class="input"
+          type="number"
+          [id]="'p-' + f.key"
+          [min]="f.min"
+          [max]="f.max"
+          [value]="s()[f.key]"
+          (change)="num(f.key, $any($event.target).value, f.min, f.max)"
+        />
+      </div>
+    }
+    <div class="pomodoro-settings-goal">
+      <label class="field-label" for="p-goal">Objectif quotidien de concentration (minutes)</label>
+      <input
+        class="input"
+        id="p-goal"
+        type="number"
+        min="0"
+        max="720"
+        [value]="s().dailyFocusGoalMinutes"
+        (change)="num('dailyFocusGoalMinutes', $any($event.target).value, 0, 720)"
+      />
+    </div>
+  </div>
+  <label class="pomodoro-settings-choice"
+    ><input
+      type="checkbox"
+      class="pomodoro-settings-checkbox"
+      [checked]="s().autoStartBreaks"
+      (change)="set({ autoStartBreaks: $any($event.target).checked })"
+    />Démarrer automatiquement les pauses</label
+  >
+  <label class="pomodoro-settings-choice"
+    ><input
+      type="checkbox"
+      class="pomodoro-settings-checkbox"
+      [checked]="s().autoStartWork"
+      (change)="set({ autoStartWork: $any($event.target).checked })"
+    />Enchaîner automatiquement la session suivante</label
+  >
+  <div class="pomodoro-settings-sound">
+    <div>
+      <label class="field-label" for="p-sound">Son de fin de session</label>
+      <select
+        id="p-sound"
+        class="input"
+        [value]="s().soundName"
+        [disabled]="!s().soundEnabled"
+        (change)="set({ soundName: $any($event.target).value })"
+      >
+        <option value="bell">Cloche</option>
+        <option value="chime">Carillon</option>
+        <option value="soft">Doux</option>
+      </select>
+    </div>
+    <button
+      type="button"
+      class="btn btn-secondary"
+      [disabled]="!s().soundEnabled"
+      (click)="sound.play(s().soundName)"
+    >
+      <ff-icon name="volume" />Écouter
+    </button>
+  </div>
+  <label class="pomodoro-settings-choice"
+    ><input
+      type="checkbox"
+      class="pomodoro-settings-checkbox"
+      [checked]="s().soundEnabled"
+      (change)="set({ soundEnabled: $any($event.target).checked })"
+    />Activer le son</label
+  >
+  <div>
+    <label class="pomodoro-settings-choice"
+      ><input
+        type="checkbox"
+        class="pomodoro-settings-checkbox"
+        [checked]="s().notificationsEnabled"
+        (change)="toggleNotifications($any($event.target).checked)"
+      />Notifications du navigateur</label
+    >
+    @if (permission() === 'denied') {
+      <p class="field-error">
+        Les notifications sont bloquées dans votre navigateur : autorisez-les pour ce site.
+      </p>
+    }
+  </div>
+</section>

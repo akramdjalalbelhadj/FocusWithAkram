@@ -1,3 +1,4 @@
+import { PomodoroSettingsComponent } from '../../components/pomodoro-settings/pomodoro-settings.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -28,7 +29,13 @@ const TYPES: { type: SessionType; short: string }[] = [
 
 @Component({
   selector: 'ff-focus-page',
-  imports: [IconComponent, RingComponent, EmptyComponent, ErrorComponent],
+  imports: [
+    PomodoroSettingsComponent,
+    IconComponent,
+    RingComponent,
+    EmptyComponent,
+    ErrorComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './focus.page.html',
   styleUrl: './focus.page.css',
@@ -52,13 +59,6 @@ export class FocusPage {
     initialValue: [] as Task[],
   });
   protected readonly formatDuration = formatDuration;
-
-  protected readonly fields = [
-    { key: 'workMinutes', label: 'Travail', min: 1, max: 180 },
-    { key: 'shortBreakMinutes', label: 'Pause courte', min: 1, max: 60 },
-    { key: 'longBreakMinutes', label: 'Pause longue', min: 1, max: 120 },
-    { key: 'sessionsBeforeLong', label: 'Sessions avant pause longue', min: 1, max: 12 },
-  ] as const;
 
   protected readonly history = new Loader(() =>
     this.pomodoroApi.dailyHistory(addDays(this.settings.today(), -13), this.settings.today()),
@@ -147,20 +147,6 @@ export class FocusPage {
   protected async reset(): Promise<void> {
     await this.engine.cancel();
     this.toast.info('Session réinitialisée. Le temps déjà travaillé reste enregistré.');
-  }
-
-  protected async saveField(
-    key: 'workMinutes' | 'shortBreakMinutes' | 'longBreakMinutes' | 'sessionsBeforeLong',
-    raw: string,
-    min: number,
-    max: number,
-  ): Promise<void> {
-    const v = Math.round(Number(raw));
-    if (!Number.isFinite(v) || v < min || v > max) {
-      this.toast.error(`Valeur comprise entre ${min} et ${max} attendue.`);
-      return;
-    }
-    await this.settings.update({ [key]: v });
   }
 
   protected async toggleFullscreen(): Promise<void> {

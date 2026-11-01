@@ -1,0 +1,39 @@
+.pomodoro-settings {
+  margin-bottom: 1.5rem;
+}
+.pomodoro-settings > p {
+  color: var(--muted);
+  margin-block: 0.75rem 1.25rem;
+}
+.pomodoro-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.pomodoro-settings form {
+  display: grid;
+  gap: 1rem;
+}
+.pomodoro-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.pomodoro-settings .pomodoro-settings-choice {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.75rem;
+}
+.pomodoro-settings-choice input {
+  flex-shrink: 0;
+}
+.pomodoro-settings form > button {
+  justify-self: start;
+}
+@media (max-width: 480px) {
+  .pomodoro-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

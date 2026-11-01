@@ -11,6 +11,7 @@
         class="btn btn-secondary"
         (click)="showConfig.set(!showConfig())"
         [attr.aria-expanded]="showConfig()"
+        aria-controls="pomodoro-settings"
       >
         <ff-icon name="settings" />Configurer
       </button>
@@ -40,46 +41,7 @@
   }
 
   @if (showConfig()) {
-    <section class="card p-5 mb-6 anim-pop" aria-label="Durées des sessions">
-      <h2 class="font-bold mb-3">Durées (en minutes)</h2>
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        @for (f of fields; track f.key) {
-          <div>
-            <label class="field-label" [for]="'cfg-' + f.key">{{ f.label }}</label>
-            <input
-              class="input"
-              type="number"
-              [id]="'cfg-' + f.key"
-              [min]="f.min"
-              [max]="f.max"
-              [value]="cfg()[f.key]"
-              (change)="saveField(f.key, $any($event.target).value, f.min, f.max)"
-            />
-          </div>
-        }
-      </div>
-      <div class="flex flex-wrap gap-6 mt-4">
-        <label class="flex items-center gap-2"
-          ><input
-            type="checkbox"
-            class="size-4 accent-[var(--brand)]"
-            [checked]="cfg().autoStartBreaks"
-            (change)="settings.update({ autoStartBreaks: $any($event.target).checked })"
-          />Démarrer automatiquement les pauses</label
-        >
-        <label class="flex items-center gap-2"
-          ><input
-            type="checkbox"
-            class="size-4 accent-[var(--brand)]"
-            [checked]="cfg().autoStartWork"
-            (change)="settings.update({ autoStartWork: $any($event.target).checked })"
-          />Enchaîner automatiquement la session suivante</label
-        >
-      </div>
-      <p class="field-hint">
-        Les valeurs appliquées à la prochaine session. Une session déjà lancée garde sa durée.
-      </p>
-    </section>
+    <ff-pomodoro-settings />
   }
 
   <div class="focus-board grid gap-6">

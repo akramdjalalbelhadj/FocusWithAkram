@@ -5,7 +5,6 @@ import { safely } from "../../../../core/utils/safely";
 import { ErrorBox } from "../../../../shared/ui/error-box/error-box";
 import { Header } from "../../../../shared/ui/page-header/page-header";
 import { bools } from "../../constants/boolean-settings";
-import { numeric } from "../../constants/numeric-settings";
 import type { useSettingsPage } from "./use-settings-page";
 export function SettingsPageView({
   app,
@@ -63,30 +62,6 @@ export function SettingsPageView({
             </select>
           </label>
         </div>
-        <h2>Focus et Pomodoro</h2>
-        <div className="form-grid">
-          {numeric.map(([k, l, min, max]) => (
-            <label key={k}>
-              {l}
-              <input
-                type="number"
-                name={k}
-                defaultValue={s[k]}
-                required
-                min={min}
-                max={max}
-              />
-            </label>
-          ))}
-        </div>
-        <label>
-          Son
-          <select name="soundName" defaultValue={s.soundName}>
-            <option value="bell">Cloche</option>
-            <option value="chime">Carillon</option>
-            <option value="soft">Doux</option>
-          </select>
-        </label>
         {bools.map(([k, l]) => (
           <label className="choice" key={k}>
             <input type="checkbox" name={k} defaultChecked={s[k]} />
