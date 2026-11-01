@@ -1,15 +1,16 @@
 # Organisation des frontends
 
-Les deux applications utilisent le même backend et les mêmes contrats dans `shared/`. Elles gardent leurs propres composants et leur propre gestion d'état. Les changements de cette réorganisation sont réalisés sur `main`.
+Les deux applications utilisent le même backend et les mêmes contrats dans `shared/`. Elles gardent leurs propres composants et leur propre gestion d'état. Pendant la refonte v2, seul Angular évolue ; React sera adapté ensuite (voir le [suivi](../suivi/refonte-v2.md)).
 
 ## Angular : `frontend-angular/`
 
 ```text
 src/
   app/
+    config/         configuration de l'application et navigation (navigation.ts)
     core/           API, services injectables, intercepteurs et utilitaires
     features/       dashboard, tasks, eisenhower, calendar, pomodoro, etc.
-    layout/         navigation, shell et palette de commandes
+    layout/         shell, palette de commandes et aide des raccourcis
     shared/ui/      composants réutilisables et dialogues
   styles/           styles globaux et règles de disposition
   styles/index.css  point d'entrée des styles
@@ -18,6 +19,13 @@ src/
 Chaque composant possède son fichier TypeScript et un template `.html` référencé par `templateUrl`. Les styles locaux, lorsqu'ils sont nécessaires, utilisent `styleUrl` et un fichier `.css`. Ne pas créer de feuille vide si les styles partagés suffisent. Les points d’entrée publics des groupes de composants sont des fichiers `index.ts` dans leurs répertoires dédiés.
 
 Les appels réseau restent dans `core/api`, les actions métier et interactions transversales dans des services injectables. Les pages assemblent ces services et exposent l'état du template. Les signaux et la détection `OnPush` sont conservés. Le lint interdit les propriétés `template` et `styles` inline dans les composants.
+
+### Conventions Angular
+
+- **Navigation** : `config/navigation.ts` est la source unique. Le menu latéral, la barre mobile (entrées `mobile`, quatre au plus), le menu « Plus », la palette de commandes et les raccourcis « G puis touche » en sont dérivés. Ajouter une page = une route dans `routes/app.routes.ts` et une entrée dans `NAV` ; un test vérifie que chaque entrée a sa route et que les touches sont uniques.
+- **Chargement** : `core/util/loader.ts` (`Loader`) relit ses données quand un signal lu par `fetch` change ou quand `RefreshService.bump()` est appelé après une mutation ; un nouveau chargement **annule** la requête précédente.
+- **Recherche** : les champs de saisie libre passent par `debounced()` (`core/util/debounced.ts`, 250 ms) avant d'alimenter un `Loader`.
+- **Erreurs** : l'intercepteur convertit tout échec HTTP en `AppError` (`core/api/app-error.ts`) et affiche lui-même les conflits, erreurs serveur et pertes réseau (`notified = true`). Les appelants utilisent `ToastService.errorFrom(e, repli)`, qui n'affiche que ce qui ne l'a pas déjà été ; les erreurs 400/404/422 restent à la charge de l'appelant (formulaires).
 
 ## React : `frontend-react/`
 
@@ -114,4 +122,4 @@ La séparation des fichiers n'élimine pas à elle seule tous les couplages : l'
 
 ## Vérification
 
-Depuis la racine : `npm run build:angular`, `npm run build:react`, `npm run test:angular`, `npm run test:react`, `npm run lint:angular` et `npm run lint:react`. La recette navigateur commune reste dans `frontend-react/e2e/` ; voir [le guide de lancement](exploitation.md) pour le backend de test isolé.
+Depuis la racine : `npm run build:angular`, `npm run build:react`, `npm run test:angular`, `npm run test:react`, `npm run lint:angular` et `npm run lint:react`. Le lint Angular est autonome (`npm --prefix frontend-angular run lint`). La recette navigateur commune reste dans `frontend-react/e2e/` ; voir [le guide de lancement](exploitation.md) pour le backend de test isolé.

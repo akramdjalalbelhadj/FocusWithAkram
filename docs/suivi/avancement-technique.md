@@ -123,7 +123,7 @@ app/
   shared/ui/                  composants regroupés par sous-dossier
 ```
 
-Composants standalone, `OnPush`, signaux et HttpClient/RxJS. `SettingsStore` et `PomodoroEngine` coordonnent les préférences et la session ; `RefreshService` provoque les relectures après mutation. Les pages sont chargées depuis les routes ; ECharts est configuré dans les composants partagés.
+Composants standalone, `OnPush`, signaux, application sans zone.js et HttpClient/RxJS. `SettingsStore` et `PomodoroEngine` coordonnent les préférences et la session ; `RefreshService` provoque les relectures après mutation, et `Loader` annule la requête précédente. La navigation est déclarée une seule fois (`config/navigation.ts`). Tests unitaires (Vitest) : 22 au 1 novembre 2026 (dates, minuteur, chargement, recherche différée, erreurs, navigation) ; lint ESLint autonome. Les pages sont chargées depuis les routes ; ECharts est configuré dans les composants partagés.
 
 30 templates ont été externalisés. Le lint interdit les propriétés de métadonnées Angular `template` et `styles` inline. La matrice a des classes sémantiques et une feuille locale ; d’autres templates gardent encore des classes Tailwind. L’externalisation des templates ne signifie donc pas que cette conversion CSS est complète.
 
@@ -175,7 +175,7 @@ Ne pas importer un composant Angular dans React ni réciproquement. Ne pas dupli
 | Cache de session dans le navigateur | Continuité d’affichage ; ne pas le confondre avec un mode hors ligne.                                                           |
 | CSS encore mixte en Angular         | Conversion des utilitaires à poursuivre ; styles globaux hérités à déplacer progressivement sans casser les composants enfants. |
 | État applicatif React central       | Coordination de plusieurs responsabilités ; extraire progressivement avec tests de comportement.                                |
-| Docker non validé                   | Les imports de `shared/` dépassent le contexte frontend ; traiter et tester la construction complète.                           |
+| Docker non validé                   | Contexte de build corrigé (racine du dépôt, `.dockerignore`) ; construction réelle et healthchecks restent à essayer.           |
 | Avertissements de bibliothèques     | Dépréciations Spring/JDK et configuration de tests à examiner lors d’une mise à niveau dédiée.                                  |
 
 ## 8. Validation et points d’extension

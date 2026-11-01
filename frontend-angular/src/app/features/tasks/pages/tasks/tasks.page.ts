@@ -6,6 +6,7 @@ import { ProjectsApi, TasksApi } from '../../../../core/api/tasks.api';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
 import { ToastService } from '../../../../core/services/toast.service';
+import { debounced } from '../../../../core/util/debounced';
 import { Loader } from '../../../../core/util/loader';
 import { QuadrantBadgeComponent } from '../../../../shared/ui/badges/index';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
@@ -75,6 +76,7 @@ export class TasksPage {
   protected readonly modes = MODES;
   protected readonly mode = signal<PriorityMode>('PRIORITIES');
   protected readonly q = signal('');
+  private readonly search = debounced(this.q);
   protected readonly projectId = signal('');
   protected readonly tag = signal('');
   protected readonly sort = signal<SortKey>('priority');
@@ -84,7 +86,7 @@ export class TasksPage {
   protected readonly current = computed(() => MODES.find((m) => m.mode === this.mode())!);
 
   protected readonly loader = new Loader(() =>
-    this.api.priorities(this.mode(), { q: this.q(), projectId: this.projectId(), tag: this.tag() }),
+    this.api.priorities(this.mode(), { q: this.search(), projectId: this.projectId(), tag: this.tag() }),
   );
 
   protected readonly sorted = computed<Task[]>(() => {

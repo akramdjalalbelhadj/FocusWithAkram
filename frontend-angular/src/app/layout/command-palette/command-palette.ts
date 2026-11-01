@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
+import { NAV } from '../../config/navigation';
 import { SearchResult } from '../../core/api/models';
 import { TasksApi } from '../../core/api/tasks.api';
 import { PomodoroEngine } from '../../core/services/pomodoro.engine';
@@ -63,67 +64,13 @@ export class CommandPaletteComponent {
       icon: 'timer',
       run: () => void this.startFocus(),
     },
-    {
-      id: 'go-dash',
-      label: 'Aller au tableau de bord',
-      icon: 'dashboard',
-      hint: 'G D',
-      run: () => this.go('/'),
-    },
-    {
-      id: 'go-matrix',
-      label: 'Aller à la matrice d’Eisenhower',
-      icon: 'grid',
-      hint: 'G M',
-      run: () => this.go('/matrix'),
-    },
-    {
-      id: 'go-tasks',
-      label: 'Aller à Mes tâches',
-      icon: 'list-checks',
-      hint: 'G T',
-      run: () => this.go('/tasks'),
-    },
-    {
-      id: 'go-focus',
-      label: 'Aller à Focus / Pomodoro',
-      icon: 'timer',
-      hint: 'G F',
-      run: () => this.go('/focus'),
-    },
-    {
-      id: 'go-cal',
-      label: 'Aller au calendrier',
-      icon: 'calendar',
-      hint: 'G C',
-      run: () => this.go('/calendar'),
-    },
-    {
-      id: 'go-stats',
-      label: 'Aller aux statistiques',
-      icon: 'chart',
-      hint: 'G S',
-      run: () => this.go('/statistics'),
-    },
-    {
-      id: 'go-projects',
-      label: 'Aller aux projets',
-      icon: 'folder',
-      run: () => this.go('/projects'),
-    },
-    {
-      id: 'go-archives',
-      label: 'Aller aux archives',
-      icon: 'archive',
-      hint: 'G A',
-      run: () => this.go('/archives'),
-    },
-    {
-      id: 'go-settings',
-      label: 'Ouvrir les paramètres',
-      icon: 'settings',
-      run: () => this.go('/settings'),
-    },
+    ...NAV.map((n) => ({
+      id: `go-${n.path}`,
+      label: n.command,
+      icon: n.icon,
+      hint: n.goKey ? `G ${n.goKey.toUpperCase()}` : undefined,
+      run: () => this.go(n.path),
+    })),
     {
       id: 'theme',
       label: 'Basculer le thème clair / sombre',

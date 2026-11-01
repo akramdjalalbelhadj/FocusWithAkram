@@ -20,6 +20,7 @@ import {
 import { ProjectsApi, TasksApi } from '../../../../core/api/tasks.api';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { debounced } from '../../../../core/util/debounced';
 import { Loader } from '../../../../core/util/loader';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { EmptyComponent, ErrorComponent } from '../../../../shared/ui/states/index';
@@ -49,6 +50,7 @@ export class MatrixPage {
 
   protected readonly meta = QUADRANT_META;
   protected readonly q = signal('');
+  private readonly search = debounced(this.q);
   protected readonly projectId = signal('');
   protected readonly status = signal<TaskStatus | ''>('');
   protected readonly tag = signal('');
@@ -60,7 +62,7 @@ export class MatrixPage {
 
   protected readonly loader = new Loader(() =>
     this.api.matrix({
-      q: this.q(),
+      q: this.search(),
       projectId: this.projectId(),
       status: this.status(),
       tag: this.tag(),

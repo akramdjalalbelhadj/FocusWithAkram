@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -86,12 +87,14 @@ export class ArchivesPage {
   protected readonly total = signal(0);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
-  private page = 0;
-  private lastPage = 0;
+  private readonly page = signal(0);
+  private readonly lastPage = signal(0);
   private readonly facets = signal<DayCount[]>([]);
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** Numero de la derniere requete : une reponse plus ancienne arrivee en retard est ignoree. */
+  private seq = 0;
 
-  protected readonly hasMore = computed(() => this.page + 1 < this.lastPage);
+  protected readonly hasMore = computed(() => this.page() + 1 < this.lastPage());
 
   protected readonly sections = computed<SectionGroup[]>(() => {
     const bySection = new Map<ArchiveSection, Map<string, ArchivedTask[]>>();
@@ -128,20 +131,24 @@ export class ArchivesPage {
         void this.loadFacets();
       });
     });
+    inject(DestroyRef).onDestroy(() => {
+      if (this.timer) clearTimeout(this.timer);
+    });
   }
 
   protected reset(): void {
     if (this.timer) clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.load(true), 250);
+    this.timer = setTimeout(() => void this.load(true), 250);
   }
 
   protected loadMore(): void {
-    this.page++;
-    this.load(false);
+    this.page.update((p) => p + 1);
+    void this.load(false);
   }
 
   protected async load(replace: boolean): Promise<void> {
-    if (replace) this.page = 0;
+    if (replace) this.page.set(0);
+    const seq = ++this.seq;
     this.loading.set(true);
     try {
       const res = await firstValueFrom(
@@ -151,19 +158,20 @@ export class ArchivesPage {
           quadrant: this.quadrant(),
           from: this.from(),
           to: this.to(),
-          page: this.page,
+          page: this.page(),
           size: 40,
           order: this.newestFirst() ? 'desc' : 'asc',
         }),
       );
+      if (seq !== this.seq) return;
       this.items.set(replace ? res.items : [...this.items(), ...res.items]);
       this.total.set(res.totalItems);
-      this.lastPage = res.totalPages;
+      this.lastPage.set(res.totalPages);
       this.error.set(false);
     } catch {
-      this.error.set(true);
+      if (seq === this.seq) this.error.set(true);
     } finally {
-      this.loading.set(false);
+      if (seq === this.seq) this.loading.set(false);
     }
   }
 

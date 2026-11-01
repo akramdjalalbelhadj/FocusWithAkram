@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { firstValueFrom } from 'rxjs';
 import { Project } from '../../../../core/api/models';
 import { ProjectsApi, TasksApi } from '../../../../core/api/tasks.api';
-import { AppError } from '../../../../core/interceptors/error.interceptor';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -79,7 +78,7 @@ export class ProjectsPage {
       );
       this.refresh.bump();
     } catch (e) {
-      if (e instanceof AppError) this.toast.error(e.problem.detail);
+      this.toast.errorFrom(e);
     }
   }
 

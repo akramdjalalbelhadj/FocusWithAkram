@@ -39,7 +39,7 @@ Relevé du **1 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 | ------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | Backend existant                | 70 tests sans échec                                               | Tâches, matrice, Pomodoro, dates, archives, statistiques, import/export.     |
 | Contrat et architecture backend | 8 tests supplémentaires sans échec                                | PATCH, DTO, recherche, erreurs HTTP et séparation contrôleur/repository.     |
-| Unitaires frontend              | 12 Angular + 12 React sans échec lors des validations précédentes | Ce sont des tests ciblés ; pas une couverture complète des pages.            |
+| Unitaires frontend              | 22 Angular (1 nov. 2026, refonte v2) + 12 React (validation antérieure) sans échec | Tests ciblés ; pas une couverture complète des pages.            |
 | Recette métier historique       | 12 scénarios réussis, 6 par frontend                              | Manipulation des tâches, Pomodoro, réseau, calendrier, sous-tâche et projet. |
 | Réglages déplacés               | 1 scénario par frontend réussi                                    | Enregistrement, recharge et conservation après paramètres généraux.          |
 | Navigation responsive           | 36 contrôles réussis                                              | 9 routes × 2 tailles × 2 frontends ; pas un essai tactile réel.              |
@@ -54,7 +54,7 @@ Les preuves ne correspondent pas toutes à une unique exécution de la version f
 | Équivalence visuelle exacte                  | Partiel                                        | Tailles d’anneau, graphiques, actions et densité diffèrent encore.                       |
 | Retrait de Tailwind du HTML Angular          | Partiel                                        | La matrice emploie des classes sémantiques ; d’autres templates gardent des utilitaires. |
 | Tests lecteurs d’écran et appareils tactiles | Non consignés de manière complète              | Recette humaine encore nécessaire.                                                       |
-| Docker de bout en bout                       | Non validé                                     | Le dossier partagé doit être inclus correctement au build.                               |
+| Docker de bout en bout                       | Non validé                                     | Contexte de build corrigé ; construction réelle à essayer.                               |
 | Fonctionnement navigateur fermé              | Non garanti                                    | Son, notifications et enchaînements automatiques nécessitent le navigateur.              |
 | Mode hors ligne complet                      | Non livré                                      | Un affichage de session mémorisé n’est pas une base locale synchronisable.               |
 | Authentification et multi-utilisateur        | Non livrés                                     | Usage local uniquement.                                                                  |

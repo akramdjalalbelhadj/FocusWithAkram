@@ -2,13 +2,13 @@ import { Dialog } from '@angular/cdk/dialog';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NAV, NavItem } from '../../config/navigation';
 import { PomodoroEngine, SESSION_LABEL } from '../../core/services/pomodoro.engine';
 import { ShortcutsService } from '../../core/services/shortcuts.service';
 import { TaskActions } from '../../features/tasks/services/task-actions.service';
 import { IconComponent } from '../../shared/ui/icon/icon';
 import { ToastHostComponent } from '../../shared/ui/toast-host/toast-host';
 import { CommandPaletteComponent } from '../command-palette/command-palette';
-import { NAV } from '../navigation/nav';
 import { readCollapsed } from './read-collapsed';
 import { ShortcutsHelpComponent } from '../shortcuts-help/shortcuts-help.component';
 
@@ -35,8 +35,8 @@ export class ShellComponent {
   private readonly shortcuts = inject(ShortcutsService);
 
   protected readonly nav = NAV;
-  protected readonly mobileNav = [NAV[0], NAV[1], NAV[2], NAV[3]];
-  protected readonly moreNav = NAV.slice(4);
+  protected readonly mobileNav = NAV.filter((n) => n.mobile);
+  protected readonly moreNav = NAV.filter((n) => !n.mobile);
   protected readonly collapsed = signal(readCollapsed());
 
   constructor() {
@@ -47,17 +47,8 @@ export class ShellComponent {
     return SESSION_LABEL[type];
   }
 
-  protected short(label: string): string {
-    return (
-      (
-        {
-          'Tableau de bord': 'Accueil',
-          'Matrice d’Eisenhower': 'Matrice',
-          'Mes tâches': 'Tâches',
-          'Focus / Pomodoro': 'Focus',
-        } as Record<string, string>
-      )[label] ?? label
-    );
+  protected short(item: NavItem): string {
+    return item.shortLabel ?? item.label;
   }
 
   protected toggleCollapsed(): void {

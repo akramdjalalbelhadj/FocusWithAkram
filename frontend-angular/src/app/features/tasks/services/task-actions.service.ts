@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { Quadrant, Task, TaskStatus } from '../../../core/api/models';
 import { TasksApi } from '../../../core/api/tasks.api';
-import { AppError } from '../../../core/interceptors/error.interceptor';
 import { PomodoroEngine } from '../../../core/services/pomodoro.engine';
 import { RefreshService } from '../../../core/services/refresh.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -174,7 +173,7 @@ export class TaskActions {
       this.refresh.bump();
       return result ?? (true as T);
     } catch (e) {
-      if (e instanceof AppError) this.toast.error(e.problem.detail);
+      this.toast.errorFrom(e);
       return undefined;
     }
   }

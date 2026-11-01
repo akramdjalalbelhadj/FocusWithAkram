@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Project } from '../../../../core/api/models';
 import { ProjectsApi } from '../../../../core/api/tasks.api';
-import { AppError } from '../../../../core/interceptors/error.interceptor';
+import { AppError } from '../../../../core/api/app-error';
 import { DateTimeFieldComponent } from '../../../../shared/ui/datetime-field/datetime-field';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { COLORS } from '../../constants/colors';

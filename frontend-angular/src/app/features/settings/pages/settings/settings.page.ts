@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { firstValueFrom } from 'rxjs';
 import { TransferApi } from '../../../../core/api/misc.api';
 import { ImportReport, Settings } from '../../../../core/api/models';
-import { AppError } from '../../../../core/interceptors/error.interceptor';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
 import { SHORTCUTS } from '../../../../core/services/shortcuts.service';
@@ -42,7 +41,7 @@ export class SettingsPage {
       await this.store.update(patch);
       this.refresh.bump();
     } catch (e) {
-      this.toast.error(e instanceof AppError ? e.problem.detail : 'Impossible d’enregistrer.');
+      this.toast.errorFrom(e, 'Impossible d’enregistrer.');
     }
   }
 
@@ -81,7 +80,7 @@ export class SettingsPage {
       this.report.set(await firstValueFrom(this.transfer.importBackup(json, true)));
     } catch (e) {
       this.pending.set(null);
-      this.toast.error(e instanceof AppError ? e.problem.detail : 'Fichier JSON invalide.');
+      this.toast.errorFrom(e, 'Fichier JSON invalide.');
     }
   }
 
@@ -92,7 +91,7 @@ export class SettingsPage {
       this.toast.success('Import terminé.');
       this.refresh.bump();
     } catch (e) {
-      this.toast.error(e instanceof AppError ? e.problem.detail : 'L’import a échoué.');
+      this.toast.errorFrom(e, 'L’import a échoué.');
     }
   }
 

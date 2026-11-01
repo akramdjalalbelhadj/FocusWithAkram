@@ -17,7 +17,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | --- | --- | --- |
 | 0 | Hygiène du dépôt, réorganisation `docs/` et racine | Livré |
 | 1 | Backend : aplatissement des packages, ArchUnit, import robuste, sauvegarde v2 extensible (compatible v1) | Livré |
-| 2 | Angular : corrections (archives, double toast, recherche, lint autonome, Docker), navigation à source unique | À faire |
+| 2 | Angular : corrections (archives, double toast, recherche, lint autonome, Docker), navigation à source unique | Livré (Docker non construit) |
 | 3 | Spécification fonctionnelle et règles financières de « Mes achats » — validation par le propriétaire | À faire |
 | 4 | Socle finance : comptes, catégories, opérations, solde, corrections | À faire |
 | 5 | Revenus prévus/reçus, budget mensuel, épargne, abonnements | À faire |
@@ -56,6 +56,19 @@ Problèmes **observés** (et non préférences), à corriger dans les lots 1 et 
 | Base vide créée silencieusement si le backend est lancé depuis un autre dossier | Chemin absolu de la base journalisé au démarrage, avertissement si elle est absente | Revue de code |
 
 Correction de l'audit : la journalisation DEBUG du profil local ne concerne que le code applicatif, qui ne journalise aucune donnée ; ce n'est pas un risque de fuite.
+
+### Réalisé au lot 2
+
+| Constat | Correction | Vérification |
+| --- | --- | --- |
+| « Charger plus » des archives figé | Pagination en signaux ; réponses obsolètes ignorées ; minuteur nettoyé à la destruction | Build et lint |
+| Erreur affichée deux fois | `AppError.notified` posé par l'intercepteur ; `ToastService.errorFrom` dans tous les appelants | 3 tests unitaires |
+| Une requête par frappe | `debounced()` (250 ms) sur Tâches et Matrice ; `Loader` annule la requête précédente | 4 tests unitaires |
+| Navigation déclarée à cinq endroits | `config/navigation.ts` unique ; shell, palette et raccourcis dérivés | 3 tests (routes, touches, barre mobile) |
+| Lint dépendant de React | ESLint 10 et typescript-eslint 8 dans Angular, versions identiques à React | `npm run lint` : 0 erreur |
+| Docker impossible à construire | Contexte racine, `.dockerignore` racine et backend (exclut la base personnelle) | **Non construit** : Docker absent du poste |
+
+Vérifications : 22 tests Angular, lint et build de production sans erreur ni avertissement.
 
 ## 4. Adaptations React à prévoir (phase 2)
 

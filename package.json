@@ -9,7 +9,7 @@
     "test:angular": "npm --prefix frontend-angular test -- --watch=false",
     "test:react": "npm --prefix frontend-react test",
     "test:e2e": "npm --prefix frontend-react run test:e2e --",
-    "lint:angular": "node frontend-react/node_modules/eslint/bin/eslint.js --config frontend-angular/eslint.config.mjs frontend-angular/src",
+    "lint:angular": "npm --prefix frontend-angular run lint",
     "lint:react": "npm --prefix frontend-react run lint",
     "test:volume": "node frontend-react/e2e/volume.mjs"
   }

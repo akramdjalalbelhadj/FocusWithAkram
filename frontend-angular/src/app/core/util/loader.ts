@@ -1,11 +1,11 @@
-import { effect, inject, signal } from '@angular/core';
-import { Observable, firstValueFrom } from 'rxjs';
+import { DestroyRef, effect, inject, signal } from '@angular/core';
+import { Observable, Subscription } from 'rxjs';
 import { RefreshService } from '../services/refresh.service';
 
 /**
  * Chargement de donnees d'une page avec etats loading / error / data. `fetch` est appele de facon synchrone
  * dans un effect : les signaux qu'il lit (filtres, periode...) et `RefreshService.tick` declenchent
- * automatiquement un rechargement. Seule la reponse la plus recente est conservee.
+ * automatiquement un rechargement. Un nouveau chargement annule la requete precedente encore en cours.
  * A instancier dans un contexte d'injection (constructeur ou initialiseur de champ).
  */
 export class Loader<T> {
@@ -13,27 +13,32 @@ export class Loader<T> {
   /** Vrai uniquement au premier chargement : les rechargements suivants gardent l'ecran stable. */
   readonly loading = signal(true);
   readonly error = signal(false);
-  private seq = 0;
+  private current: Subscription | null = null;
+  private readonly fetch: () => Observable<T>;
 
-  constructor(private readonly fetch: () => Observable<T>) {
+  constructor(fetch: () => Observable<T>) {
+    this.fetch = fetch;
     const refresh = inject(RefreshService);
     effect(() => {
       refresh.tick();
-      void this.load();
+      this.load();
     });
+    inject(DestroyRef).onDestroy(() => this.current?.unsubscribe());
   }
 
-  async load(): Promise<void> {
-    const id = ++this.seq;
-    try {
-      const result = await firstValueFrom(this.fetch());
-      if (id !== this.seq) return;
-      this.data.set(result);
-      this.error.set(false);
-    } catch {
-      if (id === this.seq) this.error.set(true);
-    } finally {
-      if (id === this.seq) this.loading.set(false);
-    }
+  load(): void {
+    // Se desabonner d'une requete HttpClient l'interrompt : la reponse obsolete n'arrive jamais.
+    this.current?.unsubscribe();
+    this.current = this.fetch().subscribe({
+      next: (result) => {
+        this.data.set(result);
+        this.error.set(false);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set(true);
+        this.loading.set(false);
+      },
+    });
   }
 }

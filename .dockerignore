@@ -1,0 +1,12 @@
+# Contexte de build du frontend Angular (racine du depot) : seuls frontend-angular/ et shared/ sont utiles.
+**/node_modules
+**/dist
+**/.angular
+.git
+.tools
+.idea
+logs
+docs
+backend
+frontend-react
+scripts

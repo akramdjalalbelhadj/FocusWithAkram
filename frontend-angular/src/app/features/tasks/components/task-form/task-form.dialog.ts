@@ -25,7 +25,7 @@ import {
   Task,
 } from '../../../../core/api/models';
 import { ProjectsApi, TasksApi } from '../../../../core/api/tasks.api';
-import { AppError } from '../../../../core/interceptors/error.interceptor';
+import { AppError } from '../../../../core/api/app-error';
 import { formatDuration } from '../../../../core/util/time';
 import { DateTimeFieldComponent } from '../../../../shared/ui/datetime-field/datetime-field';
 import { IconComponent } from '../../../../shared/ui/icon/icon';

@@ -1,21 +1,9 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
+import { AppError, SILENT_ERRORS } from '../api/app-error';
 import { ApiProblem } from '../api/models';
 import { ToastService } from '../services/toast.service';
-
-/** Erreur applicative normalisee, levee pour tous les echecs HTTP. */
-export class AppError extends Error {
-  constructor(
-    readonly problem: ApiProblem,
-    readonly offline = false,
-  ) {
-    super(problem.detail);
-  }
-}
-
-/** Requetes pour lesquelles l'appelant gere lui-meme l'affichage de l'erreur (pas de toast automatique). */
-export const SILENT_ERRORS = 'X-Silent-Errors';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const toast = inject(ToastService);
@@ -39,7 +27,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         err.status === 404 ||
         req.headers.has(SILENT_ERRORS);
       if (!handledByCaller) toast.error(problem.detail);
-      return throwError(() => new AppError(problem, offline));
+      return throwError(() => new AppError(problem, offline, !handledByCaller));
     }),
   );
 };

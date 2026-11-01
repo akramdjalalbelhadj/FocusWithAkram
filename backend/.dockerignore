@@ -1,0 +1,3 @@
+# Ne jamais envoyer la base locale (donnees personnelles) ni les sorties Maven au demon Docker.
+data
+target

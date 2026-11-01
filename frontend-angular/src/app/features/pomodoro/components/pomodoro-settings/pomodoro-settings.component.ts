@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Settings } from '../../../../core/api/models';
-import { AppError } from '../../../../core/interceptors/error.interceptor';
 import { SettingsStore } from '../../../../core/services/settings.store';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SoundService } from '../../../../core/services/sound.service';
@@ -35,7 +34,7 @@ export class PomodoroSettingsComponent {
       await this.store.update(patch);
       this.refresh.bump();
     } catch (e) {
-      this.toast.error(e instanceof AppError ? e.problem.detail : 'Impossible d’enregistrer.');
+      this.toast.errorFrom(e, 'Impossible d’enregistrer.');
     }
   }
 

@@ -10,7 +10,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { Task, TaskExecution, TimelineEvent, TimelineEventType } from '../../../../core/api/models';
 import { TasksApi } from '../../../../core/api/tasks.api';
-import { AppError } from '../../../../core/interceptors/error.interceptor';
+import { AppError } from '../../../../core/api/app-error';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
 import { formatDuration } from '../../../../core/util/time';

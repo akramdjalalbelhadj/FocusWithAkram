@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { NAV } from '../../config/navigation';
 import { TaskActions } from '../../features/tasks/services/task-actions.service';
 import { PomodoroEngine } from './pomodoro.engine';
 import { SettingsStore } from './settings.store';
@@ -9,22 +10,16 @@ export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['N'], label: 'Créer une nouvelle tâche' },
   { keys: ['/'], label: 'Rechercher' },
   { keys: ['Espace'], label: 'Démarrer / mettre en pause le Pomodoro' },
-  { keys: ['G', 'puis D'], label: 'Aller au tableau de bord' },
-  { keys: ['G', 'puis M'], label: 'Aller à la matrice' },
-  { keys: ['G', 'puis F'], label: 'Aller à Focus' },
+  ...NAV.flatMap((n) =>
+    n.goKey ? [{ keys: ['G', `puis ${n.goKey.toUpperCase()}`], label: n.command }] : [],
+  ),
   { keys: ['?'], label: 'Afficher les raccourcis' },
   { keys: ['Échap'], label: 'Fermer une fenêtre' },
 ];
 
-const GO: Record<string, string> = {
-  d: '/',
-  m: '/matrix',
-  t: '/tasks',
-  f: '/focus',
-  c: '/calendar',
-  s: '/statistics',
-  a: '/archives',
-};
+const GO: Record<string, string> = Object.fromEntries(
+  NAV.flatMap((n) => (n.goKey ? [[n.goKey, n.path]] : [])),
+);
 
 /** Raccourcis clavier globaux. Ignores dans les champs de saisie ; desactivables dans les parametres. */
 @Injectable({ providedIn: 'root' })

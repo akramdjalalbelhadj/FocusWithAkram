@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { AppError } from '../api/app-error';
 
 export type ToastKind = 'success' | 'error' | 'info';
 
@@ -20,6 +21,18 @@ export class ToastService {
 
   error(message: string): void {
     this.push('error', message, undefined, 8000);
+  }
+
+  /**
+   * Affiche l'erreur d'une operation, sauf si l'intercepteur HTTP l'a deja fait : evite les doublons
+   * (conflit 409, erreur serveur, hors ligne).
+   */
+  errorFrom(e: unknown, fallback = 'Une erreur inattendue est survenue.'): void {
+    if (e instanceof AppError) {
+      if (!e.notified) this.error(e.problem.detail);
+    } else {
+      this.error(fallback);
+    }
   }
 
   info(message: string, action?: Toast['action']): void {

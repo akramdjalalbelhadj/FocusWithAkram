@@ -3,7 +3,7 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PomodoroApi } from '../api/misc.api';
 import { PomodoroSession, SessionState, SessionType } from '../api/models';
-import { AppError } from '../interceptors/error.interceptor';
+import { AppError } from '../api/app-error';
 import { formatClock } from '../util/time';
 import { RefreshService } from './refresh.service';
 import { SettingsStore } from './settings.store';
@@ -203,7 +203,7 @@ export class PomodoroEngine {
         if (e.offline) this.offline.set(true);
         // Le serveur est la reference : on reaffiche son etat plutot que d'inventer un etat local.
         if (e.problem.status === 409 || e.problem.status === 422) {
-          this.toast.error(e.problem.detail);
+          this.toast.errorFrom(e);
           await this.sync();
         }
       }

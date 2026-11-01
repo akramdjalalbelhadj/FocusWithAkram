@@ -33,7 +33,10 @@ services:
       FOCUSFLOW_CORS_ORIGINS: http://localhost:${FOCUSFLOW_PORT:-8088}
 
   frontend:
-    build: ./frontend-angular
+    build:
+      # Racine du depot : le frontend importe shared/.
+      context: .
+      dockerfile: frontend-angular/Dockerfile
     restart: unless-stopped
     depends_on:
       - backend

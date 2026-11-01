@@ -41,7 +41,7 @@ Les lanceurs vérifient les versions et les ports, installent les dépendances f
 
 ## Avec Docker
 
-`docker-compose.yml` (PostgreSQL + backend + Angular/nginx) et `docker-compose.dev.yml` (PostgreSQL seul) existent mais **ne sont pas validés** : le build Angular ne peut pas aboutir en l'état (dossier `shared/` hors du contexte de build). Voir [exploitation, section Docker](docs/technique/exploitation.md).
+`docker-compose.yml` (PostgreSQL + backend + Angular/nginx) et `docker-compose.dev.yml` (PostgreSQL seul) existent mais **ne sont pas validés** : le contexte de build a été corrigé (racine du dépôt, `.dockerignore`), sans construction réelle à ce jour. Voir [exploitation, section Docker](docs/technique/exploitation.md).
 
 ## Organisation du dépôt
 

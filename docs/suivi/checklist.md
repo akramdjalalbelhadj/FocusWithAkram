@@ -81,7 +81,7 @@ Relevé du **1 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Templates HTML Angular externalisés et vues JSX React séparées de la logique des pages.
 - [x] Feuilles CSS dédiées et tokens partagés.
 - [x] Builds, typage et lints vérifiés pendant les lots correspondants.
-- [x] 12 tests unitaires par frontend disponibles.
+- [x] Tests unitaires disponibles : 22 Angular, 12 React.
 - [ ] Retirer les utilitaires Tailwind de tous les templates Angular si cette cible est confirmée pour la suite.
 - [ ] Décomposer davantage la coordination de l’état applicatif React quand son évolution le justifie.
 
@@ -91,7 +91,8 @@ Relevé du **1 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Scripts PowerShell/Bash distincts par frontend.
 - [x] Procédure pour lancer les deux interfaces avec un seul backend.
 - [x] Documentation des sauvegardes et du diagnostic.
-- [ ] Construction Docker avec dossier `shared/`, puis démarrage réellement vérifié.
+- [x] Contexte de build Docker incluant `shared/` et excluant les données locales.
+- [ ] Construction Docker puis démarrage réellement vérifiés.
 - [ ] Accessibilité humaine : clavier complet, lecteur d’écran, zoom et toucher.
 - [ ] Aucune ouverture Internet sans travail d’authentification et d’exposition réseau dédié.
 
