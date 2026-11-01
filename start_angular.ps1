@@ -66,7 +66,7 @@ foreach ($port in @($BackendPort, $FrontendPort)) {
 }
 
 # ---- Dependances frontend ---------------------------------------------------------------------
-$Frontend = Join-Path $Root 'frontend'
+$Frontend = Join-Path $Root 'frontend-angular'
 if (-not $SkipInstall -and -not (Test-Path (Join-Path $Frontend 'node_modules'))) {
   Write-Step 'Installation des dependances frontend (premier lancement)'
   Push-Location $Frontend

@@ -1,0 +1,33 @@
+<div
+  class="card w-[min(30rem,calc(100vw-1.5rem))] p-6 anim-pop shadow-modal"
+  role="dialog"
+  aria-labelledby="sh-title"
+>
+  <div class="flex justify-between items-center mb-4">
+    <h2 id="sh-title" class="text-lg font-bold">Raccourcis clavier</h2>
+    <button
+      class="btn btn-ghost btn-icon btn-sm"
+      aria-label="Fermer"
+      (click)="close()"
+      cdkFocusInitial
+    >
+      <ff-icon name="x" />
+    </button>
+  </div>
+  <ul class="divide-y divide-line">
+    @for (s of shortcuts; track s.label) {
+      <li class="flex items-center justify-between py-2.5 gap-4">
+        <span>{{ s.label }}</span>
+        <span class="flex gap-1">
+          @for (k of s.keys; track k) {
+            <kbd class="kbd">{{ k }}</kbd>
+          }
+        </span>
+      </li>
+    }
+  </ul>
+  <p class="field-hint mt-3">
+    Les raccourcis à une touche sont ignorés dans les champs de saisie et peuvent être désactivés
+    dans les paramètres.
+  </p>
+</div>

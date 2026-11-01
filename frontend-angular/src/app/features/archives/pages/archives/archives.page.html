@@ -1,0 +1,240 @@
+<header class="flex flex-wrap items-end justify-between gap-3 mb-5">
+  <div>
+    <h1 class="page-title">
+      <span class="page-icon"><ff-icon name="archive" [size]="24" /></span>Archives
+    </h1>
+    <p class="page-sub">Tâches terminées, classées par date réelle de fin.</p>
+  </div>
+  <div class="flex gap-2">
+    <button type="button" class="btn btn-secondary" (click)="export('csv')">
+      <ff-icon name="download" />CSV
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="export('json')">
+      <ff-icon name="download" />JSON
+    </button>
+  </div>
+</header>
+
+<div class="flex flex-wrap gap-2 mb-3" role="search">
+  <div class="relative flex-1 min-w-48 max-w-sm">
+    <ff-icon
+      name="search"
+      [size]="16"
+      class="absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
+    />
+    <input
+      class="input pl-9"
+      type="search"
+      placeholder="Rechercher par nom"
+      aria-label="Rechercher par nom"
+      [value]="q()"
+      (input)="q.set($any($event.target).value); reset()"
+    />
+  </div>
+  <select
+    class="input !w-auto"
+    aria-label="Projet"
+    [value]="projectId()"
+    (change)="projectId.set($any($event.target).value); reset()"
+  >
+    <option value="">Tous les projets</option>
+    @for (p of projects(); track p.id) {
+      <option [value]="p.id">{{ p.name }}</option>
+    }
+  </select>
+  <select
+    class="input !w-auto"
+    aria-label="Quadrant"
+    [value]="quadrant()"
+    (change)="quadrant.set($any($event.target).value); reset()"
+  >
+    <option value="">Tous les quadrants</option>
+    @for (q of quadrants; track q) {
+      <option [value]="q">{{ q }}</option>
+    }
+  </select>
+  <label class="flex items-center gap-2 text-sm text-muted"
+    >Du
+    <input
+      class="input !w-auto"
+      type="date"
+      [value]="from()"
+      (change)="from.set($any($event.target).value); reset()"
+      aria-label="Du"
+  /></label>
+  <label class="flex items-center gap-2 text-sm text-muted"
+    >au
+    <input
+      class="input !w-auto"
+      type="date"
+      [value]="to()"
+      (change)="to.set($any($event.target).value); reset()"
+      aria-label="Au"
+  /></label>
+  <button
+    type="button"
+    class="btn btn-secondary"
+    (click)="newestFirst.set(!newestFirst()); reset()"
+    [attr.aria-label]="
+      'Tri par date de fin : ' + (newestFirst() ? 'récentes d’abord' : 'anciennes d’abord')
+    "
+  >
+    <ff-icon name="clock" [size]="15" />{{
+      newestFirst() ? 'Récentes d’abord' : 'Anciennes d’abord'
+    }}
+  </button>
+</div>
+
+<!-- Navigation annee / mois -->
+@if (years().length) {
+  <nav class="flex flex-wrap items-center gap-1.5 mb-5" aria-label="Navigation par période">
+    <button
+      type="button"
+      class="chip !py-1"
+      [class.!bg-brand-soft]="!from() && !to()"
+      (click)="clearPeriod()"
+    >
+      Tout
+    </button>
+    @for (y of years(); track y) {
+      <button
+        type="button"
+        class="chip !py-1"
+        [class.!bg-brand-soft]="selectedYear() === y"
+        (click)="pickYear(y)"
+      >
+        {{ y }}
+      </button>
+    }
+    @if (selectedYear()) {
+      <span class="mx-1 text-subtle">›</span>
+      @for (m of monthsOf(selectedYear()!); track m.month) {
+        <button
+          type="button"
+          class="chip !py-1 capitalize"
+          [class.!bg-brand-soft]="selectedMonth() === m.month"
+          (click)="pickMonth(selectedYear()!, m.month)"
+        >
+          {{ monthShort(m.month) }} ({{ m.count }})
+        </button>
+      }
+    }
+  </nav>
+}
+
+@if (error()) {
+  <ff-error (retry)="load(true)" />
+} @else if (loading() && !items().length) {
+  <ff-skeleton [count]="5" />
+} @else if (!sections().length) {
+  <div class="card">
+    <ff-empty
+      icon="archive"
+      title="Aucune tâche archivée"
+      hint="Les tâches terminées arrivent ici automatiquement, avec tout leur historique."
+    />
+  </div>
+} @else {
+  <p class="text-sm text-muted mb-3" aria-live="polite">
+    {{ total() }} tâche{{ total() > 1 ? 's' : '' }} archivée{{ total() > 1 ? 's' : '' }}
+  </p>
+  <div class="space-y-8">
+    @for (s of sections(); track s.section) {
+      <section [attr.aria-label]="s.label">
+        <h2 class="section-title mb-3">{{ s.label }}</h2>
+        <div class="space-y-5">
+          @for (d of s.days; track d.day) {
+            <div>
+              <h3 class="font-semibold text-sm mb-2 capitalize">{{ dayTitle(d.day) }}</h3>
+              <ul class="space-y-2">
+                @for (a of d.items; track a.task.id) {
+                  <li class="card p-3 sm:p-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <span class="tabular-nums font-bold text-muted w-12">{{
+                      time(a.task.actualEndAt)
+                    }}</span>
+                    <div class="flex-1 min-w-48">
+                      <button
+                        type="button"
+                        class="font-semibold text-left hover:text-brand"
+                        (click)="actions.openDetail(a.task.id)"
+                      >
+                        {{ a.task.title }}
+                      </button>
+                      <div class="flex flex-wrap items-center gap-1.5 mt-1 text-xs">
+                        @if (a.task.project; as p) {
+                          <span class="chip"
+                            ><span class="size-2 rounded-full" [style.background]="p.color"></span
+                            >{{ p.name }}</span
+                          >
+                        }
+                        <span
+                          class="chip"
+                          [style.color]="'var(--' + a.task.quadrant.toLowerCase() + ')'"
+                          >{{ a.task.quadrant }}</span
+                        >
+                      </div>
+                    </div>
+                    <dl class="flex gap-4 text-xs text-muted">
+                      <div>
+                        <dt>Prévu</dt>
+                        <dd class="font-semibold text-fg tabular-nums">
+                          {{ dur(a.task.timing.plannedDurationSeconds) }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Réel</dt>
+                        <dd class="font-semibold text-fg tabular-nums">
+                          {{ dur(a.task.timing.actualElapsedSeconds) }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Actif</dt>
+                        <dd class="font-semibold text-fg tabular-nums">
+                          {{ dur(a.task.timing.activeSeconds) }}
+                        </dd>
+                      </div>
+                    </dl>
+                    @switch (a.task.timing.punctuality) {
+                      @case ('EARLY') {
+                        <span class="badge badge-done">En avance</span>
+                      }
+                      @case ('ON_TIME') {
+                        <span class="badge badge-progress">À l'heure</span>
+                      }
+                      @case ('LATE') {
+                        <span class="badge badge-danger">En retard</span>
+                      }
+                    }
+                    <div class="flex gap-1 ml-auto">
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        (click)="actions.openDetail(a.task.id)"
+                      >
+                        <ff-icon name="info" [size]="14" />Détail
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        (click)="actions.restore(a.task)"
+                      >
+                        <ff-icon name="restore" [size]="14" />Restaurer
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </div>
+  @if (hasMore()) {
+    <div class="text-center mt-8">
+      <button type="button" class="btn btn-secondary" [disabled]="loading()" (click)="loadMore()">
+        Charger la suite
+      </button>
+    </div>
+  }
+}

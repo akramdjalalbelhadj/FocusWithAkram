@@ -1,0 +1,44 @@
+<div
+  class="card w-[min(36rem,calc(100vw-1.5rem))] anim-pop shadow-modal overflow-hidden mt-[12vh]"
+  role="dialog"
+  aria-label="Palette de commandes"
+>
+  <div class="flex items-center gap-3 px-4 border-b border-line">
+    <ff-icon name="search" class="text-subtle" />
+    <input
+      class="flex-1 bg-transparent h-14 outline-none text-base"
+      placeholder="Rechercher une tâche, une page ou une action…"
+      role="combobox"
+      aria-expanded="true"
+      aria-controls="cp-list"
+      [attr.aria-activedescendant]="'cp-' + active()"
+      aria-label="Rechercher"
+      cdkFocusInitial
+      [value]="query()"
+      (input)="query.set($any($event.target).value); active.set(0)"
+      (keydown)="onKey($event)"
+    />
+    <span class="kbd">Échap</span>
+  </div>
+  <ul id="cp-list" role="listbox" class="max-h-[50vh] overflow-y-auto p-2">
+    @for (c of items(); track c.id; let i = $index) {
+      <li role="option" [id]="'cp-' + i" [attr.aria-selected]="i === active()">
+        <button
+          type="button"
+          class="menu-item"
+          [class.!bg-surface-2]="i === active()"
+          (mouseenter)="active.set(i)"
+          (click)="exec(c)"
+        >
+          <ff-icon [name]="c.icon" [size]="16" class="text-subtle" />
+          <span class="flex-1 truncate">{{ c.label }}</span>
+          @if (c.hint) {
+            <span class="text-xs text-subtle">{{ c.hint }}</span>
+          }
+        </button>
+      </li>
+    } @empty {
+      <li class="p-6 text-center text-muted text-sm">Aucun résultat pour « {{ query() }} ».</li>
+    }
+  </ul>
+</div>

@@ -1,0 +1,33 @@
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+}
+.distribution > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.distribution strong {
+  margin-left: auto;
+}
+.heatmap {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  grid-auto-flow: column;
+  gap: 3px;
+  overflow: auto;
+}
+.heatmap span {
+  min-width: 5px;
+  border-radius: 3px;
+}
+
+.heatmap span {
+  background: color-mix(
+    in srgb,
+    var(--brand) var(--heat-intensity),
+    var(--surface-3)
+  );
+}

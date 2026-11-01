@@ -1,0 +1,227 @@
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+.quadrant {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ql);
+  background: linear-gradient(135deg, var(--qs), var(--surface));
+  border-radius: 24px;
+  padding: 20px;
+  min-height: 310px;
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--qa) 13%, transparent);
+  min-width: 0;
+}
+.quadrant > header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--ql);
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+}
+.quadrant > header > div {
+  flex: 1;
+  min-width: 0;
+}
+.quadrant h2 {
+  font-size: 21px;
+  margin: 0;
+  line-height: 1.25;
+}
+.quadrant p {
+  font-size: 12px;
+  margin: 5px 0 0;
+}
+.quadrant-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  color: white;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--qa) 65%, white),
+    var(--qa)
+  );
+  box-shadow:
+    inset 0 0 0 1px #ffffff40,
+    0 4px 12px color-mix(in srgb, var(--qa) 25%, transparent);
+}
+.quadrant-icon svg {
+  width: 28px;
+  height: 28px;
+}
+.qbadge {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  background: var(--qs, var(--brand-soft));
+  color: var(--qc, var(--brand));
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.quadrant > header > .qbadge {
+  background: color-mix(in srgb, var(--qa) 20%, var(--surface));
+  font-size: 19px;
+  border-radius: 16px;
+  padding: 6px 12px;
+}
+.quadrant-body {
+  flex: 1;
+  min-height: 150px;
+}
+.drop-target {
+  outline: 2px dashed var(--brand);
+  outline-offset: -3px;
+  background: var(--brand-soft);
+}
+.draggable {
+  position: relative;
+}
+.drag-handle {
+  position: absolute;
+  left: -15px;
+  top: 19px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--muted);
+  opacity: 0;
+  cursor: grab;
+}
+.draggable:hover .drag-handle,
+.drag-handle:focus {
+  opacity: 1;
+}
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 2px;
+  min-width: 0;
+}
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+.task-title {
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  justify-content: flex-start;
+}
+.task-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.task-meta time {
+  padding: 1px 5px;
+  background: var(--qs);
+  border-radius: 4px;
+}
+.task-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 200px;
+  margin-top: 8px;
+}
+.task-menu {
+  position: relative;
+}
+.task-menu summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 5px;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 5px;
+  width: 220px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+}
+.menu button {
+  width: 100%;
+  justify-content: flex-start;
+  border: 0;
+  background: transparent;
+  padding: 8px;
+}
+.menu button:hover {
+  background: var(--surface-2);
+}
+.quick-add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: color-mix(in srgb, var(--qa) 7%, var(--surface));
+  border: 1px solid var(--ql);
+  border-radius: 12px;
+  padding: 0 12px;
+  margin-top: 16px;
+}
+.quick-add input {
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 12px 0;
+}
+.quadrant-tabs {
+  display: none;
+}
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 30px 10px;
+  color: var(--muted);
+  text-align: center;
+}
+.empty p {
+  margin: 0;
+  font-size: 13px;
+}
+.empty svg {
+  opacity: 0.6;
+}
+.loading {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+}
+.error {
+  padding: 12px 16px;
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  margin: 10px 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}

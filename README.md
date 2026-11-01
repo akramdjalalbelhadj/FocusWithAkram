@@ -44,6 +44,8 @@ docker compose up -d --build
 
 ## Architecture
 
+Organisation des deux interfaces : [architecture frontend](docs/frontend-architecture.md).
+
 Monolithe modulaire, découpé par domaine puis par responsabilité.
 
 ```
@@ -52,7 +54,8 @@ backend/   Java 25 · Spring Boot 4.1 · JPA/Hibernate · PostgreSQL · Flyway �
   com.focusflow.pomodoro    PomodoroSession (machine à états), service, API
   com.focusflow.eisenhower  matrice
   com.focusflow.dashboard · statistics · project · settings · transfer · search · common · config
-frontend/  Angular 22 · standalone · Signals · OnPush · Tailwind 4 · CDK (drag&drop, dialog, menu) · ECharts · Lucide
+frontend-react/    React · vues TSX · hooks · CSS par domaine
+frontend-angular/  Angular 22 · standalone · Signals · OnPush · Tailwind 4 · CDK (drag&drop, dialog, menu) · ECharts · Lucide
   core/      api, interceptors, services (PomodoroEngine, SettingsStore…), util (dates)
   shared/ui  design system (icônes, badges, états, sélecteur de date, graphiques, dialogues)
   features/  dashboard · eisenhower · tasks · pomodoro · calendar · statistics · projects · archives · settings
@@ -76,7 +79,7 @@ Choix structurants :
 
 ```bash
 cd backend  && mvn verify                       # 70 tests : unitaires + intégration (PostgreSQL embarqué)
-cd frontend && npx ng test --watch=false        # 12 tests : dates / fuseaux / moteur du minuteur
+cd frontend-angular && npx ng test --watch=false        # 12 tests : dates / fuseaux / moteur du minuteur
 ```
 
 Backend : cycle de vie et archivage, comparaison prévu/réel, début rétroactif, restauration et cycles multiples, matrice et ordre, priorités, sous-tâches, machine à états Pomodoro (pause, reprise, idempotence, expiration, pas de double comptage), historique quotidien, statistiques par fuseau, **changements d'heure** (printemps et automne), import / export. Les tests d'intégration utilisent un vrai PostgreSQL embarqué (Testcontainers n'est pas utilisable sans Docker).

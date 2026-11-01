@@ -1,0 +1,242 @@
+@media (min-width: 1600px) {
+  .kpis.six {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+@media (max-width: 1200px) {
+  .app-shell {
+    grid-template-columns: 225px minmax(0, 1fr);
+  }
+  main {
+    padding: 20px;
+  }
+  .utility-bar {
+    padding: 12px 20px 0;
+  }
+  .quadrant {
+    padding: 16px;
+  }
+  .quadrant h2 {
+    font-size: 18px;
+  }
+  .quadrant-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .quadrant > header {
+    gap: 10px;
+  }
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+  .calendar-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .calendar-side .card {
+    margin: 0;
+  }
+  .project-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .focus-layout {
+    grid-template-columns: 1fr;
+  }
+  .focus-layout > aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .focus-layout > aside .card {
+    margin: 0;
+  }
+}
+@media (max-width: 1023px) {
+  .matrix-grid {
+    grid-template-columns: 1fr;
+  }
+  .quadrant-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 16px;
+  }
+  .quadrant-tabs button {
+    flex: 1;
+  }
+  .quadrant-tabs [aria-selected="true"] {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+  .matrix-grid .mobile-hidden {
+    display: none;
+  }
+  .quadrant {
+    min-height: 400px;
+  }
+  .dashboard-grid,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .week-view {
+    grid-template-columns: 1fr;
+  }
+  .kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .app-shell,
+  .app-shell.collapsed {
+    display: block;
+  }
+  .sidebar {
+    display: none;
+  }
+  main {
+    padding: 18px 16px 100px;
+  }
+  .utility-bar {
+    padding: 10px 16px 0;
+  }
+  .search-button span {
+    max-width: 150px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .search-button kbd {
+    display: none;
+  }
+  .page-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .page-header h1 {
+    font-size: 23px;
+    gap: 12px;
+  }
+  .page-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .page-header .actions {
+    margin-left: auto;
+  }
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    z-index: 60;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mobile-nav a,
+  .mobile-nav button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 10px;
+    padding: 10px 4px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+  }
+  .mobile-nav .active {
+    color: var(--brand);
+  }
+  .card {
+    padding: 18px;
+  }
+  .kpis.six {
+    grid-template-columns: 1fr 1fr;
+  }
+  .kpi strong {
+    font-size: 24px;
+  }
+  .intro h2,
+  .welcome h2 {
+    font-size: 24px;
+  }
+  .project-grid,
+  .focus-layout > aside,
+  .calendar-side,
+  .form-grid,
+  .facts {
+    grid-template-columns: 1fr;
+  }
+  .calendar-controls {
+    gap: 6px;
+  }
+  .calendar-controls h2 {
+    font-size: 16px;
+  }
+  .calendar-controls select {
+    margin-left: 0;
+  }
+  .day {
+    min-height: 60px;
+    padding: 5px;
+  }
+  .day .draggable,
+  .day > small {
+    display: none;
+  }
+  .mobile-dot {
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: var(--brand);
+    border-radius: 50%;
+    margin: auto;
+  }
+  .weekdays {
+    font-size: 11px;
+  }
+  .month {
+    padding: 4px;
+  }
+  .toast {
+    bottom: 80px;
+    right: 16px;
+    font-size: 12px;
+  }
+  .filters select {
+    max-width: 100%;
+    flex: 1;
+  }
+  .timer-ring {
+    width: 260px;
+  }
+  .timer-ring strong {
+    font-size: 56px;
+  }
+  .section-head {
+    flex-wrap: wrap;
+  }
+  .inline-form {
+    flex-wrap: wrap;
+  }
+  .task-list > .actions {
+    align-items: stretch;
+  }
+  .task-list > .actions > select {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

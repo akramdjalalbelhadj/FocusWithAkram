@@ -1,0 +1,7 @@
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-value {
+  transition: stroke-dashoffset 0.4s linear;
+}

@@ -1,0 +1,71 @@
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.project-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 310px;
+  margin: 0 !important;
+}
+.project-card .actions {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.project-card .actions button {
+  font-size: 11px;
+  padding: 6px 8px;
+}
+.project-icon {
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: 14px;
+  align-self: flex-start;
+  margin-bottom: 16px;
+}
+.new-project {
+  border-style: dashed;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  min-height: 310px;
+  gap: 16px;
+  font-weight: 400;
+}
+.new-project strong {
+  font-size: 19px;
+}
+.new-project svg {
+  color: var(--brand);
+  width: 32px;
+  height: 32px;
+}
+progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+progress::-webkit-progress-bar {
+  background: var(--surface-3);
+}
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #8d3fff, #bf7aff);
+  border-radius: 6px;
+}
+progress::-moz-progress-bar {
+  background: #8d3fff;
+}
+
+.project-card {
+  border-top: 3px solid var(--project-color);
+}
+.project-card .project-icon {
+  color: var(--project-color);
+}

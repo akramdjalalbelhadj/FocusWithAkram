@@ -4,7 +4,7 @@
 
 ## Topologie vérifiée
 - `backend/` : Java 25, Spring Boot 4.1.2, PostgreSQL, Flyway, Maven. Écoute 127.0.0.1:8080, sans authentification. Profil local PostgreSQL embarqué persistant ; tests avec base séparée.
-- `frontend/` : Angular 22.2, standalone, OnPush, signals, HttpClient/RxJS, CDK drag/drop/dialog/menu, Tailwind 4, ECharts, Lucide et Inter local. Neuf routes lazy existantes. Scripts start/build/test ; aucun lint configuré.
+- `frontend-angular/` : Angular 22.2, standalone, OnPush, signals, HttpClient/RxJS, CDK drag/drop/dialog/menu, Tailwind 4, ECharts, Lucide et Inter local. Neuf routes lazy existantes. Scripts start/build/test ; aucun lint configuré.
 - `frontend-react/` : nouveau frontend indépendant prévu sur 5173. Proxy vers le même backend ; pas de backend Node.
 - Node système 22.12.0 incompatible avec Angular actuel : runtime Node 24 local dans .tools, ignoré par Git.
 

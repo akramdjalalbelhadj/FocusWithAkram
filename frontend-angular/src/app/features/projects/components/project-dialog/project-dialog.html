@@ -1,0 +1,68 @@
+<form
+  class="card w-[min(30rem,calc(100vw-1.5rem))] p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="pj-title"
+>
+  <h2 id="pj-title" class="text-lg font-bold mb-4">
+    {{ data ? 'Modifier le projet' : 'Nouveau projet' }}
+  </h2>
+  <div class="space-y-4">
+    <div>
+      <label class="field-label" for="pj-name">Nom</label>
+      <input id="pj-name" class="input" formControlName="name" maxlength="120" cdkFocusInitial />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <p class="field-error">Le nom est obligatoire.</p>
+      }
+      @if (error()) {
+        <p class="field-error">{{ error() }}</p>
+      }
+    </div>
+    <div>
+      <label class="field-label" for="pj-desc">Description</label>
+      <textarea id="pj-desc" class="input" rows="2" formControlName="description"></textarea>
+    </div>
+    <div>
+      <label class="field-label" for="pj-icon">Icône</label
+      ><select id="pj-icon" class="input" formControlName="icon">
+        <option value="folder">Dossier</option>
+        <option value="target">Objectif</option>
+        <option value="coffee">Personnel</option>
+        <option value="layers">Apprentissage</option>
+      </select>
+    </div>
+    <fieldset>
+      <legend class="field-label">Couleur</legend>
+      <div class="flex flex-wrap gap-2" role="radiogroup">
+        @for (c of colors; track c) {
+          <label
+            class="cursor-pointer has-[:focus-visible]:outline-2 outline-offset-2 rounded-full"
+          >
+            <input type="radio" class="sr-only-text" formControlName="color" [value]="c" />
+            <span
+              class="grid place-items-center size-8 rounded-full border-2"
+              [style.background]="c"
+              [style.border-color]="form.value.color === c ? 'var(--fg)' : 'transparent'"
+            >
+              @if (form.value.color === c) {
+                <ff-icon name="check" [size]="14" class="text-white" />
+              }
+            </span>
+            <span class="sr-only-text">{{ c }}</span>
+          </label>
+        }
+      </div>
+    </fieldset>
+    <div>
+      <label class="field-label" for="pj-due">Échéance (facultative)</label>
+      <ff-datetime inputId="pj-due" formControlName="dueAt" />
+    </div>
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ data ? 'Enregistrer' : 'Créer' }}
+    </button>
+  </div>
+</form>

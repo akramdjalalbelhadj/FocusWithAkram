@@ -1,0 +1,88 @@
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 20px 0;
+}
+.kpis.six {
+  grid-template-columns: repeat(3, 1fr);
+}
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 !important;
+  background: linear-gradient(120deg, var(--brand-soft), var(--surface));
+}
+.kpi:nth-child(3n + 2) {
+  background: linear-gradient(120deg, var(--success-soft), var(--surface));
+}
+.kpi:nth-child(3n) {
+  background: linear-gradient(120deg, var(--q2-soft), var(--surface));
+}
+.kpi strong {
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+.kpi > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.kpi-icon {
+  color: var(--brand) !important;
+  font-size: 22px !important;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 18px;
+}
+.dashboard-grid .card,
+.stats-grid .card {
+  margin: 0;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.priority-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.priority-row .task-row {
+  flex: 1;
+}
+.focus-compact {
+  text-align: center;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+}
+.focus-compact h2 {
+  align-self: flex-start;
+}
+.mini-matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mini-matrix a {
+  background: var(--qs);
+  color: var(--qc);
+  padding: 16px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.mini-matrix strong {
+  font-size: 24px;
+}
+.mini-matrix span {
+  font-size: 12px;
+  font-weight: 650;
+}

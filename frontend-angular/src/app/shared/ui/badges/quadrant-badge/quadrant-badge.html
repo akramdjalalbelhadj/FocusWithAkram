@@ -1,0 +1,10 @@
+<span
+  class="badge"
+  [style.background]="'var(--' + q().toLowerCase() + '-soft)'"
+  [style.color]="'var(--' + q().toLowerCase() + ')'"
+>
+  <ff-icon [name]="meta().icon" [size]="12" />{{ q() }}
+  @if (!compact()) {
+    · {{ meta().label }}
+  }
+</span>

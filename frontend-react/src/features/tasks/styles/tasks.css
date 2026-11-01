@@ -1,0 +1,15 @@
+.task-list > .tabs {
+  margin-bottom: 18px;
+}
+.task-list > .actions {
+  margin-bottom: 16px;
+}
+.inline-form {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+.inline-form input {
+  flex: 1;
+  width: 100%;
+}

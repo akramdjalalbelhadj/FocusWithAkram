@@ -1,0 +1,96 @@
+.timer-ring {
+  position: relative;
+  width: 290px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  margin: 20px auto;
+}
+.timer-ring svg {
+  width: 100%;
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 10px #a459ff20);
+}
+.timer-ring circle {
+  fill: none;
+  stroke-width: 4;
+}
+.timer-ring .track {
+  stroke: color-mix(in srgb, var(--brand) 45%, var(--surface-3));
+}
+.timer-ring .value {
+  stroke: #ab58ff;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.timer-ring > div {
+  z-index: 1;
+  text-align: center;
+}
+.timer-ring strong {
+  font-size: 64px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -3px;
+  font-variant-numeric: tabular-nums;
+  display: block;
+}
+.timer-ring span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.timer-ring.small {
+  width: 150px;
+  margin: 10px auto;
+}
+.timer-ring.small strong {
+  font-size: 32px;
+  letter-spacing: -1px;
+}
+.focus-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+}
+.timer-card {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.timer-card > label {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 500px;
+}
+.big-number {
+  font-size: 32px;
+  color: var(--fg);
+  font-weight: 750;
+}
+.big-number small {
+  font-weight: 400;
+  font-size: 14px;
+}
+.history {
+  margin-top: 20px;
+}
+.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.history-list article {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--surface-2);
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 12px;
+  flex: 1;
+  min-width: 210px;
+}

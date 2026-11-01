@@ -1,0 +1,176 @@
+<header class="matrix-page-header">
+  <div>
+    <h1 class="page-title">
+      <span class="page-icon"><ff-icon name="grid" [size]="24" /></span>Matrice d’Eisenhower
+    </h1>
+  </div>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="actions.create({ quadrant: mobileQuadrant() })"
+  >
+    <ff-icon name="plus" />Nouvelle tâche
+  </button>
+</header>
+
+<!-- Filtres -->
+<div class="matrix-filters" role="search">
+  <div class="matrix-search">
+    <ff-icon name="search" [size]="16" class="matrix-search-icon" />
+    <input
+      class="input matrix-search-input"
+      type="search"
+      placeholder="Rechercher dans la matrice"
+      aria-label="Rechercher dans la matrice"
+      [value]="q()"
+      (input)="q.set($any($event.target).value)"
+    />
+  </div>
+  <select
+    class="input matrix-filter-select"
+    aria-label="Filtrer par projet"
+    [value]="projectId()"
+    (change)="projectId.set($any($event.target).value)"
+  >
+    <option value="">Tous les projets</option>
+    @for (p of projects(); track p.id) {
+      <option [value]="p.id">{{ p.name }}</option>
+    }
+  </select>
+  <select
+    class="input matrix-filter-select"
+    aria-label="Filtrer par statut"
+    [value]="status()"
+    (change)="status.set($any($event.target).value)"
+  >
+    <option value="">Tous les statuts</option>
+    <option value="TODO">À faire</option>
+    <option value="IN_PROGRESS">En cours</option>
+  </select>
+  <select
+    class="input matrix-filter-select"
+    aria-label="Filtrer par étiquette"
+    [value]="tag()"
+    (change)="tag.set($any($event.target).value)"
+  >
+    <option value="">Toutes les étiquettes</option>
+    @for (t of tags(); track t) {
+      <option [value]="t">{{ t }}</option>
+    }
+  </select>
+  <label class="btn btn-secondary matrix-overdue-filter">
+    <input
+      type="checkbox"
+      class="sr-only-text"
+      [checked]="overdue()"
+      (change)="overdue.set($any($event.target).checked)"
+    />
+    <ff-icon name="alert" [size]="15" />En retard
+  </label>
+</div>
+
+@if (loader.error()) {
+  <ff-error (retry)="loader.load()" />
+} @else if (loader.loading()) {
+  <div class="matrix-loading">
+    @for (_ of [1, 2, 3, 4]; track _) {
+      <div class="skeleton matrix-loading-card"></div>
+    }
+  </div>
+} @else {
+  <!-- Selecteur de quadrant (mobile / tablette etroite) -->
+  <div class="matrix-tabs" role="tablist" aria-label="Quadrants">
+    @for (q of view(); track q.quadrant) {
+      <button
+        type="button"
+        role="tab"
+        class="matrix-tab"
+        [attr.aria-selected]="mobileQuadrant() === q.quadrant"
+        [attr.data-quadrant]="q.quadrant"
+        (click)="mobileQuadrant.set(q.quadrant)"
+      >
+        {{ q.quadrant }}<span class="matrix-tab-count">{{ q.tasks.length }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="matrix-grid" cdkDropListGroup>
+    @for (q of view(); track q.quadrant) {
+      <section
+        class="matrix-quadrant"
+        [attr.data-quadrant]="q.quadrant"
+        [class.is-active]="q.quadrant === mobileQuadrant()"
+        [attr.aria-labelledby]="'q-h-' + q.quadrant"
+      >
+        <header class="matrix-quadrant-header">
+          <span class="matrix-quadrant-icon"><ff-icon [name]="meta[q.quadrant].icon" /></span>
+          <div class="matrix-quadrant-heading">
+            <h2 [id]="'q-h-' + q.quadrant" class="matrix-quadrant-title">
+              {{ meta[q.quadrant].label }}
+            </h2>
+            <p class="matrix-quadrant-description">
+              {{ q.tasks.length }} tâches · {{ meta[q.quadrant].hint }}
+            </p>
+          </div>
+          @if (overdueOf(q) > 0) {
+            <span class="badge badge-danger" title="Tâches en retard"
+              ><ff-icon name="alert" [size]="11" />{{ overdueOf(q) }}</span
+            >
+          }
+          <span
+            class="badge matrix-quadrant-badge"
+            [attr.aria-label]="q.tasks.length + ' tâches'"
+            >{{ q.quadrant }}</span
+          >
+          <button
+            type="button"
+            class="btn btn-sm btn-icon matrix-add-button"
+            [attr.aria-label]="'Ajouter une tâche en ' + meta[q.quadrant].label"
+            (click)="actions.create({ quadrant: q.quadrant })"
+          >
+            <ff-icon name="plus" [size]="16" />
+          </button>
+        </header>
+
+        <div
+          cdkDropList
+          [cdkDropListData]="q.quadrant"
+          (cdkDropListDropped)="drop($event)"
+          class="matrix-task-list"
+          [attr.aria-label]="'Tâches ' + meta[q.quadrant].label"
+        >
+          @for (t of q.tasks; track t.id; let i = $index) {
+            <div
+              cdkDrag
+              [cdkDragData]="t"
+              class="matrix-draggable-task"
+              (keydown)="onCardKey($event, t, q.quadrant, i)"
+            >
+              <ff-task-card [task]="t" [compact]="true" />
+            </div>
+          } @empty {
+            <ff-empty icon="inbox" title="Aucune tâche" [hint]="hint(q.quadrant)" />
+          }
+        </div>
+
+        <form
+          class="matrix-quick-add"
+          (submit)="$event.preventDefault(); quickAdd(q.quadrant, field)"
+        >
+          <input
+            #field
+            class="input matrix-quick-add-input"
+            placeholder="Ajout rapide… (Entrée)"
+            [attr.aria-label]="'Ajout rapide dans ' + meta[q.quadrant].label"
+            maxlength="200"
+          />
+        </form>
+      </section>
+    }
+  </div>
+  @if (loader.data()!.total === 0 && !filtersActive()) {
+    <p class="matrix-empty-message">
+      Votre matrice est vide : créez une première tâche pour commencer.
+    </p>
+  }
+}

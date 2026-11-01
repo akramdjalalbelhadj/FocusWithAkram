@@ -1,0 +1,6 @@
+.fullscreen-mode {
+  background: var(--page);
+  padding: 2rem;
+  overflow-y: auto;
+  min-height: 100dvh;
+}

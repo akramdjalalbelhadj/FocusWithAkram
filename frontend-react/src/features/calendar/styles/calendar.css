@@ -1,0 +1,109 @@
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.calendar-controls h2 {
+  margin: 0;
+  text-transform: capitalize;
+  font-size: 18px;
+}
+.calendar-controls select {
+  margin-left: auto;
+}
+.calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 20px;
+}
+.calendar-side .card {
+  min-height: 220px;
+}
+.month {
+  padding: 6px;
+  overflow: hidden;
+}
+.weekdays,
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.weekdays {
+  text-align: center;
+  padding: 14px 0;
+  text-transform: capitalize;
+}
+.month-grid {
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+.month-grid > div {
+  min-width: 0;
+}
+.day {
+  min-height: 120px;
+  height: 100%;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  padding: 7px;
+  cursor: pointer;
+}
+.day.selected {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+  border-radius: 14px;
+  background: var(--brand-soft);
+}
+.day > span:first-child {
+  display: inline-block;
+  font-weight: 600;
+  padding: 0 5px;
+}
+.day.outside {
+  color: var(--subtle);
+  background: var(--surface-2);
+}
+.today {
+  background: var(--brand);
+  color: var(--brand-fg);
+  border-radius: 8px;
+}
+.calendar-event {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--ql);
+  background: var(--qs);
+  padding: 7px;
+  border-radius: 10px;
+  margin: 6px 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+.calendar-event small {
+  font-size: 10px;
+}
+.week-view {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.week-view .card {
+  padding: 10px;
+  box-shadow: none;
+  border-radius: 12px;
+  margin: 0;
+}
+.week-view h3 {
+  font-size: 12px;
+  margin: 0;
+}
+.mobile-dot {
+  display: none;
+}

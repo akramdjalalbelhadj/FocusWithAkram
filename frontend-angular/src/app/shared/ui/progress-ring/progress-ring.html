@@ -1,0 +1,28 @@
+<svg
+  [attr.width]="size()"
+  [attr.height]="size()"
+  [attr.viewBox]="'0 0 ' + size() + ' ' + size()"
+  class="progress-ring"
+>
+  <circle
+    [attr.cx]="size() / 2"
+    [attr.cy]="size() / 2"
+    [attr.r]="r()"
+    fill="none"
+    stroke="var(--surface-3)"
+    [attr.stroke-width]="stroke()"
+  />
+  <circle
+    [attr.cx]="size() / 2"
+    [attr.cy]="size() / 2"
+    [attr.r]="r()"
+    fill="none"
+    [attr.stroke]="color()"
+    [attr.stroke-width]="stroke()"
+    stroke-linecap="round"
+    [attr.stroke-dasharray]="circumference()"
+    [attr.stroke-dashoffset]="offset()"
+    class="progress-ring-value"
+  />
+</svg>
+<div class="absolute inset-0 grid place-items-center"><ng-content /></div>

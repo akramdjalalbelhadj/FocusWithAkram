@@ -20,4 +20,4 @@ Les six KPI métier du dashboard sont conservés. Compteurs, progressions, annea
 
 Thème LIGHT/DARK/SYSTEM persistant sur le serveur. Cache local pour le premier rendu, puis synchronisation avec le serveur. `prefers-reduced-motion` désactive les animations non essentielles. Dialogues Angular CDK et React natifs : Échap, confinement et restitution du focus. Erreurs ProblemDetail visibles dans les formulaires ; aucun succès avant confirmation serveur.
 
-Composants propres à chaque framework ; DTO, dates et tokens partagés. Styles Angular dans `frontend/src/redesign.css`, React dans `frontend-react/src/styles.css`.
+Composants propres à chaque framework ; DTO, dates et tokens partagés. Styles Angular dans `frontend-angular/src/styles/layout.css`, React dans `frontend-react/src/styles/index.css`.

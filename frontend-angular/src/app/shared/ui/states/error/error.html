@@ -1,0 +1,8 @@
+<div
+  role="alert"
+  class="flex items-center gap-3 rounded-xl border border-line bg-danger-soft text-danger p-4"
+>
+  <ff-icon name="alert" />
+  <span class="flex-1 text-sm font-medium">{{ message() }}</span>
+  <button type="button" class="btn btn-sm btn-secondary" (click)="retry.emit()">Réessayer</button>
+</div>

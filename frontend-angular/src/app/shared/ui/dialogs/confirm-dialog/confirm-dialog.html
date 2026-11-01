@@ -1,0 +1,30 @@
+<div
+  class="card w-[min(28rem,calc(100vw-2rem))] p-6 anim-pop shadow-modal"
+  role="alertdialog"
+  aria-labelledby="cf-title"
+  aria-describedby="cf-msg"
+>
+  <div class="flex gap-3">
+    <span
+      class="grid place-items-center size-10 rounded-xl flex-none"
+      [class]="data.danger ? 'bg-danger-soft text-danger' : 'bg-brand-soft text-brand'"
+      ><ff-icon [name]="data.danger ? 'alert' : 'info'"
+    /></span>
+    <div>
+      <h2 id="cf-title" class="text-lg font-bold">{{ data.title }}</h2>
+      <p id="cf-msg" class="text-muted mt-1">{{ data.message }}</p>
+    </div>
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close(false)">Annuler</button>
+    <button
+      type="button"
+      class="btn"
+      [class]="data.danger ? 'btn-danger-solid' : 'btn-primary'"
+      cdkFocusInitial
+      (click)="ref.close(true)"
+    >
+      {{ data.confirmLabel ?? 'Confirmer' }}
+    </button>
+  </div>
+</div>

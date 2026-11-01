@@ -1,0 +1,143 @@
+<header class="flex flex-wrap items-end justify-between gap-3 mb-5">
+  <div>
+    <h1 class="page-title">
+      <span class="page-icon"><ff-icon name="folder" [size]="24" /></span>Projets
+    </h1>
+    <p class="page-sub">Regroupez vos tâches par projet et suivez leur avancement.</p>
+  </div>
+  <div class="flex gap-2">
+    <label class="flex items-center gap-2 text-sm text-muted"
+      ><input
+        type="checkbox"
+        class="size-4 accent-[var(--brand)]"
+        [checked]="showArchived()"
+        (change)="showArchived.set($any($event.target).checked)"
+      />Afficher les archivés</label
+    >
+    <button type="button" class="btn btn-primary" (click)="edit(null)">
+      <ff-icon name="plus" />Nouveau projet
+    </button>
+  </div>
+</header>
+
+<div class="flex flex-wrap gap-2 mb-4">
+  <input
+    class="input flex-1"
+    type="search"
+    aria-label="Rechercher un projet"
+    placeholder="Rechercher un projet…"
+    [value]="query()"
+    (input)="query.set($any($event.target).value)"
+  /><select
+    class="input w-auto"
+    aria-label="Trier les projets"
+    [value]="sort()"
+    (change)="sort.set($any($event.target).value)"
+  >
+    <option value="name">Nom</option>
+    <option value="due">Échéance</option>
+  </select>
+</div>
+@if (taskPreview.error()) {
+  <ff-error (retry)="taskPreview.load()" />
+}
+@if (loader.error()) {
+  <ff-error (retry)="loader.load()" />
+} @else if (loader.loading()) {
+  <ff-skeleton [count]="3" [height]="120" />
+} @else if (!visible().length) {
+  <div class="card">
+    <ff-empty
+      icon="folder"
+      title="Aucun projet"
+      hint="Créez un projet pour regrouper des tâches liées."
+      ><button type="button" class="btn btn-primary btn-sm mt-2" (click)="edit(null)">
+        Créer un projet
+      </button></ff-empty
+    >
+  </div>
+} @else {
+  <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    @for (p of visible(); track p.id) {
+      <article
+        class="card p-5 flex flex-col gap-3"
+        [class.opacity-70]="p.archived"
+        [style.border-top-color]="p.color"
+      >
+        <div class="flex items-start gap-3">
+          <span
+            class="size-10 rounded-xl grid place-items-center text-white flex-none"
+            [style.background]="p.color"
+            ><ff-icon [name]="p.icon || 'folder'"
+          /></span>
+          <div class="min-w-0 flex-1">
+            <h2 class="font-bold truncate">{{ p.name }}</h2>
+            @if (p.description) {
+              <p class="text-sm text-muted line-clamp-2">{{ p.description }}</p>
+            }
+          </div>
+          @if (p.archived) {
+            <span class="badge badge-todo">Archivé</span>
+          }
+        </div>
+        <div>
+          <div class="flex justify-between text-xs text-muted mb-1">
+            <span>{{ p.doneTasks }}/{{ p.totalTasks }} terminées</span
+            ><span class="tabular-nums">{{ pct(p) }}%</span>
+          </div>
+          <div
+            class="h-2 rounded-full bg-surface-3 overflow-hidden"
+            role="progressbar"
+            [attr.aria-label]="'Avancement de ' + p.name"
+            [attr.aria-valuenow]="pct(p)"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <div
+              class="h-full transition-all"
+              [style.width.%]="pct(p)"
+              [style.background]="p.color"
+            ></div>
+          </div>
+        </div>
+        <div class="project-preview">
+          @for (t of previewTasks(p.id); track t.id) {
+            <button type="button" (click)="actions.openDetail(t.id)">□ {{ t.title }}</button>
+          }
+        </div>
+        <p class="text-sm text-muted">{{ settings.fmt(p.dueAt) || 'Sans échéance' }}</p>
+        <div class="flex flex-wrap gap-1 mt-auto">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            (click)="actions.create({ projectId: p.id })"
+          >
+            <ff-icon name="plus" [size]="14" />Tâche
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="edit(p)">
+            <ff-icon name="pencil" [size]="14" />Modifier
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="toggleArchive(p)">
+            <ff-icon name="archive" [size]="14" />{{ p.archived ? 'Restaurer' : 'Archiver' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm text-danger"
+            (click)="remove(p)"
+            [attr.aria-label]="'Supprimer ' + p.name"
+          >
+            <ff-icon name="trash" [size]="14" />
+          </button>
+        </div>
+      </article>
+    }
+    <button
+      type="button"
+      class="card p-6 flex flex-col items-center justify-center gap-3 border-dashed min-h-64"
+      (click)="edit(null)"
+    >
+      <ff-icon name="plus" [size]="32" /><strong>Un nouveau projet ?</strong
+      ><span class="text-sm text-muted">Donne une place à ta prochaine idée.</span>
+    </button>
+  </div>
+}

@@ -55,9 +55,9 @@ for p in "$BACKEND_PORT" "$FRONTEND_PORT"; do
 done
 
 # ---- Dependances frontend -----------------------------------------------------------------------
-if [ ! -d "$ROOT/frontend/node_modules" ]; then
+if [ ! -d "$ROOT/frontend-angular/node_modules" ]; then
   step "Installation des dependances frontend (premier lancement)"
-  (cd "$ROOT/frontend" && npm install)
+  (cd "$ROOT/frontend-angular" && npm install)
 fi
 
 # ---- Demarrage ----------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ printf '    \033[32mBackend pret.\033[0m\n'
 
 step "Demarrage du frontend (port $FRONTEND_PORT)"
 printf '{"/api":{"target":"http://127.0.0.1:%s","secure":false,"changeOrigin":true}}\n' "$BACKEND_PORT" >"$LOG_DIR/proxy.conf.json"
-(cd "$ROOT/frontend" && exec node node_modules/@angular/cli/bin/ng.js serve --host 127.0.0.1 --port "$FRONTEND_PORT" --proxy-config "$LOG_DIR/proxy.conf.json") >"$LOG_DIR/frontend.log" 2>&1 &
+(cd "$ROOT/frontend-angular" && exec node node_modules/@angular/cli/bin/ng.js serve --host 127.0.0.1 --port "$FRONTEND_PORT" --proxy-config "$LOG_DIR/proxy.conf.json") >"$LOG_DIR/frontend.log" 2>&1 &
 frontend_pid=$!
 pids+=("$frontend_pid")
 

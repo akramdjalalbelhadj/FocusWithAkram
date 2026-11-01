@@ -1,0 +1,144 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--fg);
+  font:
+    14px/1.5 "Inter Variable",
+    system-ui,
+    sans-serif;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+button,
+a,
+input,
+select,
+textarea {
+  outline-offset: 3px;
+}
+*:focus-visible {
+  outline: 2px solid var(--ring);
+}
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 9px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+button:hover {
+  border-color: var(--brand);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+input,
+textarea,
+select {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  padding: 10px 12px;
+  border-radius: 10px;
+  min-width: 0;
+  max-width: 100%;
+}
+input[type="checkbox"] {
+  accent-color: var(--brand);
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+input[type="color"] {
+  height: 42px;
+}
+textarea {
+  min-height: 75px;
+  resize: vertical;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 550;
+}
+p {
+  color: var(--muted);
+  margin: 8px 0 16px;
+}
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.035em;
+  margin: 0 0 12px;
+  font-weight: 750;
+}
+h1 {
+  font-size: 30px;
+}
+h2 {
+  font-size: 19px;
+}
+h3 {
+  font-size: 16px;
+  margin-top: 20px;
+}
+small {
+  font-size: 12px;
+  color: var(--muted);
+}
+em {
+  font-style: normal;
+  color: var(--brand);
+}
+.primary {
+  background: linear-gradient(115deg, #9844ff, #6920ed);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 5px 16px #7437f62a;
+}
+.danger,
+.overdue {
+  color: var(--danger);
+}
+.selected {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: var(--ring);
+}
+.icon-btn {
+  border: 0;
+  background: transparent;
+  padding: 5px;
+  flex-shrink: 0;
+}
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

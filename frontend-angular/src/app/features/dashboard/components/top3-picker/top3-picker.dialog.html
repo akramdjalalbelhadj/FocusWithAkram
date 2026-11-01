@@ -1,0 +1,44 @@
+<div
+  class="card w-[min(32rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-3rem)] flex flex-col anim-pop shadow-modal"
+  role="dialog"
+  aria-labelledby="t3-title"
+>
+  <header class="px-6 pt-5 pb-3">
+    <h2 id="t3-title" class="text-lg font-bold">Mes 3 priorités du jour</h2>
+    <p class="text-sm text-muted">
+      Choisissez jusqu’à trois tâches à accomplir aujourd’hui ({{ selected().length }}/3).
+    </p>
+  </header>
+  <ul class="overflow-y-auto px-3 pb-2" role="listbox" aria-multiselectable="true">
+    @for (t of data.tasks; track t.id) {
+      <li>
+        <label
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-2 cursor-pointer"
+          [class.opacity-50]="!selected().includes(t.id) && selected().length >= 3"
+        >
+          <input
+            type="checkbox"
+            class="size-4 accent-[var(--brand)]"
+            [checked]="selected().includes(t.id)"
+            [disabled]="!selected().includes(t.id) && selected().length >= 3"
+            (change)="toggle(t.id)"
+          />
+          <span
+            class="size-2.5 rounded-sm flex-none"
+            [style.background]="'var(--' + t.quadrant.toLowerCase() + ')'"
+          ></span>
+          <span class="flex-1 truncate">{{ t.title }}</span>
+          <span class="text-xs text-subtle">{{ t.quadrant }}</span>
+        </label>
+      </li>
+    } @empty {
+      <li class="p-6 text-center text-muted">Aucune tâche active à choisir.</li>
+    }
+  </ul>
+  <footer class="flex justify-end gap-2 px-6 py-4 border-t border-line">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="button" class="btn btn-primary" cdkFocusInitial (click)="ref.close(selected())">
+      <ff-icon name="check" [size]="16" />Valider
+    </button>
+  </footer>
+</div>

@@ -7,7 +7,7 @@ Racine : `D:\Projet\backup_Project\FocusWithAkram`.
 Java 25, Maven, Node 24.22.2 (version utilisée), npm. Le Node système 22.12.0 rencontré est trop ancien pour Angular 22.2. Activer Node 24 avant les commandes npm.
 
 ```powershell
-npm ci --prefix frontend
+npm ci --prefix frontend-angular
 npm ci --prefix frontend-react
 ```
 
@@ -39,7 +39,7 @@ npm run react
 
 Angular : http://127.0.0.1:4200 ; React : http://127.0.0.1:5173 ; API : http://127.0.0.1:8080/api/v1. Les applications partagent données et paramètres. Une seule session Pomodoro active côté serveur. Recharger l’autre frontend après modification pour comparer le même état.
 
-Sans profil local : PostgreSQL via `FOCUSFLOW_DB_URL`, `FOCUSFLOW_DB_USER`, `FOCUSFLOW_DB_PASSWORD`. `PORT` fixe le port API ; `FOCUSFLOW_BIND_ADDRESS` reste 127.0.0.1. `FOCUSFLOW_CORS_ORIGINS` remplace les origines autorisées. React : proxy `FOCUS_API_URL` (défaut http://127.0.0.1:8080). Angular : `frontend/proxy.conf.json`.
+Sans profil local : PostgreSQL via `FOCUSFLOW_DB_URL`, `FOCUSFLOW_DB_USER`, `FOCUSFLOW_DB_PASSWORD`. `PORT` fixe le port API ; `FOCUSFLOW_BIND_ADDRESS` reste 127.0.0.1. `FOCUSFLOW_CORS_ORIGINS` remplace les origines autorisées. React : proxy `FOCUS_API_URL` (défaut http://127.0.0.1:8080). Angular : `frontend-angular/proxy.conf.json`.
 
 ## Vérifications
 
@@ -67,7 +67,7 @@ Libérer les ports des frontends précédents puis, depuis la racine, dans des t
 
 ```powershell
 # Angular
-npm --prefix frontend start -- --configuration production --host 127.0.0.1 --port 4200 --proxy-config proxy.e2e.json
+npm --prefix frontend-angular start -- --configuration production --host 127.0.0.1 --port 4200 --proxy-config proxy.e2e.json
 # React
 $env:FOCUS_API_URL='http://127.0.0.1:18080'
 npm run build:react

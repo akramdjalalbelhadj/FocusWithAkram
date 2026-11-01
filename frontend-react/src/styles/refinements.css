@@ -1,0 +1,84 @@
+.tasks-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 18px;
+}
+.task-summary {
+  align-self: start;
+  min-height: 500px;
+}
+.task-summary h2 {
+  font-size: 23px;
+  margin-top: 24px;
+}
+.task-summary > button {
+  width: 100%;
+  margin-top: 12px;
+}
+.task-summary hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 20px 0;
+}
+.compact .task-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.compact .task-title {
+  flex: 1;
+  min-width: 120px;
+}
+.compact .task-meta {
+  margin: 0;
+}
+.quadrant .task-row {
+  min-height: 55px;
+}
+@media (max-width: 1200px) {
+  .tasks-layout {
+    grid-template-columns: 1fr;
+  }
+  .task-summary {
+    display: none;
+  }
+}
+
+.donut {
+  display: block;
+  width: 190px;
+  max-width: 100%;
+  margin: 16px auto;
+}
+
+.compact .task-row {
+  padding-block: 8px;
+}
+
+.distribution {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.distribution > div {
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.project-preview {
+  min-height: 64px;
+  display: grid;
+  gap: 8px;
+}
+.project-preview button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

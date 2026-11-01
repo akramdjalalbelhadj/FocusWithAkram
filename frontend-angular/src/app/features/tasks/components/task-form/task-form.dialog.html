@@ -1,0 +1,170 @@
+<form
+  class="card w-[min(40rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] flex flex-col anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="tf-title"
+>
+  <header class="flex items-center justify-between px-6 pt-5 pb-3">
+    <h2 id="tf-title" class="text-lg font-bold">
+      {{ editing ? 'Modifier la tâche' : 'Nouvelle tâche' }}
+    </h2>
+    <button
+      type="button"
+      class="btn btn-ghost btn-icon btn-sm"
+      aria-label="Fermer"
+      (click)="ref.close()"
+    >
+      <ff-icon name="x" />
+    </button>
+  </header>
+
+  <div class="overflow-y-auto px-6 pb-2 space-y-4">
+    <div>
+      <label class="field-label" for="tf-title-input"
+        >Titre <span class="text-danger" aria-hidden="true">*</span></label
+      >
+      <input
+        id="tf-title-input"
+        class="input"
+        formControlName="title"
+        maxlength="200"
+        placeholder="Que faut-il faire ?"
+        cdkFocusInitial
+        [attr.aria-invalid]="form.controls.title.invalid && form.controls.title.touched"
+      />
+      @if (form.controls.title.touched && form.controls.title.invalid) {
+        <p class="field-error">Le titre est obligatoire.</p>
+      }
+      @if (serverErrors()['title']) {
+        <p class="field-error">{{ serverErrors()['title'] }}</p>
+      }
+    </div>
+
+    <div>
+      <label class="field-label" for="tf-desc">Description</label>
+      <textarea
+        id="tf-desc"
+        class="input"
+        formControlName="description"
+        rows="3"
+        placeholder="Détails, contexte, critères de réussite…"
+      ></textarea>
+    </div>
+
+    <fieldset>
+      <legend class="field-label">Quadrant (matrice d'Eisenhower)</legend>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" role="radiogroup">
+        @for (q of quadrants; track q) {
+          <label
+            class="cursor-pointer rounded-xl border px-3 py-2 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+            [style.background]="
+              form.value.quadrant === q ? 'var(--' + q.toLowerCase() + '-soft)' : 'var(--surface)'
+            "
+            [style.border-color]="
+              form.value.quadrant === q ? 'var(--' + q.toLowerCase() + ')' : 'var(--line)'
+            "
+            [style.color]="
+              form.value.quadrant === q ? 'var(--' + q.toLowerCase() + ')' : 'var(--fg)'
+            "
+          >
+            <input type="radio" class="sr-only-text" formControlName="quadrant" [value]="q" />
+            <span class="font-semibold block">{{ q }} · {{ meta[q].label }}</span>
+            <span class="text-xs opacity-80">{{ meta[q].hint }}</span>
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="rounded-xl border border-line p-4 space-y-3">
+      <legend class="field-label px-1">Planification</legend>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="field-label" for="tf-start">Début prévisionnel</label>
+          <ff-datetime inputId="tf-start" formControlName="plannedStartAt" />
+        </div>
+        <div>
+          <label class="field-label" for="tf-end">Fin prévisionnelle</label>
+          <ff-datetime inputId="tf-end" formControlName="plannedEndAt" />
+        </div>
+      </div>
+      @if (form.hasError('plannedOrder')) {
+        <p class="field-error" role="alert">Le début prévu doit précéder la fin prévue.</p>
+      } @else if (plannedSummary()) {
+        <p class="text-sm text-muted flex items-center gap-2">
+          <ff-icon name="hourglass" [size]="14" />Durée prévue :
+          <strong class="text-fg">{{ plannedSummary() }}</strong>
+        </p>
+      }
+    </fieldset>
+
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" for="tf-project">Projet</label>
+        <select id="tf-project" class="input" formControlName="projectId">
+          <option value="">Aucun projet</option>
+          @for (p of projects(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="tf-est">Estimation (minutes)</label>
+        <input
+          id="tf-est"
+          class="input"
+          type="number"
+          min="1"
+          max="100000"
+          formControlName="estimatedMinutes"
+          placeholder="ex. 90"
+        />
+        @if (form.controls.estimatedMinutes.invalid) {
+          <p class="field-error">Entre 1 et 100000 minutes.</p>
+        }
+      </div>
+    </div>
+
+    <div>
+      <label class="field-label" for="tf-tags">Étiquettes</label>
+      <input
+        id="tf-tags"
+        class="input"
+        formControlName="tags"
+        placeholder="séparées par des virgules : api, revue, perso"
+      />
+      @if (serverErrors()['tags']) {
+        <p class="field-error">{{ serverErrors()['tags'] }}</p>
+      }
+    </div>
+
+    @if (!editing) {
+      <div>
+        <label class="field-label" for="tf-sub">Sous-tâches</label>
+        <textarea
+          id="tf-sub"
+          class="input"
+          formControlName="subtasks"
+          rows="3"
+          placeholder="Une sous-tâche par ligne"
+        ></textarea>
+      </div>
+    }
+
+    <div>
+      <label class="field-label" for="tf-notes">Notes</label>
+      <textarea id="tf-notes" class="input" formControlName="notes" rows="2"></textarea>
+    </div>
+
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+
+  <footer class="flex justify-end gap-2 px-6 py-4 border-t border-line">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ editing ? 'Enregistrer' : 'Créer la tâche' }}
+    </button>
+  </footer>
+</form>

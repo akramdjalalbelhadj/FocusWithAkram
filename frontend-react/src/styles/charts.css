@@ -1,0 +1,40 @@
+.activity {
+  display: flex;
+  height: 180px;
+  gap: 14px;
+  align-items: flex-end;
+  padding: 10px 6px 26px;
+  overflow: hidden;
+}
+.bar-column {
+  height: 100%;
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-width: 3px;
+}
+.bar {
+  display: block;
+  width: 100%;
+  min-height: 1px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(#cb89ff, #8440ff);
+  box-shadow: 0 0 18px #a459ff25;
+}
+.bar-column small {
+  position: absolute;
+  bottom: -22px;
+  font-size: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+details > summary {
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.bar {
+  height: var(--activity-height);
+}

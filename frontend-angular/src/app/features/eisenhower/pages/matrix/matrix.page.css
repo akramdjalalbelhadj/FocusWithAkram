@@ -1,0 +1,198 @@
+[data-quadrant='Q1'] {
+  --quadrant-color: var(--q1);
+  --quadrant-accent: var(--q1-accent);
+  --quadrant-soft: var(--q1-soft);
+  --quadrant-line: var(--q1-line);
+}
+
+[data-quadrant='Q2'] {
+  --quadrant-color: var(--q2);
+  --quadrant-accent: var(--q2-accent);
+  --quadrant-soft: var(--q2-soft);
+  --quadrant-line: var(--q2-line);
+}
+
+[data-quadrant='Q3'] {
+  --quadrant-color: var(--q3);
+  --quadrant-accent: var(--q3-accent);
+  --quadrant-soft: var(--q3-soft);
+  --quadrant-line: var(--q3-line);
+}
+
+[data-quadrant='Q4'] {
+  --quadrant-color: var(--q4);
+  --quadrant-accent: var(--q4-accent);
+  --quadrant-soft: var(--q4-soft);
+  --quadrant-line: var(--q4-line);
+}
+
+.matrix-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.matrix-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.matrix-search {
+  position: relative;
+  flex: 1;
+  min-width: 12rem;
+  max-width: 24rem;
+}
+
+.matrix-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--subtle);
+}
+
+.matrix-search-input {
+  padding-left: 2.25rem;
+}
+.matrix-filter-select {
+  width: auto;
+}
+.matrix-overdue-filter {
+  cursor: pointer;
+}
+
+.matrix-overdue-filter:has(:checked) {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.matrix-loading {
+  display: grid;
+  gap: 1rem;
+}
+
+.matrix-loading-card {
+  height: 16rem;
+}
+
+.matrix-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+}
+
+.matrix-tab {
+  border-radius: 0.5rem;
+  padding-block: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  transition:
+    color 150ms,
+    background-color 150ms;
+}
+
+.matrix-tab[aria-selected='true'] {
+  color: var(--quadrant-color);
+  background: var(--quadrant-soft);
+}
+
+.matrix-tab-count {
+  display: block;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.matrix-grid {
+  display: grid;
+}
+
+.matrix-quadrant {
+  display: none;
+  flex-direction: column;
+  border: 1px solid var(--quadrant-line);
+}
+
+.matrix-quadrant.is-active {
+  display: flex;
+}
+
+.matrix-quadrant-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--quadrant-color);
+}
+
+.matrix-quadrant-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+}
+
+.matrix-quadrant-heading {
+  min-width: 0;
+  flex: 1;
+}
+.matrix-quadrant-title {
+  font-weight: 800;
+}
+.matrix-quadrant-description {
+  opacity: 0.85;
+}
+.matrix-quadrant-badge {
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+.matrix-add-button {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+.matrix-add-button:hover {
+  background: var(--surface);
+}
+
+.matrix-task-list {
+  flex: 1;
+  padding: 0 0.75rem 0.5rem;
+  min-height: 6rem;
+}
+
+.matrix-task-list > :not(:last-child) {
+  margin-bottom: 0.5rem;
+}
+.matrix-draggable-task {
+  border-radius: 0.75rem;
+}
+.matrix-quick-add {
+  padding: 0 0.75rem 0.75rem;
+}
+
+.matrix-empty-message {
+  text-align: center;
+  color: var(--muted);
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 64rem) {
+  .matrix-loading,
+  .matrix-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .matrix-tabs {
+    display: none;
+  }
+  .matrix-quadrant {
+    display: flex;
+  }
+}

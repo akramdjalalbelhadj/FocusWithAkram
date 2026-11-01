@@ -1,0 +1,6 @@
+<div class="space-y-3" aria-hidden="true" role="status">
+  <span class="sr-only-text">Chargement…</span>
+  @for (_ of rows(); track $index) {
+    <div class="skeleton" [style.height.px]="height()"></div>
+  }
+</div>

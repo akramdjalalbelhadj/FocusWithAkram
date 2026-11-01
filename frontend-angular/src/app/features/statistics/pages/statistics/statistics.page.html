@@ -1,0 +1,261 @@
+<header class="flex flex-wrap items-end justify-between gap-3 mb-5">
+  <div>
+    <h1 class="page-title">
+      <span class="page-icon"><ff-icon name="chart" [size]="24" /></span>Statistiques
+    </h1>
+    <p class="page-sub">
+      Calculées à partir de vos tâches et sessions réellement enregistrées (fuseau
+      {{ settings.timeZone() }}).
+    </p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <div class="flex gap-1 p-1 rounded-xl bg-surface-2" role="group" aria-label="Période">
+      @for (p of presets; track p.id) {
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm font-semibold"
+          [class]="preset() === p.id ? 'bg-surface shadow-card text-brand' : 'text-muted'"
+          [attr.aria-pressed]="preset() === p.id"
+          (click)="preset.set(p.id)"
+        >
+          {{ p.label }}
+        </button>
+      }
+    </div>
+    @if (preset() === 'custom') {
+      <input
+        class="input !w-auto"
+        type="date"
+        aria-label="Du"
+        [value]="customFrom()"
+        (change)="customFrom.set($any($event.target).value)"
+      />
+      <input
+        class="input !w-auto"
+        type="date"
+        aria-label="Au"
+        [value]="customTo()"
+        (change)="customTo.set($any($event.target).value)"
+      />
+    }
+  </div>
+</header>
+
+@if (loader.error()) {
+  <ff-error (retry)="loader.load()" />
+} @else if (loader.loading()) {
+  <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+    @for (_ of [1, 2, 3, 4]; track _) {
+      <div class="skeleton h-24"></div>
+    }
+  </div>
+} @else {
+  @let d = loader.data()!;
+
+  <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6" aria-label="Chiffres clés">
+    @for (k of cards(); track k.label) {
+      <div class="card p-4">
+        <p class="text-xs font-semibold text-muted flex items-center gap-1.5">
+          <ff-icon [name]="k.icon" [size]="14" />{{ k.label }}
+        </p>
+        <p class="text-2xl font-extrabold tabular-nums mt-1">{{ k.value }}</p>
+        <p class="text-xs text-subtle">{{ k.sub }}</p>
+      </div>
+    }
+  </section>
+
+  <div class="grid xl:grid-cols-2 gap-6">
+    <section class="card p-5" aria-labelledby="c1">
+      <h2 id="c1" class="font-bold mb-1">Évolution quotidienne</h2>
+      <p class="text-sm text-muted">Tâches terminées et minutes de concentration par jour.</p>
+      <ff-chart
+        [option]="dailyChart"
+        [height]="280"
+        label="Courbe : tâches terminées et minutes de concentration par jour"
+      />
+      <details class="mt-2 text-sm">
+        <summary class="cursor-pointer text-brand font-semibold">Afficher les données</summary>
+        <div class="max-h-56 overflow-auto mt-2">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left text-muted">
+                <th scope="col">Jour</th>
+                <th scope="col">Terminées</th>
+                <th scope="col">Concentration</th>
+                <th scope="col">Pomodoros</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (x of d.daily; track x.date) {
+                <tr class="border-t border-line">
+                  <th scope="row" class="font-normal">{{ x.date }}</th>
+                  <td>{{ x.tasksCompleted }}</td>
+                  <td>{{ fmt(x.focusSeconds) }}</td>
+                  <td>{{ x.pomodoros }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section class="card p-5" aria-labelledby="c2">
+      <h2 id="c2" class="font-bold mb-1">Durée prévue vs durée réelle</h2>
+      <p class="text-sm text-muted">Dernières tâches terminées ayant des dates prévues.</p>
+      @if (d.planning.comparisons.length) {
+        <ff-chart
+          [option]="compareChart"
+          [height]="280"
+          label="Barres : durée prévue et durée réelle écoulée par tâche terminée"
+        />
+        <details class="mt-2 text-sm">
+          <summary class="cursor-pointer text-brand font-semibold">Afficher les données</summary>
+          <table class="w-full mt-2">
+            <thead>
+              <tr class="text-left text-muted">
+                <th scope="col">Tâche</th>
+                <th scope="col">Prévu</th>
+                <th scope="col">Réel</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of d.planning.comparisons; track c.taskId + c.completedAt) {
+                <tr class="border-t border-line">
+                  <th scope="row" class="font-normal">{{ c.title }}</th>
+                  <td>{{ fmt(c.plannedSeconds) }}</td>
+                  <td>{{ fmt(c.elapsedSeconds) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </details>
+      } @else {
+        <ff-empty
+          icon="chart"
+          title="Pas encore de comparaison"
+          hint="Terminez des tâches planifiées (début et fin prévus) pour comparer prévu et réel."
+        />
+      }
+    </section>
+
+    <section class="card p-5" aria-labelledby="c3">
+      <h2 id="c3" class="font-bold mb-1">Répartition des tâches</h2>
+      <div class="grid sm:grid-cols-2 gap-2">
+        <div>
+          <p class="text-xs font-semibold text-muted text-center">Actives par quadrant</p>
+          <ff-chart
+            [option]="quadrantChart"
+            [height]="220"
+            label="Anneau : tâches actives par quadrant"
+          />
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-muted text-center">Par statut</p>
+          <ff-chart [option]="statusChart" [height]="220" label="Anneau : tâches par statut" />
+        </div>
+      </div>
+      <p class="sr-only-text">Quadrants : {{ quadrantText() }}. Statuts : {{ statusText() }}.</p>
+      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted justify-center">
+        @for (q of quadrants; track q) {
+          <li>
+            {{ q }} : <strong class="text-fg">{{ d.tasks.activeByQuadrant[q] }}</strong>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="card p-5" aria-labelledby="c4">
+      <h2 id="c4" class="font-bold mb-1">Temps par projet</h2>
+      @if (d.focus.byProject.length) {
+        <ff-chart
+          [option]="projectChart"
+          [height]="240"
+          label="Anneau : temps de concentration par projet"
+        />
+        <ul class="text-sm mt-2 space-y-1">
+          @for (p of d.focus.byProject; track p.projectId) {
+            <li class="flex justify-between">
+              <span class="flex items-center gap-2"
+                ><span class="size-2.5 rounded-sm" [style.background]="p.color"></span
+                >{{ p.name }}</span
+              ><span class="tabular-nums font-semibold">{{ fmt(p.focusSeconds) }}</span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <ff-empty
+          icon="folder"
+          title="Aucun temps par projet"
+          hint="Lancez des Pomodoros sur des tâches rattachées à un projet."
+        />
+      }
+      @if (d.focus.byTask.length) {
+        <h3 class="section-title mt-5 mb-2">Temps par tâche</h3>
+        <ul class="text-sm space-y-1">
+          @for (t of d.focus.byTask; track t.taskId) {
+            <li class="flex justify-between gap-3">
+              <span class="truncate">{{ t.title }}</span
+              ><span class="tabular-nums font-semibold">{{ fmt(t.focusSeconds) }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="card p-5 xl:col-span-2" aria-labelledby="c5">
+      <h2 id="c5" class="font-bold mb-1">Activité des 12 derniers mois</h2>
+      <p class="text-sm text-muted">Minutes de concentration par jour.</p>
+      @if (heat.data(); as h) {
+        <ff-chart
+          [option]="heatChart"
+          [height]="190"
+          label="Carte de chaleur : minutes de concentration par jour sur 12 mois"
+        />
+        <p class="sr-only-text">{{ heatText() }}</p>
+      }
+    </section>
+
+    <section class="card p-5 xl:col-span-2" aria-labelledby="c6">
+      <h2 id="c6" class="font-bold mb-3">Respect du planning</h2>
+      <div class="grid sm:grid-cols-4 gap-3 text-center">
+        <div class="rounded-xl bg-success-soft text-success p-3">
+          <p class="text-2xl font-extrabold">{{ d.planning.early }}</p>
+          <p class="text-xs font-semibold">En avance</p>
+        </div>
+        <div class="rounded-xl bg-info-soft text-info p-3">
+          <p class="text-2xl font-extrabold">{{ d.planning.onTime }}</p>
+          <p class="text-xs font-semibold">À l'heure (±5 min)</p>
+        </div>
+        <div class="rounded-xl bg-danger-soft text-danger p-3">
+          <p class="text-2xl font-extrabold">{{ d.planning.late }}</p>
+          <p class="text-xs font-semibold">En retard</p>
+        </div>
+        <div class="rounded-xl bg-surface-2 p-3">
+          <p class="text-2xl font-extrabold tabular-nums">
+            {{
+              d.planning.averageEndVarianceSeconds === null
+                ? '—'
+                : fmtSigned(d.planning.averageEndVarianceSeconds)
+            }}
+          </p>
+          <p class="text-xs font-semibold text-muted">Écart moyen fin prévue / réelle</p>
+        </div>
+      </div>
+      <dl class="grid sm:grid-cols-3 gap-3 mt-4 text-sm">
+        <div>
+          <dt class="text-muted">Durée prévue totale</dt>
+          <dd class="font-bold tabular-nums">{{ fmt(d.planning.totalPlannedSeconds) }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Durée réelle écoulée totale</dt>
+          <dd class="font-bold tabular-nums">{{ fmt(d.planning.totalElapsedSeconds) }}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">Temps de concentration actif</dt>
+          <dd class="font-bold tabular-nums">{{ fmt(d.planning.totalActiveSeconds) }}</dd>
+        </div>
+      </dl>
+    </section>
+  </div>
+}
