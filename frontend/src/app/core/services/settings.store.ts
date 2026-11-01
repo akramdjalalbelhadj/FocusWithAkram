@@ -32,7 +32,7 @@ export class SettingsStore {
   private readonly api = inject(SettingsApi);
   private readonly doc = inject(DOCUMENT);
 
-  readonly settings = signal<Settings>(DEFAULTS);
+  readonly settings = signal<Settings>({ ...DEFAULTS, theme: cachedTheme() });
   readonly loaded = signal(false);
   readonly timeZone = computed(() => this.settings().timeZone);
 
@@ -91,3 +91,5 @@ export class SettingsStore {
     }
   }
 }
+
+function cachedTheme(): Settings['theme'] { try { const value = localStorage.getItem(THEME_KEY); return value === 'LIGHT' || value === 'DARK' ? value : 'SYSTEM'; } catch { return 'SYSTEM'; } }

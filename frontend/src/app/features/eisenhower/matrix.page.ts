@@ -19,8 +19,8 @@ import { TaskCardComponent } from '../tasks/task-card';
   template: `
     <header class="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 class="page-title">Matrice d’Eisenhower</h1>
-        <p class="page-sub">Glissez les tâches entre quadrants — ou utilisez le menu ⋯ / Alt+1…4 au clavier.</p>
+        <h1 class="page-title"><span class="page-icon"><ff-icon name="grid" [size]="24" /></span>Matrice d’Eisenhower</h1>
+
       </div>
       <button type="button" class="btn btn-primary" (click)="actions.create({ quadrant: mobileQuadrant() })"><ff-icon name="plus" />Nouvelle tâche</button>
     </header>
@@ -63,9 +63,12 @@ import { TaskCardComponent } from '../tasks/task-card';
         }
       </div>
 
-      <div class="grid lg:grid-cols-2 gap-4" cdkDropListGroup>
+      <div class="matrix-grid grid lg:grid-cols-2 gap-4" cdkDropListGroup>
         @for (q of view(); track q.quadrant) {
-          <section class="rounded-2xl border flex-col min-h-72"
+          <section class="matrix-quadrant rounded-2xl border flex-col min-h-72"
+            [style.--quadrant-accent]="'var(--' + q.quadrant.toLowerCase() + '-accent)'"
+            [style.--quadrant-soft]="'var(--' + q.quadrant.toLowerCase() + '-soft)'"
+            [style.--quadrant-line]="'var(--' + q.quadrant.toLowerCase() + '-line)'"
             [class]="q.quadrant === mobileQuadrant() ? 'flex' : 'hidden lg:flex'"
             [style.background]="'var(--' + q.quadrant.toLowerCase() + '-soft)'" [style.border-color]="'var(--' + q.quadrant.toLowerCase() + '-line)'"
             [attr.aria-labelledby]="'q-h-' + q.quadrant">
@@ -73,10 +76,10 @@ import { TaskCardComponent } from '../tasks/task-card';
               <span class="grid place-items-center size-9 rounded-xl bg-surface/70"><ff-icon [name]="meta[q.quadrant].icon" /></span>
               <div class="min-w-0 flex-1">
                 <h2 [id]="'q-h-' + q.quadrant" class="font-extrabold uppercase tracking-wide text-sm">{{ meta[q.quadrant].label }}</h2>
-                <p class="text-xs opacity-85">{{ meta[q.quadrant].hint }}</p>
+                <p class="text-xs opacity-85">{{ q.tasks.length }} tâches · {{ meta[q.quadrant].hint }}</p>
               </div>
               @if (overdueOf(q) > 0) { <span class="badge badge-danger" title="Tâches en retard"><ff-icon name="alert" [size]="11" />{{ overdueOf(q) }}</span> }
-              <span class="badge bg-surface/80" [attr.aria-label]="q.tasks.length + ' tâches'">{{ q.tasks.length }}</span>
+              <span class="badge bg-surface/80" [attr.aria-label]="q.tasks.length + ' tâches'">{{ q.quadrant }}</span>
               <button type="button" class="btn btn-sm btn-icon bg-surface/70 hover:bg-surface" [attr.aria-label]="'Ajouter une tâche en ' + meta[q.quadrant].label"
                 (click)="actions.create({ quadrant: q.quadrant })"><ff-icon name="plus" [size]="16" /></button>
             </header>

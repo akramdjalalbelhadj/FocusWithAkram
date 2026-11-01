@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DashboardApi } from '../../core/api/misc.api';
-import { QUADRANT_META, QUADRANTS, STATUS_LABEL, TaskStatus } from '../../core/api/models';
+import { QUADRANTS, STATUS_LABEL, TaskStatus } from '../../core/api/models';
 import { SettingsStore } from '../../core/services/settings.store';
 import { Loader } from '../../core/util/loader';
 import { addDays, formatDuration, longDate } from '../../core/util/time';
@@ -17,7 +17,7 @@ type Preset = 'today' | '7' | '30' | 'custom';
   template: `
     <header class="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 class="page-title">Statistiques</h1>
+        <h1 class="page-title"><span class="page-icon"><ff-icon name="chart" [size]="24" /></span>Statistiques</h1>
         <p class="page-sub">Calculées à partir de vos tâches et sessions réellement enregistrées (fuseau {{ settings.timeZone() }}).</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">

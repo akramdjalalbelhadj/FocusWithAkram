@@ -1,117 +1,7 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 
-/* ------------------------------------------------------------------ *
- * Design tokens FocusWithAkram. Les couleurs sont des variables CSS afin
- * que le theme clair / sombre ne change que ces valeurs. Contrastes
- * verifies pour WCAG 2.2 AA (texte >= 4.5:1).
- * ------------------------------------------------------------------ */
-:root {
-  color-scheme: light;
-  --page: #f5f6fa;
-  --surface: #ffffff;
-  --surface-2: #f0f2f8;
-  --surface-3: #e6e9f3;
-  --line: #dde1ee;
-  --line-strong: #c3c9dc;
-  --fg: #0f172a;
-  --muted: #475569;
-  --subtle: #64748b;
-  --brand: #4f46e5;
-  --brand-hover: #4338ca;
-  --brand-soft: #eef0ff;
-  --brand-fg: #ffffff;
-  --ring: #6366f1;
-  --success: #15803d;
-  --success-soft: #e8f7ee;
-  --warning: #b45309;
-  --warning-soft: #fff6e0;
-  --danger: #b42318;
-  --danger-soft: #fef0ee;
-  --info: #1d4ed8;
-  --info-soft: #e8f0ff;
-
-  --q1: #b42318;  --q1-soft: #fff0ee;  --q1-line: #f6c4bd;
-  --q2: #3730a3;  --q2-soft: #eef0ff;  --q2-line: #c7ccf5;
-  --q3: #92400e;  --q3-soft: #fff6e0;  --q3-line: #f1d79a;
-  --q4: #5b4a8a;  --q4-soft: #f4f1fb;  --q4-line: #d9d0ee;
-
-  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
-  --shadow-md: 0 4px 14px rgb(15 23 42 / 0.08);
-  --shadow-lg: 0 18px 50px rgb(15 23 42 / 0.18);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --page: #0e1017;
-    --surface: #161a24;
-    --surface-2: #1d2230;
-    --surface-3: #262c3d;
-    --line: #2a3043;
-    --line-strong: #3a4260;
-    --fg: #e8eaf2;
-    --muted: #a5adc4;
-    --subtle: #8b94ad;
-    --brand: #8b93ff;
-    --brand-hover: #a3a9ff;
-    --brand-soft: #23274a;
-    --brand-fg: #0e1017;
-    --ring: #a3a9ff;
-    --success: #5fd38d;
-    --success-soft: #14301f;
-    --warning: #f5b84a;
-    --warning-soft: #3a2b10;
-    --danger: #ff9c8f;
-    --danger-soft: #3a1a17;
-    --info: #8fb4ff;
-    --info-soft: #17284d;
-    --q1: #ffb0a5;  --q1-soft: #3a1c19;  --q1-line: #6b2f29;
-    --q2: #b3b9ff;  --q2-soft: #1f2347;  --q2-line: #3c4380;
-    --q3: #f5c27a;  --q3-soft: #36290f;  --q3-line: #67501c;
-    --q4: #cdbff0;  --q4-soft: #2a2340;  --q4-line: #4a3f73;
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-md: 0 4px 14px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 18px 50px rgb(0 0 0 / 0.6);
-  }
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0e1017;
-  --surface: #161a24;
-  --surface-2: #1d2230;
-  --surface-3: #262c3d;
-  --line: #2a3043;
-  --line-strong: #3a4260;
-  --fg: #e8eaf2;
-  --muted: #a5adc4;
-  --subtle: #8b94ad;
-  --brand: #8b93ff;
-  --brand-hover: #a3a9ff;
-  --brand-soft: #23274a;
-  --brand-fg: #0e1017;
-  --ring: #a3a9ff;
-  --success: #5fd38d;
-  --success-soft: #14301f;
-  --warning: #f5b84a;
-  --warning-soft: #3a2b10;
-  --danger: #ff9c8f;
-  --danger-soft: #3a1a17;
-  --info: #8fb4ff;
-  --info-soft: #17284d;
-  --q1: #ffb0a5;  --q1-soft: #3a1c19;  --q1-line: #6b2f29;
-  --q2: #b3b9ff;  --q2-soft: #1f2347;  --q2-line: #3c4380;
-  --q3: #f5c27a;  --q3-soft: #36290f;  --q3-line: #67501c;
-  --q4: #cdbff0;  --q4-soft: #2a2340;  --q4-line: #4a3f73;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 14px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 18px 50px rgb(0 0 0 / 0.6);
-}
-
+@import "../../shared/design-tokens.css";
 /* Mapping Tailwind : bg-page, text-fg, border-line, bg-brand, text-q1... */
 @theme inline {
   --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -328,3 +218,5 @@ h1, h2, h3, h4 { letter-spacing: -0.015em; }
     scroll-behavior: auto !important;
   }
 }
+
+@import "./redesign.css";

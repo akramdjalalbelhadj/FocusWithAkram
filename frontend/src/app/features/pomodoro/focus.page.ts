@@ -26,8 +26,8 @@ const TYPES: { type: SessionType; short: string }[] = [
     <div #stage class="focus-stage" [class.fullscreen-mode]="fullscreen()">
       <header class="flex flex-wrap items-end justify-between gap-3 mb-6">
         <div>
-          <h1 class="page-title">Focus</h1>
-          <p class="page-sub">Une tâche, un minuteur, aucune distraction.</p>
+          <h1 class="page-title"><span class="page-icon"><ff-icon name="timer" [size]="24" /></span>Focus / Pomodoro</h1>
+
         </div>
         <div class="flex gap-2">
           <button type="button" class="btn btn-secondary" (click)="showConfig.set(!showConfig())" [attr.aria-expanded]="showConfig()"><ff-icon name="settings" />Configurer</button>
@@ -35,6 +35,7 @@ const TYPES: { type: SessionType; short: string }[] = [
         </div>
       </header>
 
+      <div class="focus-intro mb-6"><p class="text-xs font-bold text-brand">UN MOMENT POUR SOI, UN OBJECTIF À LA FOIS</p><h2 class="text-2xl font-extrabold mt-2">Une chose à la fois. <span class="text-brand">Tout devient possible.</span></h2><p class="text-sm text-muted mt-2">Choisis ta tâche et offre-lui toute ton attention.</p></div>
       @if (engine.offline()) {
         <div class="rounded-xl border border-line bg-warning-soft text-warning px-4 py-3 mb-4 flex items-center gap-2" role="status">
           <ff-icon name="alert" /> Hors ligne : le minuteur continue grâce aux horodatages enregistrés, mais pause, reprise et fin nécessitent le serveur.
@@ -60,7 +61,7 @@ const TYPES: { type: SessionType; short: string }[] = [
         </section>
       }
 
-      <div class="grid xl:grid-cols-[minmax(0,1fr)_24rem] gap-6">
+      <div class="focus-board grid gap-6">
         <!-- Minuteur -->
         <section class="card p-6 md:p-10 flex flex-col items-center" aria-label="Minuteur">
           @let s = engine.session();
@@ -130,7 +131,7 @@ const TYPES: { type: SessionType; short: string }[] = [
         </section>
 
         <!-- Objectif + historique -->
-        <div class="space-y-6">
+        <div class="focus-side">
           <section class="card p-5" aria-labelledby="goal-h">
             <h2 id="goal-h" class="section-title mb-3">Objectif du jour</h2>
             <div class="flex items-center gap-4">
@@ -142,6 +143,7 @@ const TYPES: { type: SessionType; short: string }[] = [
             </div>
           </section>
 
+          <section class="card p-6 focus-cycle"><h2 class="font-bold mb-4">Ton cycle Pomodoro</h2><p class="text-muted mb-3">Concentration · {{ cfg().workMinutes }} min</p><p class="text-muted mb-3">Pause courte · {{ cfg().shortBreakMinutes }} min</p><p class="text-muted mb-4">Pause longue · {{ cfg().longBreakMinutes }} min après {{ cfg().sessionsBeforeLong }} sessions</p><h3 class="font-semibold mb-2">Prochaine session</h3><p class="text-muted">{{ nextLabel() }}</p></section>
           <section class="card p-5" aria-labelledby="hist-h">
             <h2 id="hist-h" class="font-bold flex items-center gap-2 mb-1"><ff-icon name="history" />Historique des Pomodoros</h2>
             <p class="text-sm text-muted mb-4">14 derniers jours — date, heure et durée de chaque session.</p>
@@ -159,7 +161,7 @@ const TYPES: { type: SessionType; short: string }[] = [
                     <ul class="divide-y divide-line rounded-xl border border-line">
                       @for (e of d.sessions; track e.id) {
                         <li class="flex items-center gap-3 px-3 py-2 text-sm">
-                          <span class="size-2 rounded-full flex-none" [class]="e.status === 'COMPLETED' ? 'bg-success' : 'bg-warning'" [attr.aria-label]="e.status === 'COMPLETED' ? 'Terminée' : 'Interrompue'"></span>
+                          <span role="img" class="size-2 rounded-full flex-none" [class]="e.status === 'COMPLETED' ? 'bg-success' : 'bg-warning'" [attr.aria-label]="e.status === 'COMPLETED' ? 'Terminée' : 'Interrompue'"></span>
                           <span class="tabular-nums text-muted">{{ time(e.startedAt) }}–{{ time(e.endedAt) }}</span>
                           <span class="flex-1 truncate">{{ e.taskTitle ?? 'Sans tâche' }}</span>
                           <span class="tabular-nums font-semibold">{{ formatDuration(e.workedSeconds) }}</span>
@@ -207,7 +209,7 @@ export class FocusPage {
 
   protected readonly history = new Loader(() => this.pomodoroApi.dailyHistory(addDays(this.settings.today(), -13), this.settings.today()));
 
-  protected readonly ringSize = signal(typeof window !== 'undefined' && window.innerWidth < 480 ? 250 : 340);
+  protected readonly ringSize = signal(typeof window !== 'undefined' && window.innerWidth < 480 ? 250 : 280);
   protected readonly progressPct = computed(() => Math.round(this.engine.progress() * 100));
 
   protected readonly idleClock = computed(() => {

@@ -17,7 +17,7 @@ import { IconComponent } from '../../shared/ui/icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="mb-6">
-      <h1 class="page-title">Paramètres</h1>
+      <h1 class="page-title"><span class="page-icon"><ff-icon name="settings" [size]="24" /></span>Paramètres</h1>
       <p class="page-sub">Personnalisez l’apparence, le minuteur et vos données. Les changements sont enregistrés automatiquement.</p>
     </header>
 

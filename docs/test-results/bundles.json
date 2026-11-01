@@ -1,0 +1,22 @@
+{
+  "angular": {
+    "files": [
+      "main-6Z4YZ6GZ.js",
+      "styles-GHRUMRRR.css",
+      "chunk-B8wS_q_F.js",
+      "chunk-CmkYQkUb.js",
+      "chunk-KOOFp351.js",
+      "chunk-OUTYYAMc.js"
+    ],
+    "rawBytes": 588823,
+    "gzipBytes": 166999
+  },
+  "react": {
+    "files": [
+      "index-Bsa8DrLQ.js",
+      "index-CD3LoK-s.css"
+    ],
+    "rawBytes": 499880,
+    "gzipBytes": 153295
+  }
+}

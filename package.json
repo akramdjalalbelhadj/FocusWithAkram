@@ -1,0 +1,16 @@
+{
+  "name": "focuswithakram-comparison",
+  "private": true,
+  "scripts": {
+    "angular": "npm --prefix frontend start -- --host 127.0.0.1",
+    "react": "npm --prefix frontend-react start",
+    "build:angular": "npm --prefix frontend run build",
+    "build:react": "npm --prefix frontend-react run build",
+    "test:angular": "npm --prefix frontend test -- --watch=false",
+    "test:react": "npm --prefix frontend-react test",
+    "test:e2e": "npm --prefix frontend-react run test:e2e --",
+    "lint:angular": "node frontend-react/node_modules/eslint/bin/eslint.js --config frontend/eslint.config.mjs frontend/src",
+    "lint:react": "npm --prefix frontend-react run lint",
+    "test:volume": "node frontend-react/e2e/volume.mjs"
+  }
+}

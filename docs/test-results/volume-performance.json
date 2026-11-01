@@ -1,0 +1,114 @@
+{
+  "date": "2026-11-01T08:27:14.997Z",
+  "additionalTasks": 120,
+  "measurements": [
+    {
+      "framework": "angular",
+      "route": "/matrix",
+      "sample": 1,
+      "readyIncludingNetworkIdleMs": 1047,
+      "domContentLoadedMs": 243,
+      "loadMs": 243,
+      "domElements": 3283
+    },
+    {
+      "framework": "angular",
+      "route": "/matrix",
+      "sample": 2,
+      "readyIncludingNetworkIdleMs": 979,
+      "domContentLoadedMs": 141,
+      "loadMs": 143,
+      "domElements": 3283
+    },
+    {
+      "framework": "angular",
+      "route": "/matrix",
+      "sample": 3,
+      "readyIncludingNetworkIdleMs": 853,
+      "domContentLoadedMs": 114,
+      "loadMs": 116,
+      "domElements": 3283
+    },
+    {
+      "framework": "angular",
+      "route": "/calendar",
+      "sample": 1,
+      "readyIncludingNetworkIdleMs": 837,
+      "domContentLoadedMs": 92,
+      "loadMs": 92,
+      "domElements": 765
+    },
+    {
+      "framework": "angular",
+      "route": "/calendar",
+      "sample": 2,
+      "readyIncludingNetworkIdleMs": 877,
+      "domContentLoadedMs": 107,
+      "loadMs": 108,
+      "domElements": 765
+    },
+    {
+      "framework": "angular",
+      "route": "/calendar",
+      "sample": 3,
+      "readyIncludingNetworkIdleMs": 796,
+      "domContentLoadedMs": 65,
+      "loadMs": 65,
+      "domElements": 765
+    },
+    {
+      "framework": "react",
+      "route": "/matrix",
+      "sample": 1,
+      "readyIncludingNetworkIdleMs": 837,
+      "domContentLoadedMs": 87,
+      "loadMs": 87,
+      "domElements": 4891
+    },
+    {
+      "framework": "react",
+      "route": "/matrix",
+      "sample": 2,
+      "readyIncludingNetworkIdleMs": 964,
+      "domContentLoadedMs": 106,
+      "loadMs": 107,
+      "domElements": 4891
+    },
+    {
+      "framework": "react",
+      "route": "/matrix",
+      "sample": 3,
+      "readyIncludingNetworkIdleMs": 722,
+      "domContentLoadedMs": 56,
+      "loadMs": 56,
+      "domElements": 4891
+    },
+    {
+      "framework": "react",
+      "route": "/calendar",
+      "sample": 1,
+      "readyIncludingNetworkIdleMs": 709,
+      "domContentLoadedMs": 28,
+      "loadMs": 29,
+      "domElements": 1512
+    },
+    {
+      "framework": "react",
+      "route": "/calendar",
+      "sample": 2,
+      "readyIncludingNetworkIdleMs": 705,
+      "domContentLoadedMs": 31,
+      "loadMs": 31,
+      "domElements": 1512
+    },
+    {
+      "framework": "react",
+      "route": "/calendar",
+      "sample": 3,
+      "readyIncludingNetworkIdleMs": 692,
+      "domContentLoadedMs": 37,
+      "loadMs": 37,
+      "domElements": 1512
+    }
+  ]
+}
