@@ -27,7 +27,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 7 | Prêts et emprunts | Livré |
 | 8 | Tableau de bord, statistiques, alertes, simulations, calendrier financier | Livré |
 | 9 | Documentation finale et dossier de migration React | À faire |
-| 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Planifié après les lots 7 et 8 |
+| 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Livré dans Krimou le 1 novembre 2026, non essayé sur téléphone |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -149,6 +149,20 @@ Vérifications : 147 tests backend, 31 tests Angular, lint et build ; React comp
 | Angular | Alertes en tête de la vue d'ensemble (lien vers l'onglet où agir) ; onglets **Calendrier** (grille du mois, entrées et sorties par jour, détail du jour avec les actions) et **Statistiques** (période 3/6/12/24 mois, graphique mensuel, catégories dépliables, plus grosses dépenses, achats prévus réalisés) ; panneau **Et si… ?** dans Achats prévus | 35 tests unitaires, lint, build ; recette navigateur |
 
 Vérifications : 152 tests backend, 35 tests Angular, lint et build ; React compile toujours. Recette sur base jetable : alertes « Ordinateur n'est plus réalisable… date réaliste le 28 novembre », « 90 % du plafond variable utilisé », « Forfait prévue le 5 novembre » ; statistiques sur 12 mois (330 € de dépenses, 27,50 € par mois) ; calendrier de novembre avec le salaire calculé du 28 ; simulation du report de l'ordinateur au 15 décembre : « Non réalisable → Réalisable », sans aucune écriture.
+
+### Réalisé au lot 10 — portage dans Krimou
+
+Module **FocusWithAkram** de l'application Android Krimou (dépôt `D:\Projet`, `agent-android/`), hors ligne :
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Moteurs | `engine.focus` (tâches, projets, Top 3, archives, Pomodoro, statistiques) et `engine.focus.finance` (soldes, échéancier, bilans, budget, prévision, faisabilité, prêts, alertes, statistiques, simulations, toutes les modifications avec les codes d'erreur de l'API) ; argent en centimes | 64 tests de productivité ; `ForecastEngineTest` (12) et `FinanceScenariosTest` (15) reprennent les scénarios de `ForecastEngineTest`, `GoalIT`, `LoanIT`, `InsightIT`, `FinanceBudgetIT` ; catégories par défaut (3) |
+| Données | Document au format de la sauvegarde v3, chiffré (AES-256-GCM, Android Keystore), exclu des sauvegardes Android ; export v3 et import v1 à v3 avec aperçu, doublons ignorés | 16 tests (aller-retour exact des montants, idempotence, données illisibles jamais écrasées) |
+| Interface | Cinq onglets (Aujourd'hui, Tâches, Focus, Mes achats, Plus) ; toutes les sections de « Mes achats » | 10 tests Robolectric ; suite Krimou complète, lint sans erreur, APK de debug |
+
+Différences connues : interface en français seulement ; pas de notification de fin de Pomodoro ; calendrier mensuel
+seulement ; déplacements dans les matrices par menu (pas de glisser-déposer). Toute règle modifiée ici doit l'être aussi
+dans `engine.focus` de Krimou, avec son scénario de test. Documentation : `D:\Projet\docs\modules\focuswithakram\`.
 
 ## 4. Adaptations React à prévoir (phase 2)
 
