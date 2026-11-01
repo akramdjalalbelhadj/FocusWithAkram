@@ -52,6 +52,16 @@
       }
     </p>
   </section>
+
+  <details class="card p-5 mb-4 group" aria-label="Simulation">
+    <summary class="section-title !mb-0 cursor-pointer flex items-center gap-2 list-none">
+      <ff-icon name="sparkles" [size]="18" />Et si… ? Simuler une hypothèse
+      <ff-icon name="chevron-down" [size]="16" class="ml-auto transition-transform group-open:rotate-180" />
+    </summary>
+    <div class="mt-4">
+      <ff-simulation-panel [goals]="open()" />
+    </div>
+  </details>
 }
 
 @if (goals.error()) {

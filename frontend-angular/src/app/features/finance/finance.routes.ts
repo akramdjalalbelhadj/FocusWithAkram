@@ -43,6 +43,18 @@ export const FINANCE_ROUTES: Routes = [
           import('./pages/schedules/schedules.page').then((m) => m.FinanceSchedulesPage),
       },
       {
+        path: 'calendar',
+        title: 'Calendrier — Mes achats',
+        loadComponent: () =>
+          import('./pages/calendar/finance-calendar.page').then((m) => m.FinanceCalendarPage),
+      },
+      {
+        path: 'statistics',
+        title: 'Statistiques — Mes achats',
+        loadComponent: () =>
+          import('./pages/statistics/finance-statistics.page').then((m) => m.FinanceStatisticsPage),
+      },
+      {
         path: 'settings',
         title: 'Comptes et catégories — Mes achats',
         loadComponent: () =>

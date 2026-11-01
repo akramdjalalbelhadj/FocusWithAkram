@@ -1,0 +1,206 @@
+<form class="space-y-4" (ngSubmit)="run()">
+  <p class="text-sm text-muted">
+    Testez une hypothèse sur la même prévision : rien n’est enregistré. Laissez vide ce qui ne change
+    pas.
+  </p>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div>
+      <label class="field-label" for="sim-salary">Variation de chaque salaire prévu</label>
+      <input
+        id="sim-salary"
+        name="salary"
+        class="input text-right tabular-nums"
+        inputmode="decimal"
+        placeholder="ex. -200"
+        autocomplete="off"
+        [ngModel]="salaryDelta()"
+        (ngModelChange)="salaryDelta.set($event)"
+      />
+    </div>
+    <div>
+      <label class="field-label" for="sim-var">Dépenses variables en moins par mois</label>
+      <input
+        id="sim-var"
+        name="variable"
+        class="input text-right tabular-nums"
+        inputmode="decimal"
+        placeholder="ex. 100"
+        autocomplete="off"
+        [ngModel]="variableReduction()"
+        (ngModelChange)="variableReduction.set($event)"
+      />
+    </div>
+  </div>
+
+  <fieldset class="rounded-xl border border-line p-3">
+    <legend class="text-sm font-semibold px-1">Achat supplémentaire</legend>
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div>
+        <label class="field-label" for="sim-name">Nom</label>
+        <input
+          id="sim-name"
+          name="extraName"
+          class="input"
+          maxlength="120"
+          autocomplete="off"
+          [ngModel]="extraName()"
+          (ngModelChange)="extraName.set($event)"
+        />
+      </div>
+      <div>
+        <label class="field-label" for="sim-price">Prix</label>
+        <input
+          id="sim-price"
+          name="extraPrice"
+          class="input text-right tabular-nums"
+          inputmode="decimal"
+          autocomplete="off"
+          [ngModel]="extraPrice()"
+          (ngModelChange)="extraPrice.set($event)"
+        />
+      </div>
+      <div>
+        <label class="field-label" for="sim-date">Date</label>
+        <input
+          id="sim-date"
+          name="extraDate"
+          type="date"
+          class="input"
+          [ngModel]="extraDate()"
+          (ngModelChange)="extraDate.set($event)"
+        />
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-4 mt-2 text-sm">
+      <label class="flex items-center gap-2"
+        ><input
+          type="checkbox"
+          class="size-4 accent-[var(--brand)]"
+          [checked]="extraImportant()"
+          (change)="extraImportant.set($any($event.target).checked)"
+        />Important</label
+      >
+      <label class="flex items-center gap-2"
+        ><input
+          type="checkbox"
+          class="size-4 accent-[var(--brand)]"
+          [checked]="extraUrgent()"
+          (change)="extraUrgent.set($any($event.target).checked)"
+        />Urgent</label
+      >
+    </div>
+  </fieldset>
+
+  @if (goals().length) {
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label class="field-label" for="sim-postpone">Reporter un achat prévu</label>
+        <select
+          id="sim-postpone"
+          name="postpone"
+          class="input"
+          [ngModel]="postponeId()"
+          (ngModelChange)="postponeId.set($event)"
+        >
+          <option value="">Aucun</option>
+          @for (g of goals(); track g.id) {
+            <option [value]="g.id">{{ g.name }} ({{ longDate(g.targetDate) }})</option>
+          }
+        </select>
+      </div>
+      @if (postponeId()) {
+        <div>
+          <label class="field-label" for="sim-postpone-date">Nouvelle date</label>
+          <input
+            id="sim-postpone-date"
+            name="postponeDate"
+            type="date"
+            class="input"
+            [min]="today"
+            [ngModel]="postponeDate()"
+            (ngModelChange)="postponeDate.set($event)"
+          />
+        </div>
+      }
+    </div>
+    <fieldset>
+      <legend class="field-label">Renoncer à</legend>
+      <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        @for (g of goals(); track g.id) {
+          <label class="flex items-center gap-2"
+            ><input
+              type="checkbox"
+              class="size-4 accent-[var(--brand)]"
+              [checked]="excluded().includes(g.id)"
+              (change)="toggleExcluded(g.id, $any($event.target).checked)"
+            />{{ g.name }}</label
+          >
+        }
+      </div>
+    </fieldset>
+  }
+
+  @if (error()) {
+    <p class="field-error" role="alert">{{ error() }}</p>
+  }
+  <div class="flex gap-2">
+    <button type="submit" class="btn btn-primary btn-sm" [disabled]="running()">
+      <ff-icon name="sparkles" [size]="14" />Simuler
+    </button>
+    @if (result()) {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="reset()">Effacer</button>
+    }
+  </div>
+</form>
+
+@if (result(); as r) {
+  <div class="mt-4 space-y-3 text-sm" aria-live="polite">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-xl border border-line p-3">
+        <p class="text-xs text-muted uppercase font-semibold">Aujourd’hui</p>
+        <p class="font-bold tabular-nums" [class.text-danger]="r.baseline.lowest.afterGoals < r.baseline.safetyReserve">
+          {{ money(r.baseline.lowest.afterGoals) }}
+        </p>
+        <p class="text-xs text-muted">point le plus bas, le {{ longDate(r.baseline.lowest.date) }}</p>
+      </div>
+      <div class="rounded-xl border border-brand p-3">
+        <p class="text-xs text-brand uppercase font-semibold">Avec l’hypothèse</p>
+        <p class="font-bold tabular-nums" [class.text-danger]="r.simulated.lowest.afterGoals < r.simulated.safetyReserve">
+          {{ money(r.simulated.lowest.afterGoals) }}
+        </p>
+        <p class="text-xs text-muted">
+          point le plus bas, le {{ longDate(r.simulated.lowest.date) }} ({{
+            signed(r.simulated.lowest.afterGoals - r.baseline.lowest.afterGoals)
+          }})
+        </p>
+      </div>
+    </div>
+    @if (extra(); as x) {
+      <div class="rounded-xl bg-surface-2 p-3">
+        <p class="font-semibold">
+          {{ extraName$() }}
+          <span class="badge ml-1" [class]="verdict[x.verdict].badge">{{ verdict[x.verdict].label }}</span>
+        </p>
+        <p class="text-muted mt-1">{{ sentence(x) }}</p>
+      </div>
+    }
+    @if (changes().length) {
+      <ul class="divide-y divide-[var(--line)]">
+        @for (c of changes(); track c.name) {
+          <li class="flex items-center gap-2 py-1.5">
+            <span class="flex-1 truncate">{{ c.name }}</span>
+            @if (c.before) {
+              <span class="badge" [class]="verdict[c.before.verdict].badge">{{ verdict[c.before.verdict].label }}</span>
+            }
+            <ff-icon name="arrow-right" [size]="14" class="text-muted" />
+            @if (c.after) {
+              <span class="badge" [class]="verdict[c.after.verdict].badge">{{ verdict[c.after.verdict].label }}</span>
+            } @else {
+              <span class="text-muted">retiré</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}

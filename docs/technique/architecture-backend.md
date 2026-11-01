@@ -20,7 +20,7 @@ backend/src/main/java/com/focusflow/
   finance/         module « Mes achats » : Account, Category, Operation, Schedule (echeancier), MonthlyBudget,
                    FinancePreferences, Goal (objectif d'achat), Loan (pret ou emprunt), ForecastEngine (calcul pur) et ForecastService,
                    Money, FinanceDates, services (comptes, operations, echeancier, budget, objectifs, prets),
-                   FinanceOverviewService (bilan du mois), FinanceBackup (section de sauvegarde), dto/
+                   FinanceOverviewService (bilan du mois), AlertService, FinanceStatisticsService, SimulationService (hypotheses sur la prevision), FinanceBackup (section de sauvegarde), dto/
   transfer/        export CSV/JSON, sauvegarde versionnee et import, dto/
 ```
 
@@ -94,7 +94,7 @@ Regles metier : [specification de « Mes achats »](../produit/mes-achats/specif
 - **Prevision et faisabilite** : `ForecastEngine` est un calcul pur (sans Spring ni base), teste sur des scenarios chiffres a la main. Il calcule jour par jour le disponible et l'epargne (operations prevues et en retard, echeances, depenses variables restantes reparties au centime sur le mois, epargne du mois retiree au salaire) puis evalue les objectifs ouverts par priorite (quadrant, date cible, anciennete). Un achat est realisable si le disponible libre reste au-dessus de la reserve de securite sur [date, date + 92 jours] ; chaque objectif retenu est deduit avant le suivant (pas de double comptage) ; les reservations n'appartiennent qu'a leur objectif ; un objectif « finance par l'epargne » peut puiser au-dessus du plancher. `ForecastService` prepare les entrees ; tout est recalcule a chaque lecture.
 - **Migrations** : `V2__finance_core.sql` (tables), `V3__finance_default_categories.sql` (categories initiales), `V4__finance_budget_schedules.sql` (preferences, budgets, echeanciers, lien operation-echeance), `V5__finance_goals.sql` (objectifs d'achat, lien depense-objectif), `V6__finance_loans.sql` (prets et emprunts, mouvements de pret lies). Additives : aucune donnee existante n'est modifiee.
 
-API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`), `schedules` (CRUD, `/{id}/pause|resume|end`, `/{id}/occurrences/{AAAA-MM-JJ}/complete|skip`, `PUT /{id}/occurrences/{date}`), `budget?month=` et `PUT budget/{AAAA-MM}`, `preferences` (GET/PUT), `forecast`, `goals` (CRUD, `preview`, `/{id}/reservation`, `/{id}/purchase`, `/{id}/postpone|abandon|reopen`, `/{id}/position`), `loans` (liste, detail, creation, `PUT /{id}` personne/echeance/notes, `/{id}/repayments`, `/{id}/write-off`, `/{id}/cancel`).
+API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`), `schedules` (CRUD, `/{id}/pause|resume|end`, `/{id}/occurrences/{AAAA-MM-JJ}/complete|skip`, `PUT /{id}/occurrences/{date}`), `budget?month=` et `PUT budget/{AAAA-MM}`, `preferences` (GET/PUT), `forecast`, `goals` (CRUD, `preview`, `/{id}/reservation`, `/{id}/purchase`, `/{id}/postpone|abandon|reopen`, `/{id}/position`), `loans` (liste, detail, creation, `PUT /{id}` personne/echeance/notes, `/{id}/repayments`, `/{id}/write-off`, `/{id}/cancel`), `alerts`, `statistics?from=&to=` (AAAA-MM, 1 a 24 mois), `POST simulation`, `calendar?month=`.
 
 ## Sauvegarde et import
 

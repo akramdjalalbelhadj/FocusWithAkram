@@ -10,6 +10,7 @@ import { ChartComponent, chartTheme } from '../../../../shared/ui/chart/chart';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { EmptyComponent, ErrorComponent, SkeletonComponent } from '../../../../shared/ui/states';
 import { OperationRowComponent } from '../../components/operation-row/operation-row';
+import { SEVERITY_TONE, alertView } from '../../alert-text';
 import { ACCOUNT_TYPE_LABEL, ACCOUNT_TYPES, BUDGET_STATE } from '../../finance-labels';
 import { FinanceActions } from '../../services/finance-actions.service';
 
@@ -36,6 +37,10 @@ export class FinanceOverviewPage {
   protected readonly month = signal(this.currentMonth);
   protected readonly loader = new Loader(() => this.api.overview(this.month()));
   protected readonly data = computed(() => this.loader.data());
+  /** Alertes du jour, independantes du mois affiche. */
+  protected readonly alertsLoader = new Loader(() => this.api.alerts());
+  protected readonly alerts = computed(() => (this.alertsLoader.data() ?? []).map(alertView));
+  protected readonly tone = SEVERITY_TONE;
   protected readonly money = formatMoney;
   protected readonly states = BUDGET_STATE;
   protected readonly Math = Math;

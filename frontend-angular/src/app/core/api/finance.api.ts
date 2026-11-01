@@ -14,8 +14,12 @@ import {
   Goal,
   GoalBody,
   GoalFeasibility,
+  FinanceAlert,
+  FinanceStatistics,
   Loan,
   LoanBody,
+  SimulationBody,
+  SimulationResult,
   Operation,
   OperationBody,
   OperationQuery,
@@ -246,5 +250,23 @@ export class FinanceApi {
 
   cancelLoan(id: string): Observable<Loan> {
     return this.http.post<Loan>(`${BASE}/loans/${id}/cancel`, {});
+  }
+
+  // ---- Analyses ----
+
+  alerts(): Observable<FinanceAlert[]> {
+    return this.http.get<FinanceAlert[]>(`${BASE}/alerts`);
+  }
+
+  statistics(from: string, to: string): Observable<FinanceStatistics> {
+    return this.http.get<FinanceStatistics>(`${BASE}/statistics`, { params: { from, to } });
+  }
+
+  simulate(body: SimulationBody): Observable<SimulationResult> {
+    return this.http.post<SimulationResult>(`${BASE}/simulation`, body);
+  }
+
+  calendar(month: string): Observable<Operation[]> {
+    return this.http.get<Operation[]>(`${BASE}/calendar`, { params: { month } });
   }
 }

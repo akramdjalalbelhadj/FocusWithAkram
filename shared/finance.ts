@@ -417,3 +417,100 @@ export interface LoanBody {
   recordDisbursement: boolean;
   notes: string | null;
 }
+
+// ---- Analyses (lot 8) : alertes, statistiques, simulation ----
+
+export type AlertCode =
+  | "BUDGET_WARNING"
+  | "BUDGET_OVER"
+  | "INCOME_LATE"
+  | "EXPENSES_OVERDUE"
+  | "DUE_SOON"
+  | "RESERVE_BREACH"
+  | "GOAL_RISKY"
+  | "GOAL_NOT_FEASIBLE"
+  | "LOAN_OVERDUE_LENT"
+  | "LOAN_OVERDUE_BORROWED";
+export type AlertSeverity = "DANGER" | "WARNING" | "INFO";
+
+/** Alerte calculée par le serveur ; le texte est formulé par l'interface à partir du code. */
+export interface FinanceAlert {
+  code: AlertCode;
+  severity: AlertSeverity;
+  label: string | null;
+  date: string | null;
+  amount: number | null;
+  count: number | null;
+  refId: string | null;
+}
+
+export interface MonthStat {
+  month: string;
+  incomeReceived: number;
+  expensesPaid: number;
+  essentialPaid: number;
+  variablePaid: number;
+  goalPurchasesPaid: number;
+  savedToSavings: number;
+  unspent: number;
+}
+
+export interface CategoryStat {
+  categoryId: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  amount: number;
+  count: number;
+  percent: number;
+  children: { categoryId: string; name: string; amount: number }[];
+}
+
+export interface FinanceStatistics {
+  from: string;
+  to: string;
+  months: MonthStat[];
+  totals: {
+    incomeReceived: number;
+    expensesPaid: number;
+    essentialPaid: number;
+    variablePaid: number;
+    goalPurchasesPaid: number;
+    exceptionalPaid: number;
+    refunds: number;
+    savedToSavings: number;
+    unspent: number;
+    averageIncome: number;
+    averageExpenses: number;
+    /** Épargne mise de côté / revenus reçus, en % (null sans revenu). */
+    savingsRate: number | null;
+  };
+  categories: CategoryStat[];
+  topExpenses: Operation[];
+  purchases: {
+    goalId: string;
+    name: string;
+    date: string;
+    estimated: number;
+    actual: number;
+    variance: number;
+  }[];
+  writtenOffLent: number;
+  writtenOffBorrowed: number;
+}
+
+export interface SimulationBody {
+  /** Ajouté à chaque salaire prévu (négatif pour une baisse). */
+  salaryDelta?: number | null;
+  /** Réduction mensuelle des dépenses variables anticipées. */
+  variableReduction?: number | null;
+  postponements?: { goalId: string; targetDate: string }[];
+  excludedGoalIds?: string[];
+  extraPurchase?: GoalBody | null;
+}
+
+export interface SimulationResult {
+  baseline: Forecast;
+  simulated: Forecast;
+  extraGoalId: string | null;
+}

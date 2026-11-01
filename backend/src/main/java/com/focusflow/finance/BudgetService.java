@@ -84,6 +84,16 @@ public class BudgetService {
         return plan;
     }
 
+    /** Calendrier financier : operations du mois hors annulees, par date. */
+    @Transactional(readOnly = true)
+    public List<OperationResponse> calendar(YearMonth month) {
+        LocalDate today = dates.today();
+        return monthPlan(month).stream()
+                .filter(o -> o.getStatus() != OperationStatus.CANCELLED)
+                .sorted(Comparator.comparing(Operation::getDate).thenComparing(Operation::getType))
+                .map(o -> FinanceMapper.toResponse(o, today)).toList();
+    }
+
     @Transactional(readOnly = true)
     public BudgetResponse budget(YearMonth month) {
         LocalDate today = dates.today();

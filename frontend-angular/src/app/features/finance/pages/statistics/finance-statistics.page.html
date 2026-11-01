@@ -1,0 +1,199 @@
+<div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+  <p class="text-sm text-muted max-w-2xl">
+    Mois complets, opérations réalisées uniquement. Les dépenses sont nettes des remboursements
+    d’achats ; prêts, virements et corrections n’y figurent pas.
+  </p>
+  <div class="flex rounded-xl border border-line p-1 gap-1" role="tablist" aria-label="Période">
+    @for (p of periods; track p) {
+      <button
+        type="button"
+        role="tab"
+        class="rounded-lg px-3 py-1.5 text-sm font-semibold"
+        [attr.aria-selected]="span() === p"
+        [class]="span() === p ? 'bg-brand-soft text-brand' : 'text-muted'"
+        (click)="span.set(p)"
+      >
+        {{ p }} mois
+      </button>
+    }
+  </div>
+</div>
+
+@if (loader.error()) {
+  <ff-error (retry)="loader.load()" />
+} @else if (loader.loading() && !data()) {
+  <ff-skeleton [count]="3" [height]="120" />
+} @else if (data(); as s) {
+  @if (empty()) {
+    <div class="card">
+      <ff-empty
+        icon="chart"
+        title="Pas encore de statistiques"
+        hint="Les revenus reçus, dépenses payées et virements vers l’épargne de la période apparaîtront ici."
+      />
+    </div>
+  } @else {
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5" aria-label="Totaux de la période">
+      <div class="card p-4">
+        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Revenus reçus</p>
+        <p class="text-xl font-bold tabular-nums mt-1 text-success">
+          {{ money(s.totals.incomeReceived) }}
+        </p>
+        <p class="text-xs text-muted mt-1">{{ money(s.totals.averageIncome) }} par mois en moyenne</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Dépenses payées</p>
+        <p class="text-xl font-bold tabular-nums mt-1">{{ money(s.totals.expensesPaid) }}</p>
+        <p class="text-xs text-muted mt-1">{{ money(s.totals.averageExpenses) }} par mois en moyenne</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Épargne mise de côté</p>
+        <p class="text-xl font-bold tabular-nums mt-1">{{ money(s.totals.savedToSavings) }}</p>
+        <p class="text-xs text-muted mt-1">
+          @if (s.totals.savingsRate !== null) {
+            {{ s.totals.savingsRate }} % des revenus reçus
+          } @else {
+            Aucun revenu reçu sur la période
+          }
+        </p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Non dépensé</p>
+        <p class="text-xl font-bold tabular-nums mt-1" [class.text-danger]="s.totals.unspent < 0">
+          {{ money(s.totals.unspent) }}
+        </p>
+        <p class="text-xs text-muted mt-1">
+          Indispensables {{ money(s.totals.essentialPaid) }} · variables
+          {{ money(s.totals.variablePaid) }}
+        </p>
+      </div>
+    </section>
+
+    <section class="card p-5 mb-5" aria-labelledby="st-months">
+      <h3 id="st-months" class="section-title">Mois par mois</h3>
+      <ff-chart
+        [option]="monthsChart"
+        [height]="280"
+        label="Barres : revenus reçus et dépenses payées par mois ; courbe : épargne mise de côté"
+      />
+    </section>
+
+    <div class="grid gap-5 lg:grid-cols-2 mb-5">
+      <section class="card p-5" aria-labelledby="st-cat">
+        <h3 id="st-cat" class="section-title">Dépenses par catégorie</h3>
+        @if (!s.categories.length) {
+          <p class="text-sm text-muted">Aucune dépense catégorisée sur la période.</p>
+        }
+        <ul class="space-y-2 text-sm">
+          @for (c of s.categories; track c.categoryId) {
+            <li>
+              <button
+                type="button"
+                class="w-full text-left"
+                [attr.aria-expanded]="c.children.length ? expanded() === c.categoryId : null"
+                [disabled]="!c.children.length"
+                (click)="toggle(c.categoryId)"
+              >
+                <span class="flex items-center gap-2">
+                  <span
+                    class="size-2.5 rounded-full flex-none"
+                    [style.background]="c.color ?? 'var(--brand)'"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="flex-1 truncate font-medium">{{ c.name }}</span>
+                  <span class="text-muted tabular-nums">{{ c.percent }} %</span>
+                  <span class="font-semibold tabular-nums w-24 text-right">{{ money(c.amount) }}</span>
+                </span>
+                <span class="block h-1.5 rounded-full bg-surface-2 mt-1 overflow-hidden">
+                  <span
+                    class="block h-full"
+                    [style.width.%]="c.percent"
+                    [style.background]="c.color ?? 'var(--brand)'"
+                  ></span>
+                </span>
+              </button>
+              @if (expanded() === c.categoryId) {
+                <ul class="mt-1 ml-5 space-y-0.5 text-muted">
+                  @for (sub of c.children; track sub.categoryId) {
+                    <li class="flex justify-between gap-2">
+                      <span class="truncate">{{ sub.name }}</span
+                      ><span class="tabular-nums">{{ money(sub.amount) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="card p-5" aria-labelledby="st-top">
+        <h3 id="st-top" class="section-title">Plus grosses dépenses</h3>
+        @if (!s.topExpenses.length) {
+          <p class="text-sm text-muted">Aucune dépense payée sur la période.</p>
+        }
+        <ul class="divide-y divide-[var(--line)] text-sm">
+          @for (o of s.topExpenses; track o.id) {
+            <li class="flex items-center gap-3 py-2">
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold truncate">{{ o.label }}</p>
+                <p class="text-xs text-muted truncate">
+                  {{ longDate(o.date) }}
+                  @if (o.category) {
+                    · {{ o.category.name }}
+                  }
+                </p>
+              </div>
+              <span class="font-bold tabular-nums">{{ money(o.amount) }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    </div>
+
+    @if (s.purchases.length || s.writtenOffLent || s.writtenOffBorrowed) {
+      <section class="card p-5" aria-labelledby="st-goals">
+        <h3 id="st-goals" class="section-title">Achats prévus réalisés</h3>
+        @if (s.purchases.length) {
+          <ul class="divide-y divide-[var(--line)] text-sm">
+            @for (p of s.purchases; track p.goalId) {
+              <li class="flex items-center gap-3 py-2">
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold truncate">{{ p.name }}</p>
+                  <p class="text-xs text-muted">
+                    {{ longDate(p.date) }} · estimé {{ money(p.estimated) }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold tabular-nums">{{ money(p.actual) }}</p>
+                  <p
+                    class="text-xs tabular-nums"
+                    [class.text-success]="p.variance < 0"
+                    [class.text-danger]="p.variance > 0"
+                  >
+                    {{ signed(p.variance) }}
+                  </p>
+                </div>
+              </li>
+            }
+          </ul>
+          <p class="text-sm text-muted mt-2">
+            Écart total entre prix payés et estimés :
+            <strong class="tabular-nums">{{ signed(varianceTotal()) }}</strong>
+          </p>
+        }
+        @if (s.writtenOffLent || s.writtenOffBorrowed) {
+          <p class="text-sm text-muted mt-2 flex items-center gap-2">
+            <ff-icon name="hand-coins" [size]="16" />
+            @if (s.writtenOffLent) {
+              Créances abandonnées : {{ money(s.writtenOffLent) }}.
+            }
+            @if (s.writtenOffBorrowed) {
+              Dettes remises : {{ money(s.writtenOffBorrowed) }}.
+            }
+          </p>
+        }
+      </section>
+    }
+  }
+}

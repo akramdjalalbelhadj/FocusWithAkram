@@ -10,6 +10,7 @@ import { ChartComponent, chartTheme } from '../../../../shared/ui/chart/chart';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { EmptyComponent, ErrorComponent, SkeletonComponent } from '../../../../shared/ui/states';
 import { GoalCardComponent } from '../../components/goal-card/goal-card';
+import { SimulationPanelComponent } from '../../components/simulation-panel/simulation-panel';
 import { FinanceActions } from '../../services/finance-actions.service';
 
 type QuadrantKey = 'Q1' | 'Q2' | 'Q3' | 'Q4';
@@ -34,6 +35,7 @@ const QUADRANTS: { key: QuadrantKey; label: string; hint: string; important: boo
     SkeletonComponent,
     ChartComponent,
     GoalCardComponent,
+    SimulationPanelComponent,
     CdkDropListGroup,
     CdkDropList,
     CdkDrag,

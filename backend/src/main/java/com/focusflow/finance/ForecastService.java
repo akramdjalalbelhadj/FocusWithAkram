@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,25 @@ public class ForecastService {
     public static final Comparator<Goal> PRIORITY = Comparator.comparingInt(Goal::quadrantRank)
             .thenComparing(Goal::getTargetDate)
             .thenComparing(Goal::getCreatedAt);
+
+    /**
+     * Hypotheses d'une simulation (specification § 6), appliquees au meme calcul sans rien enregistrer :
+     * variation de chaque salaire prevu, reduction mensuelle des depenses variables, reports et exclusions
+     * d'objectifs, achat supplementaire.
+     */
+    public record Scenario(BigDecimal salaryDelta, BigDecimal variableReduction, Map<UUID, LocalDate> postponed,
+                           Set<UUID> excluded, Goal extra) {
+        public static final Scenario NONE = new Scenario(Money.ZERO, Money.ZERO, Map.of(), Set.of(), null);
+
+        LocalDate target(Goal g) {
+            return postponed.getOrDefault(g.getId(), g.getTargetDate());
+        }
+
+        Comparator<Goal> priority() {
+            return Comparator.comparingInt(Goal::quadrantRank).thenComparing(this::target)
+                    .thenComparing(Goal::getCreatedAt);
+        }
+    }
 
     private final AccountService accounts;
     private final OperationRepository operations;
@@ -65,7 +85,19 @@ public class ForecastService {
     /** Prevision avec les objectifs ouverts enregistres. */
     @Transactional(readOnly = true)
     public ForecastResponse forecast() {
-        return forecast(openGoals(null, null));
+        return forecast(openGoals(null, null), Scenario.NONE);
+    }
+
+    /** Prevision sous hypotheses ; les objectifs exclus sont ignores, l'achat supplementaire prend son rang. */
+    @Transactional(readOnly = true)
+    public ForecastResponse simulate(Scenario s) {
+        List<Goal> open = new ArrayList<>(goals.findAllOrdered().stream()
+                .filter(g -> g.getStatus().isOpen() && !s.excluded().contains(g.getId())).toList());
+        if (s.extra() != null) {
+            open.add(s.extra());
+        }
+        open.sort(s.priority());
+        return forecast(open, s);
     }
 
     /**
@@ -74,7 +106,7 @@ public class ForecastService {
      */
     @Transactional(readOnly = true)
     public GoalFeasibility preview(Goal hypothetical) {
-        ForecastResponse r = forecast(openGoals(hypothetical, hypothetical.getId()));
+        ForecastResponse r = forecast(openGoals(hypothetical, hypothetical.getId()), Scenario.NONE);
         return r.goals().stream().filter(g -> g.goalId().equals(hypothetical.getId())).findFirst().orElseThrow();
     }
 
@@ -96,7 +128,7 @@ public class ForecastService {
         return open;
     }
 
-    private ForecastResponse forecast(List<Goal> open) {
+    private ForecastResponse forecast(List<Goal> open, Scenario s) {
         LocalDate today = dates.today();
         FinancePreferences prefs = budgets.preferences();
         List<AccountResponse> all = accounts.list();
@@ -106,7 +138,7 @@ public class ForecastService {
             if (a.type().isAvailable()) available = available.add(a.balance());
             else savings = savings.add(a.balance());
         }
-        LocalDate latestTarget = open.stream().map(Goal::getTargetDate).max(LocalDate::compareTo).orElse(today);
+        LocalDate latestTarget = open.stream().map(s::target).max(LocalDate::compareTo).orElse(today);
         LocalDate horizon = latestTarget.plusDays(ForecastEngine.CHECK_WINDOW_DAYS + 1L);
         if (horizon.isBefore(today.plusDays(MIN_HORIZON_DAYS))) horizon = today.plusDays(MIN_HORIZON_DAYS);
         if (horizon.isAfter(today.plusDays(MAX_HORIZON_DAYS))) horizon = today.plusDays(MAX_HORIZON_DAYS);
@@ -118,20 +150,28 @@ public class ForecastService {
         List<Event> events = new ArrayList<>();
         boolean hasIncome = false;
         for (Operation o : planned) {
-            events.add(event(o, today));
+            Event e = event(o, today);
+            if (s.salaryDelta().signum() != 0 && isSalary(o)) {
+                // Un salaire ne devient jamais negatif : la baisse est limitee a son montant.
+                BigDecimal delta = s.salaryDelta().max(o.getAmount().negate());
+                e = o.getAccount().getType().isAvailable()
+                        ? new Event(e.date(), e.available().add(delta), e.savings(), e.lateIncome())
+                        : new Event(e.date(), e.available(), e.savings().add(delta), e.lateIncome());
+            }
+            events.add(e);
             hasIncome |= o.getType() == OperationType.INCOME;
         }
 
         // Prets : une dette est remboursee a son echeance (sans echeance, sa date est inconnue) ; un remboursement
         // attendu d'un pret accorde n'est pas de l'argent disponible (D5) : il n'est que signale.
         BigDecimal expectedRepayments = Money.ZERO;
-        for (LoanService.LoanState s : loans.states()) {
-            if (!"OPEN".equals(s.status()) || s.loan().getDueDate() == null) continue;
-            if (s.loan().getDirection() == LoanDirection.BORROWED) {
-                LocalDate due = s.loan().getDueDate().isBefore(today) ? today : s.loan().getDueDate();
-                events.add(new Event(due, s.remaining().negate(), Money.ZERO, false));
-            } else if (!s.loan().getDueDate().isAfter(horizon)) {
-                expectedRepayments = expectedRepayments.add(s.remaining());
+        for (LoanService.LoanState ls : loans.states()) {
+            if (!"OPEN".equals(ls.status()) || ls.loan().getDueDate() == null) continue;
+            if (ls.loan().getDirection() == LoanDirection.BORROWED) {
+                LocalDate due = ls.loan().getDueDate().isBefore(today) ? today : ls.loan().getDueDate();
+                events.add(new Event(due, ls.remaining().negate(), Money.ZERO, false));
+            } else if (!ls.loan().getDueDate().isAfter(horizon)) {
+                expectedRepayments = expectedRepayments.add(ls.remaining());
             }
         }
 
@@ -149,7 +189,8 @@ public class ForecastService {
             if (cap == null) cap = prefs.getDefaultVariableCap();
             capDefined |= cap != null;
             BigDecimal discretionary = cap == null ? Money.ZERO
-                    : cap.subtract(t.variablePaid()).subtract(t.variablePlanned()).max(Money.ZERO);
+                    : cap.subtract(t.variablePaid()).subtract(t.variablePlanned()).subtract(s.variableReduction())
+                    .max(Money.ZERO);
             BigDecimal target = b.map(MonthlyBudget::getSavingsTarget).orElse(null);
             if (target == null) target = prefs.getDefaultSavingsTarget();
             BigDecimal setAside = target == null ? Money.ZERO
@@ -158,7 +199,7 @@ public class ForecastService {
         }
 
         List<GoalInput> inputs = open.stream().map(g -> new GoalInput(g.getId(), g.getEstimatedPrice(),
-                g.getReservedAmount(), g.getTargetDate(), g.isFundedBySavings())).toList();
+                g.getReservedAmount(), s.target(g), g.isFundedBySavings())).toList();
         ForecastEngine.Result result = ForecastEngine.run(new ForecastEngine.Input(today, horizon, available, savings,
                 prefs.getSafetyReserve(), prefs.getSavingsFloor(), events, months, inputs));
 
@@ -201,6 +242,13 @@ public class ForecastService {
         boolean late = o.getType() == OperationType.INCOME && o.getDate().isBefore(today);
         LocalDate date = o.getDate().isBefore(today) ? today : o.getDate();
         return new Event(date, dA, dS, late);
+    }
+
+    /** Salaire prevu : echeance d'un echeancier « salaire » ou revenu saisi comme salaire. */
+    private static boolean isSalary(Operation o) {
+        return o.getType() == OperationType.INCOME && o.getStatus() == OperationStatus.PLANNED
+                && (o.getIncomeKind() == IncomeKind.SALARY
+                    || o.getSchedule() != null && o.getSchedule().getKind() == ScheduleKind.SALARY);
     }
 
     /** Virements prevus du disponible vers l'epargne : deja comptes, ils reduisent l'epargne restant a mettre de cote. */

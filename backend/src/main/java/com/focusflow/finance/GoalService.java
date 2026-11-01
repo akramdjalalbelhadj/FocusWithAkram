@@ -76,6 +76,12 @@ public class GoalService {
         return forecast.preview(hypothetical);
     }
 
+    /** Objectif non enregistre, pour une simulation. */
+    @Transactional(readOnly = true)
+    public Goal hypothetical(GoalRequest request) {
+        return Goal.create(draft(request), Instant.now(clock));
+    }
+
     @Transactional
     public UUID create(GoalRequest request) {
         return goals.save(Goal.create(draft(request), Instant.now(clock))).getId();

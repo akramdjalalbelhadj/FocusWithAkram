@@ -25,7 +25,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 5 | Revenus prévus/reçus, budget mensuel, épargne, abonnements | Livré |
 | 6 | Objectifs d'achat, matrice d'achats, moteur de prévision, faisabilité | Livré |
 | 7 | Prêts et emprunts | Livré |
-| 8 | Tableau de bord, statistiques, alertes, simulations | À faire |
+| 8 | Tableau de bord, statistiques, alertes, simulations, calendrier financier | Livré |
 | 9 | Documentation finale et dossier de migration React | À faire |
 | 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Planifié après les lots 7 et 8 |
 
@@ -138,6 +138,18 @@ Précision de règle : tous les objectifs ouverts (envisagés, planifiés, repor
 
 Vérifications : 147 tests backend, 31 tests Angular, lint et build ; React compile toujours (types partagés étendus, aucun fichier React modifié). Recette sur base jetable : compte de 1 200 €, prêt de 300 € à Sami (en retard, échéance au 25/10) et emprunt antérieur de 400 € ; remboursement partiel de 120,50 € saisi au format français → reste dû 179,50 € ; régularisation du reste → créances à 0 € ; vue d'ensemble : disponible 1 020,50 €, « Vous devez 400,00 € », aucune dépense ni aucun revenu comptés.
 
+### Réalisé au lot 8 — alertes, statistiques, simulations, calendrier
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Alertes | `AlertService`, `GET /finance/alerts` : plafond variable au seuil ou dépassé, revenu attendu non reçu, dépenses prévues en retard, échéances des 7 jours, disponible prévu sous la réserve dans les 60 jours, objectif risqué ou non réalisable, prêt ou emprunt en retard. Calculées à la lecture, triées par gravité ; formulées par l'interface (`alert-text.ts`) | 2 tests d'intégration (7 alertes chiffrées ; aucune alerte sans cause) ; 4 tests unitaires de formulation |
+| Statistiques | `FinanceStatisticsService`, `GET /finance/statistics?from=&to=` (1 à 24 mois complets) : série mensuelle, totaux et moyennes, taux d'épargne, catégories et sous-catégories nettes des remboursements, plus grosses dépenses, écart prix payé / estimé des achats prévus, créances abandonnées et dettes remises | Test d'intégration chiffré (périodes invalides refusées) |
+| Simulations | `ForecastService.Scenario` et `POST /finance/simulation` : variation de chaque salaire prévu, réduction mensuelle des dépenses variables, report ou retrait d'objectifs, achat supplémentaire ; même moteur, rien n'est enregistré, résultat comparé à la prévision actuelle | Test d'intégration (baisse de salaire → non réalisable ; report → réalisable ; achat urgent prioritaire ; aucune écriture) |
+| Calendrier | `GET /finance/calendar?month=` : opérations du mois, échéances calculées comprises, hors annulées | Test d'intégration |
+| Angular | Alertes en tête de la vue d'ensemble (lien vers l'onglet où agir) ; onglets **Calendrier** (grille du mois, entrées et sorties par jour, détail du jour avec les actions) et **Statistiques** (période 3/6/12/24 mois, graphique mensuel, catégories dépliables, plus grosses dépenses, achats prévus réalisés) ; panneau **Et si… ?** dans Achats prévus | 35 tests unitaires, lint, build ; recette navigateur |
+
+Vérifications : 152 tests backend, 35 tests Angular, lint et build ; React compile toujours. Recette sur base jetable : alertes « Ordinateur n'est plus réalisable… date réaliste le 28 novembre », « 90 % du plafond variable utilisé », « Forfait prévue le 5 novembre » ; statistiques sur 12 mois (330 € de dépenses, 27,50 € par mois) ; calendrier de novembre avec le salaire calculé du 28 ; simulation du report de l'ordinateur au 15 décembre : « Non réalisable → Réalisable », sans aucune écriture.
+
 ## 4. Adaptations React à prévoir (phase 2)
 
 | Origine | Adaptation |
@@ -146,4 +158,5 @@ Vérifications : 147 tests backend, 31 tests Angular, lint et build ; React comp
 | Lot 1 | `ImportReport` contient `settingsRestored`, `dailyGoalsCreated`, `dailyGoalsSkipped` (sauvegarde v2) : les afficher dans l'aperçu d'import React. Champs ajoutés, aucun champ retiré : React compile sans changement |
 | Lot 4 | Implémenter le module « Mes achats » : contrats dans `shared/finance.ts`, API `/api/v1/finance` (voir l'architecture backend), entrée de navigation `/finance` (G puis B), raccourci E. `ImportReport.finance` (sauvegarde v3) à afficher dans l'aperçu d'import |
 | Lot 7 | `OperationType` compte quatre types de mouvements de prêt (`LOAN_*`) à libeller ; `FinanceOverview.receivables` / `debts`, `ForecastResponse.expectedRepayments`, type `Loan` et API `/api/v1/finance/loans` ; `ImportReport.finance.loansCreated` / `loansSkipped` |
+| Lot 8 | API `/finance/alerts`, `/finance/statistics`, `/finance/simulation`, `/finance/calendar` et types `FinanceAlert`, `FinanceStatistics`, `SimulationBody` / `SimulationResult` dans `shared/finance.ts` ; formulation des alertes à reprendre de `alert-text.ts` |
 | Lot 0 | La suite E2E (`frontend-react/e2e`, `playwright.config.ts`) écrit dans `docs/test-results/` et `docs/screenshots/`, désormais ignorés par Git ; envisager de la déplacer hors du dossier React puisqu'elle teste aussi Angular |

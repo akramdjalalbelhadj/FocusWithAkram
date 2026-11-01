@@ -32,21 +32,23 @@
 } @else if (loader.loading()) {
   <ff-skeleton [count]="4" [height]="96" />
 } @else if (data(); as d) {
-  @if (d.overdueCount) {
-    <div
-      class="card !bg-danger-soft !border-[var(--q1-line)] p-3 mb-4 flex items-center gap-2 text-sm"
-      role="alert"
-    >
-      <ff-icon name="alert" class="text-danger" />
-      <span
-        ><strong>{{ d.overdueCount }}</strong>
-        {{
-          d.overdueCount > 1
-            ? 'opérations prévues sont en retard : indiquez si elles ont eu lieu.'
-            : 'opération prévue est en retard : indiquez si elle a eu lieu.'
-        }}</span
-      >
-    </div>
+  @if (alerts().length) {
+    <section class="card p-3 mb-4" aria-labelledby="fin-alerts">
+      <h3 id="fin-alerts" class="sr-only">Alertes</h3>
+      <ul class="space-y-1">
+        @for (a of alerts(); track $index) {
+          <li>
+            <a
+              [routerLink]="'../' + a.link"
+              class="flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2"
+            >
+              <ff-icon [name]="a.icon" [size]="16" class="mt-0.5 flex-none" [class]="tone[a.severity]" />
+              <span>{{ a.text }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
   }
 
   <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5" aria-label="Indicateurs">

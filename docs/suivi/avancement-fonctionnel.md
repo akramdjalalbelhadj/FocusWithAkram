@@ -28,7 +28,7 @@ Relevé du **1 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 | FWA-F020 Mes achats — budget      | Livré                  | Livré                      | Non commencé                   | Échéancier, budget, préférences : 14 tests dédiés ; recette navigateur. |
 | FWA-F021 Mes achats — achats prévus | Livré                | Livré                      | Non commencé                   | Moteur testé sur 12 scénarios chiffrés ; 6 tests d'intégration ; recette navigateur. |
 | FWA-F022 Mes achats — prêts       | Livré                  | Livré                      | Non commencé                   | 7 tests d'intégration ; recette navigateur. |
-| FWA-F023 Mes achats               | À faire (lot 8)        | À faire                    | Non commencé                   | Voir le [suivi de la refonte v2](refonte-v2.md). |
+| FWA-F023 Mes achats — analyses    | Livré                  | Livré                      | Non commencé                   | Alertes, statistiques, simulations, calendrier : 5 tests d'intégration, 4 tests unitaires ; recette navigateur. |
 
 ## 2. Modifications fonctionnelles récentes
 
