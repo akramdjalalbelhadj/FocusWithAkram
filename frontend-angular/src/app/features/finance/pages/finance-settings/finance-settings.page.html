@@ -9,6 +9,47 @@
   >
 </div>
 
+<section class="card p-5 mb-4" aria-labelledby="fs-prefs">
+  <h2 id="fs-prefs" class="section-title">Préférences financières</h2>
+  <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 items-start" (ngSubmit)="savePreferences()">
+    <div>
+      <label class="field-label" for="fp-reserve">Réserve de sécurité</label>
+      <input id="fp-reserve" name="reserve" class="input text-right tabular-nums" inputmode="decimal"
+        [ngModel]="reserve()" (ngModelChange)="reserve.set($event)" />
+      <p class="field-hint">Solde disponible à ne jamais entamer dans les prévisions.</p>
+    </div>
+    <div>
+      <label class="field-label" for="fp-floor">Plancher d’épargne</label>
+      <input id="fp-floor" name="floor" class="input text-right tabular-nums" inputmode="decimal"
+        [ngModel]="floor()" (ngModelChange)="floor.set($event)" />
+      <p class="field-hint">Épargne minimale conservée si un achat est financé par l’épargne.</p>
+    </div>
+    <div>
+      <label class="field-label" for="fp-cap">Plafond variable par défaut</label>
+      <input id="fp-cap" name="cap" class="input text-right tabular-nums" inputmode="decimal" placeholder="Aucun"
+        [ngModel]="cap()" (ngModelChange)="cap.set($event)" />
+      <p class="field-hint">Repris chaque mois sauf budget propre au mois.</p>
+    </div>
+    <div>
+      <label class="field-label" for="fp-target">Objectif d’épargne par défaut</label>
+      <input id="fp-target" name="target" class="input text-right tabular-nums" inputmode="decimal" placeholder="Aucun"
+        [ngModel]="target()" (ngModelChange)="target.set($event)" />
+    </div>
+    <div>
+      <label class="field-label" for="fp-warning">Alerte à (% du plafond)</label>
+      <input id="fp-warning" name="warning" type="number" min="1" max="100" class="input text-right"
+        [ngModel]="warning()" (ngModelChange)="warning.set($event)" />
+      <p class="field-hint">Orange à partir de ce seuil, rouge au-delà du plafond.</p>
+    </div>
+    <div class="sm:col-span-2 lg:col-span-5 flex items-center justify-end gap-3">
+      @if (prefsError()) {
+        <p class="field-error !mt-0" role="alert">{{ prefsError() }}</p>
+      }
+      <button type="submit" class="btn btn-primary btn-sm" [disabled]="!prefs.data()">Enregistrer</button>
+    </div>
+  </form>
+</section>
+
 <div class="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-4 items-start">
   <section class="card p-5" aria-labelledby="fs-accounts">
     <div class="flex items-center justify-between gap-2 mb-2">

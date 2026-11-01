@@ -2,16 +2,21 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  BudgetBody,
+  BudgetView,
   CategoryBody,
   CreateAccountBody,
   FinanceAccount,
   FinanceCategory,
   FinanceOverview,
+  FinancePreferences,
   Operation,
   OperationBody,
   OperationQuery,
   OperationType,
   Page,
+  Schedule,
+  ScheduleBody,
   UpdateAccountBody,
 } from './models';
 
@@ -103,5 +108,63 @@ export class FinanceApi {
 
   deleteOperation(id: string): Observable<void> {
     return this.http.delete<void>(`${BASE}/operations/${id}`);
+  }
+
+  // ---- Échéanciers ----
+
+  schedules(): Observable<Schedule[]> {
+    return this.http.get<Schedule[]>(`${BASE}/schedules`);
+  }
+
+  createSchedule(body: ScheduleBody): Observable<Schedule> {
+    return this.http.post<Schedule>(`${BASE}/schedules`, body);
+  }
+
+  updateSchedule(id: string, body: ScheduleBody): Observable<Schedule> {
+    return this.http.put<Schedule>(`${BASE}/schedules/${id}`, body);
+  }
+
+  deleteSchedule(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/schedules/${id}`);
+  }
+
+  scheduleAction(id: string, action: 'pause' | 'resume' | 'end'): Observable<Schedule> {
+    return this.http.post<Schedule>(`${BASE}/schedules/${id}/${action}`, {});
+  }
+
+  completeOccurrence(scheduleId: string, due: string, amount: number, date: string): Observable<Operation> {
+    return this.http.post<Operation>(`${BASE}/schedules/${scheduleId}/occurrences/${due}/complete`, {
+      amount,
+      date,
+    });
+  }
+
+  skipOccurrence(scheduleId: string, due: string): Observable<Operation> {
+    return this.http.post<Operation>(`${BASE}/schedules/${scheduleId}/occurrences/${due}/skip`, {});
+  }
+
+  adjustOccurrence(scheduleId: string, due: string, amount: number, date: string): Observable<Operation> {
+    return this.http.put<Operation>(`${BASE}/schedules/${scheduleId}/occurrences/${due}`, {
+      amount,
+      date,
+    });
+  }
+
+  // ---- Budget et préférences ----
+
+  budget(month: string): Observable<BudgetView> {
+    return this.http.get<BudgetView>(`${BASE}/budget`, { params: { month } });
+  }
+
+  updateBudget(month: string, body: BudgetBody): Observable<BudgetView> {
+    return this.http.put<BudgetView>(`${BASE}/budget/${month}`, body);
+  }
+
+  preferences(): Observable<FinancePreferences> {
+    return this.http.get<FinancePreferences>(`${BASE}/preferences`);
+  }
+
+  updatePreferences(body: FinancePreferences): Observable<FinancePreferences> {
+    return this.http.put<FinancePreferences>(`${BASE}/preferences`, body);
   }
 }

@@ -150,7 +150,7 @@ export class OperationDialogComponent {
         }
       }
       await firstValueFrom(
-        this.op ? this.api.updateOperation(this.op.id, body) : this.api.createOperation(body),
+        this.op?.id ? this.api.updateOperation(this.op.id, body) : this.api.createOperation(body),
       );
       this.ref.close(true);
     } catch (e) {

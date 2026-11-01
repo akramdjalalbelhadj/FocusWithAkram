@@ -1,9 +1,12 @@
 import type {
   AccountType,
+  BudgetState,
+  Frequency,
   IncomeKind,
   Operation,
   OperationStatus,
   OperationType,
+  ScheduleKind,
 } from '../../core/api/models';
 
 export const ACCOUNT_TYPES: { value: AccountType; label: string; icon: string }[] = [
@@ -74,3 +77,26 @@ export const CATEGORY_ICONS: { value: string; label: string }[] = [
   { value: 'coins', label: 'Argent' },
   { value: 'tag', label: 'Étiquette' },
 ];
+
+export const SCHEDULE_KINDS: { value: ScheduleKind; label: string; icon: string }[] = [
+  { value: 'SALARY', label: 'Salaire', icon: 'banknote' },
+  { value: 'SUBSCRIPTION', label: 'Abonnement', icon: 'repeat' },
+  { value: 'BILL', label: 'Charge ou facture', icon: 'receipt' },
+  { value: 'INSTALLMENT', label: 'Paiement en plusieurs fois', icon: 'credit-card' },
+  { value: 'OTHER', label: 'Autre', icon: 'more' },
+];
+
+/** « Chaque mois », « Tous les 3 mois », « Toutes les 2 semaines »… */
+export function frequencyLabel(frequency: Frequency, interval: number): string {
+  if (frequency === 'WEEKLY') return interval === 1 ? 'Chaque semaine' : `Toutes les ${interval} semaines`;
+  if (frequency === 'MONTHLY') return interval === 1 ? 'Chaque mois' : `Tous les ${interval} mois`;
+  return interval === 1 ? 'Chaque année' : `Tous les ${interval} ans`;
+}
+
+/** Couleur et libelle de l'etat du plafond variable. */
+export const BUDGET_STATE: Record<BudgetState, { label: string; tone: string; bar: string }> = {
+  NONE: { label: 'Aucun plafond défini', tone: 'text-muted', bar: 'var(--line-strong)' },
+  OK: { label: 'Budget confortable', tone: 'text-success', bar: 'var(--success)' },
+  WARNING: { label: 'Plafond bientôt atteint', tone: 'text-warning', bar: 'var(--q3-accent)' },
+  OVER: { label: 'Plafond dépassé', tone: 'text-danger', bar: 'var(--danger)' },
+};

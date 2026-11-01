@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -80,6 +81,18 @@ public class Operation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "refund_of_id")
     private Operation refundOf;
+
+    /** Echeancier dont cette operation est l'echeance `dueDate` (realisee, sautee ou ajustee). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schedule_id")
+    private Schedule schedule;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    /** Echeance calculee, jamais enregistree : sert aux previsions et au budget. */
+    @Transient
+    private boolean virtual;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -167,6 +180,9 @@ public class Operation {
         if (d.refundOf() != null && (t != OperationType.PURCHASE_REFUND || d.refundOf().getType() != OperationType.EXPENSE)) {
             throw ApiException.rule("INVALID_OPERATION", "Un remboursement d'achat ne peut se rattacher qu'a une depense.");
         }
+        if (schedule != null && t != schedule.getType()) {
+            throw ApiException.rule("INVALID_OPERATION", "L'echeance d'un echeancier garde le type de son echeancier.");
+        }
         if (d.status() != OperationStatus.COMPLETED) {
             plannedAmount = null;
         }
@@ -187,6 +203,24 @@ public class Operation {
         updatedAt = now;
     }
 
+    /** Rattache l'operation a l'echeance `due` d'un echeancier (une seule operation par echeance). */
+    public void linkOccurrence(Schedule s, LocalDate due) {
+        if (s == null || due == null || s.getType() != type) {
+            throw ApiException.rule("INVALID_OPERATION", "Echeance invalide pour cet echeancier.");
+        }
+        schedule = s;
+        dueDate = due;
+    }
+
+    void markVirtual() {
+        virtual = true;
+    }
+
+    /** Montant attendu avant realisation : le montant prevu conserve, ou le montant courant. */
+    public BigDecimal expectedAmount() {
+        return plannedAmount != null ? plannedAmount : amount;
+    }
+
     /** Realise une operation prevue avec son montant et sa date reels ; le montant prevu est conserve. */
     public void complete(BigDecimal actualAmount, LocalDate actualDate, Instant now) {
         if (status != OperationStatus.PLANNED) {
@@ -200,6 +234,39 @@ public class Operation {
         amount = actual;
         date = actualDate;
         status = OperationStatus.COMPLETED;
+        updatedAt = now;
+    }
+
+    /**
+     * Realise une echeance d'echeancier (prevue ou sautee) : montant attendu conserve, montant et date reels.
+     */
+    public void settleOccurrence(BigDecimal expected, BigDecimal actualAmount, LocalDate actualDate, Instant now) {
+        if (schedule == null) {
+            throw ApiException.rule("INVALID_OPERATION", "Cette operation n'est pas une echeance.");
+        }
+        if (status == OperationStatus.COMPLETED) {
+            throw ApiException.rule("OCCURRENCE_ALREADY_RECORDED", "Cette echeance est deja realisee.");
+        }
+        if (actualDate == null) {
+            throw ApiException.rule("INVALID_OPERATION", "La date reelle est obligatoire.");
+        }
+        amount = Money.positive(actualAmount, "Le montant reel");
+        plannedAmount = Money.positive(expected, "Le montant prevu");
+        date = actualDate;
+        status = OperationStatus.COMPLETED;
+        updatedAt = now;
+    }
+
+    /** Ajuste une echeance encore prevue (montant ou date differents pour cette fois). */
+    public void adjustOccurrence(BigDecimal newAmount, LocalDate newDate, Instant now) {
+        if (schedule == null || status != OperationStatus.PLANNED) {
+            throw ApiException.rule("OCCURRENCE_NOT_PLANNED", "Seule une echeance encore prevue peut etre ajustee.");
+        }
+        if (newDate == null) {
+            throw ApiException.rule("INVALID_OPERATION", "La date est obligatoire.");
+        }
+        amount = Money.positive(newAmount, "Le montant");
+        date = newDate;
         updatedAt = now;
     }
 
@@ -246,6 +313,9 @@ public class Operation {
     public boolean isEssential() { return essential; }
     public boolean isExceptional() { return exceptional; }
     public Operation getRefundOf() { return refundOf; }
+    public Schedule getSchedule() { return schedule; }
+    public LocalDate getDueDate() { return dueDate; }
+    public boolean isVirtual() { return virtual; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

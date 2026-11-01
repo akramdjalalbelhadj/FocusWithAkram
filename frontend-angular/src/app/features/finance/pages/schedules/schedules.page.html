@@ -1,0 +1,132 @@
+<div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+  <p class="text-sm text-muted max-w-2xl">
+    Salaire, abonnements, charges et paiements en plusieurs fois. Leurs échéances sont prévues : vous
+    confirmez chacune quand elle a lieu, ou la sautez pour un mois.
+  </p>
+  <div class="flex items-center gap-3">
+    <label class="flex items-center gap-2 text-sm text-muted"
+      ><input
+        type="checkbox"
+        class="size-4 accent-[var(--brand)]"
+        [checked]="showEnded()"
+        (change)="showEnded.set($any($event.target).checked)"
+      />Résiliés</label
+    >
+    <button type="button" class="btn btn-primary btn-sm" (click)="actions.editSchedule(null)">
+      <ff-icon name="plus" [size]="14" />Échéancier
+    </button>
+  </div>
+</div>
+
+@if (loader.error()) {
+  <ff-error (retry)="loader.load()" />
+} @else if (loader.loading()) {
+  <ff-skeleton [count]="3" [height]="96" />
+} @else if (empty()) {
+  <div class="card">
+    <ff-empty
+      icon="repeat"
+      title="Aucun échéancier"
+      hint="Commencez par votre salaire, puis vos abonnements et charges fixes."
+    >
+      <div class="flex flex-wrap justify-center gap-2 mt-2">
+        <button type="button" class="btn btn-primary btn-sm" (click)="actions.editSchedule(null, 'SALARY')">
+          Déclarer mon salaire
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="actions.editSchedule(null, 'SUBSCRIPTION')">
+          Ajouter un abonnement
+        </button>
+      </div>
+    </ff-empty>
+  </div>
+} @else {
+  <div class="space-y-4">
+    @for (g of groups(); track g.key) {
+      <section class="card p-5" [attr.aria-label]="g.title">
+        <div class="flex items-baseline justify-between gap-2 mb-1">
+          <h3 class="section-title !mb-0 flex items-center gap-2">
+            <ff-icon [name]="g.icon" [size]="18" />{{ g.title }}
+          </h3>
+          <p class="text-sm text-muted tabular-nums">
+            {{ money(g.monthly) }} / mois · {{ money(g.annual) }} / an
+          </p>
+        </div>
+        <ul class="divide-y divide-[var(--line)]">
+          @for (s of g.items; track s.id) {
+            <li class="flex items-center gap-3 py-2.5" [class.opacity-60]="s.status !== 'ACTIVE'">
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold truncate">
+                  {{ s.label }}
+                  @if (s.status === 'PAUSED') {
+                    <span class="badge badge-warning ml-1">Suspendu</span>
+                  } @else if (s.status === 'ENDED') {
+                    <span class="badge ml-1">Résilié</span>
+                  }
+                  @if (s.essential) {
+                    <span class="badge badge-progress ml-1">Indispensable</span>
+                  }
+                </p>
+                <p class="text-xs text-muted truncate">
+                  {{ frequency(s.frequency, s.intervalCount) }}
+                  @if (s.category) {
+                    · {{ s.category.rootId === s.category.id ? s.category.name : s.category.rootName + ' › ' + s.category.name }}
+                  }
+                  · {{ s.account.name }}
+                  @if (s.nextDueDate) {
+                    · prochaine : {{ longDate(s.nextDueDate) }}
+                  }
+                  @if (s.endDate && s.status === 'ACTIVE') {
+                    · jusqu’au {{ longDate(s.endDate) }}
+                  }
+                </p>
+              </div>
+              <div class="text-right flex-none">
+                <p class="font-bold tabular-nums" [class.text-success]="s.type === 'INCOME'">
+                  {{ s.type === 'INCOME' ? '+' : '' }}{{ money(s.amount) }}
+                </p>
+                @if (s.frequency !== 'MONTHLY' || s.intervalCount !== 1) {
+                  <p class="text-xs text-muted tabular-nums">≈ {{ money(s.monthlyEquivalent) }} / mois</p>
+                }
+              </div>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm btn-icon flex-none"
+                [attr.aria-label]="'Actions sur « ' + s.label + ' »'"
+                [cdkMenuTriggerFor]="menu"
+              >
+                <ff-icon name="more" />
+              </button>
+              <ng-template #menu>
+                <div cdkMenu class="menu anim-pop" aria-label="Actions">
+                  <button cdkMenuItem class="menu-item" (click)="actions.editSchedule(s)">
+                    <ff-icon name="pencil" [size]="16" />Modifier
+                  </button>
+                  @if (s.status === 'ACTIVE') {
+                    <button cdkMenuItem class="menu-item" (click)="actions.scheduleAction(s, 'pause')">
+                      <ff-icon name="pause" [size]="16" />Suspendre
+                    </button>
+                  } @else if (s.status === 'PAUSED') {
+                    <button cdkMenuItem class="menu-item" (click)="actions.scheduleAction(s, 'resume')">
+                      <ff-icon name="play" [size]="16" />Reprendre
+                    </button>
+                  }
+                  @if (s.status !== 'ENDED') {
+                    <button cdkMenuItem class="menu-item" (click)="actions.scheduleAction(s, 'end')">
+                      <ff-icon name="x" [size]="16" />Résilier
+                    </button>
+                  }
+                  @if (!s.hasOperations) {
+                    <div class="menu-sep" role="separator"></div>
+                    <button cdkMenuItem class="menu-item danger" (click)="actions.deleteSchedule(s)">
+                      <ff-icon name="trash" [size]="16" />Supprimer
+                    </button>
+                  }
+                </div>
+              </ng-template>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+}

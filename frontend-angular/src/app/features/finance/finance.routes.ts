@@ -21,6 +21,17 @@ export const FINANCE_ROUTES: Routes = [
           import('./pages/operations/operations.page').then((m) => m.FinanceOperationsPage),
       },
       {
+        path: 'budget',
+        title: 'Budget — Mes achats',
+        loadComponent: () => import('./pages/budget/budget.page').then((m) => m.FinanceBudgetPage),
+      },
+      {
+        path: 'schedules',
+        title: 'Échéancier — Mes achats',
+        loadComponent: () =>
+          import('./pages/schedules/schedules.page').then((m) => m.FinanceSchedulesPage),
+      },
+      {
         path: 'settings',
         title: 'Comptes et catégories — Mes achats',
         loadComponent: () =>

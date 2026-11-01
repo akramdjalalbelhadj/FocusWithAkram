@@ -26,9 +26,10 @@ public final class FinanceMapper {
 
     public static OperationResponse toResponse(Operation o, LocalDate today) {
         boolean overdue = o.getStatus() == OperationStatus.PLANNED && o.getDate().isBefore(today);
-        return new OperationResponse(o.getId(), ref(o.getAccount()), ref(o.getTargetAccount()), o.getType(), o.getStatus(),
+        return new OperationResponse(o.isVirtual() ? null : o.getId(), ref(o.getAccount()), ref(o.getTargetAccount()), o.getType(), o.getStatus(),
                 o.getDirection(), o.getDate(), o.getAmount(), o.getPlannedAmount(), ref(o.getCategory()), o.getIncomeKind(),
                 o.getLabel(), o.getDescription(), o.isEssential(), o.isExceptional(),
-                o.getRefundOf() == null ? null : o.getRefundOf().getId(), overdue, o.getCreatedAt(), o.getUpdatedAt());
+                o.getRefundOf() == null ? null : o.getRefundOf().getId(), overdue, o.getCreatedAt(), o.getUpdatedAt(),
+                o.getSchedule() == null ? null : o.getSchedule().getId(), o.getDueDate(), o.isVirtual());
     }
 }

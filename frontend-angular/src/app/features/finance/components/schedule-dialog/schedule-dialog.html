@@ -1,0 +1,176 @@
+<form
+  class="card w-[min(34rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="sch-title"
+>
+  <h2 id="sch-title" class="text-lg font-bold mb-4">
+    {{ data.schedule ? 'Modifier l’échéancier' : 'Nouvel échéancier' }}
+  </h2>
+  <div class="space-y-4">
+    <div>
+      <label class="field-label" for="sch-kind">Nature</label>
+      <select id="sch-kind" class="input" formControlName="kind">
+        @for (k of kinds; track k.value) {
+          <option [value]="k.value">{{ k.label }}</option>
+        }
+      </select>
+    </div>
+    @if (form.value.kind === 'OTHER') {
+      <div class="flex rounded-xl border border-line p-1 gap-1 w-fit" role="radiogroup" aria-label="Sens">
+        <label
+          class="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold has-[:focus-visible]:outline-2"
+          [class]="type() === 'EXPENSE' ? 'bg-brand-soft text-brand' : 'text-muted'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="type" value="EXPENSE" />Dépense
+        </label>
+        <label
+          class="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold has-[:focus-visible]:outline-2"
+          [class]="type() === 'INCOME' ? 'bg-brand-soft text-brand' : 'text-muted'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="type" value="INCOME" />Revenu
+        </label>
+      </div>
+    }
+    <div class="grid sm:grid-cols-[1fr_10rem] gap-3">
+      <div>
+        <label class="field-label" for="sch-label">Libellé</label>
+        <input
+          id="sch-label"
+          class="input"
+          formControlName="label"
+          maxlength="120"
+          placeholder="Loyer, Claude, forfait mobile…"
+          cdkFocusInitial
+        />
+      </div>
+      <div>
+        <label class="field-label" for="sch-amount">Montant habituel</label>
+        <div class="relative">
+          <input
+            id="sch-amount"
+            class="input pr-8 text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="amount"
+            placeholder="0,00"
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
+        </div>
+      </div>
+    </div>
+    @if (type() === 'EXPENSE') {
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="field-label" for="sch-cat">Catégorie</label>
+          <select id="sch-cat" class="input" formControlName="categoryId">
+            <option value="" disabled>Choisir…</option>
+            @for (c of categories(); track c.id) {
+              <optgroup [label]="c.name">
+                <option [value]="c.id">{{ c.name }} (général)</option>
+                @for (s of c.children; track s.id) {
+                  <option [value]="s.id">{{ s.name }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+        </div>
+        <label
+          class="flex items-start gap-2 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2 self-end"
+        >
+          <input type="checkbox" class="mt-0.5 size-4 accent-[var(--brand)]" formControlName="essential" />
+          <span class="text-sm"
+            ><span class="font-semibold">Indispensable</span
+            ><span class="block text-muted text-xs">À couvrir chaque mois</span></span
+          >
+        </label>
+      </div>
+    } @else {
+      <div>
+        <label class="field-label" for="sch-income">Origine du revenu</label>
+        <select id="sch-income" class="input" formControlName="incomeKind">
+          @for (k of incomeKinds; track k.value) {
+            <option [value]="k.value">{{ k.label }}</option>
+          }
+        </select>
+      </div>
+    }
+    <div>
+      <label class="field-label" for="sch-account">Compte</label>
+      <select id="sch-account" class="input" formControlName="accountId">
+        @for (a of accounts(); track a.id) {
+          <option [value]="a.id">{{ a.name }}</option>
+        }
+      </select>
+    </div>
+    <fieldset class="grid grid-cols-[auto_5rem_1fr] items-end gap-2">
+      <legend class="field-label">Périodicité</legend>
+      <span class="text-sm text-muted pb-2.5">Tous les</span>
+      <input
+        class="input text-center"
+        type="number"
+        min="1"
+        max="24"
+        aria-label="Intervalle"
+        formControlName="intervalCount"
+      />
+      <select class="input" aria-label="Unité" formControlName="frequency">
+        <option value="WEEKLY">semaine(s)</option>
+        <option value="MONTHLY">mois</option>
+        <option value="YEARLY">an(s)</option>
+      </select>
+    </fieldset>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" for="sch-start">{{
+          data.schedule ? 'Échéance de référence' : 'Première échéance suivie'
+        }}</label>
+        <input id="sch-start" type="date" class="input" formControlName="startDate" />
+      </div>
+      <div>
+        <label class="field-label" for="sch-end">Fin</label>
+        <select id="sch-end" class="input" formControlName="endMode">
+          <option value="none">Sans fin</option>
+          <option value="date">À une date</option>
+          <option value="count">Après un nombre d’échéances</option>
+        </select>
+      </div>
+    </div>
+    @if (endMode() === 'date') {
+      <div>
+        <label class="field-label" for="sch-end-date">Dernière échéance au plus tard le</label>
+        <input id="sch-end-date" type="date" class="input" formControlName="endDate" />
+      </div>
+    } @else if (endMode() === 'count') {
+      <div>
+        <label class="field-label" for="sch-count">Nombre d’échéances</label>
+        <input
+          id="sch-count"
+          type="number"
+          min="1"
+          max="600"
+          class="input w-32"
+          formControlName="occurrences"
+        />
+      </div>
+    }
+    <p class="field-hint">
+      Les échéances sont prévues, jamais considérées comme payées : confirmez chacune (« Marquer comme
+      payé »), sautez-la ou ajustez-la pour un mois donné.
+    </p>
+    <div>
+      <label class="field-label" for="sch-notes">Notes (facultatives)</label>
+      <textarea id="sch-notes" class="input" rows="2" formControlName="notes"></textarea>
+    </div>
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      <ff-icon name="check" [size]="16" />{{ data.schedule ? 'Enregistrer' : 'Créer' }}
+    </button>
+  </div>
+</form>

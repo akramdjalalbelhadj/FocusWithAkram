@@ -17,7 +17,8 @@ backend/src/main/java/com/focusflow/
   pomodoro/        PomodoroSession (machine a etats), SessionType, SessionStatus, PomodoroService, dto/
   settings/        UserSettings (singleton), SettingsService, SettingsMapper, dto/
   dashboard/       indicateurs et Top 3 ; eisenhower/ matrice ; statistics/ agregations ; search/ recherche
-  finance/         module « Mes achats » : Account, Category, Operation, Money, FinanceDates, services,
+  finance/         module « Mes achats » : Account, Category, Operation, Schedule (echeancier), MonthlyBudget,
+                   FinancePreferences, Money, FinanceDates, services (comptes, operations, echeancier, budget),
                    FinanceOverviewService (bilan du mois), FinanceBackup (section de sauvegarde), dto/
   transfer/        export CSV/JSON, sauvegarde versionnee et import, dto/
 ```
@@ -87,9 +88,11 @@ Regles metier : [specification de « Mes achats »](../produit/mes-achats/specif
 - **Dates** : `LocalDate` dans le fuseau des preferences (`FinanceDates.today()`) ; une operation realisee ne peut pas etre datee dans le futur.
 - **Saisie** : creation et modification en remplacement complet (`PUT`) par des records valides ; les booleens facultatifs sont des `Boolean` (Jackson 3 refuse un primitif absent).
 - **Invariants** : `Operation.apply` verifie tout le brouillon (`Operation.Draft`) avant de modifier l'entite ; les memes regles existent en SQL.
-- **Migrations** : `V2__finance_core.sql` (tables), `V3__finance_default_categories.sql` (categories initiales). Additives : aucune donnee existante n'est modifiee.
+- **Echeanciers** : les echeances sont calculees depuis la date de depart (`Schedule.nth`, sans derive de fin de mois). Seule une echeance realisee, sautee ou ajustee est enregistree, comme operation liee (`schedule_id`, `due_date`, index unique) : une echeance ne peut pas etre payee deux fois. Les echeances a venir sont des operations **virtuelles** (`Operation.virtual`, jamais persistees) reutilisees par le budget, la vue d'ensemble et, plus tard, la prevision. Les echeances passees non confirmees restent proposees 92 jours (`ScheduleService.OVERDUE_LOOKBACK_DAYS`).
+- **Budget** : `BudgetService` combine operations du mois et echeances virtuelles ; plafond et objectif du mois (`fin_budget`) ou par defaut (`fin_preferences`) ; jauge OK / WARNING (seuil inclus jusqu'au plafond) / OVER calculee sur les valeurs exactes.
+- **Migrations** : `V2__finance_core.sql` (tables), `V3__finance_default_categories.sql` (categories initiales), `V4__finance_budget_schedules.sql` (preferences, budgets, echeanciers, lien operation-echeance). Additives : aucune donnee existante n'est modifiee.
 
-API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`).
+API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`), `schedules` (CRUD, `/{id}/pause|resume|end`, `/{id}/occurrences/{AAAA-MM-JJ}/complete|skip`, `PUT /{id}/occurrences/{date}`), `budget?month=` et `PUT budget/{AAAA-MM}`, `preferences` (GET/PUT).
 
 ## Sauvegarde et import
 
@@ -99,7 +102,7 @@ API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/rec
 | --- | --- |
 | 1 | projets, taches (etiquettes, sous-taches, cycles), sessions Pomodoro terminees |
 | 2 | v1 + preferences (`settings`) + Top 3 quotidien (`dailyGoals`) |
-| 3 | v2 + module « Mes achats » (`finance` : comptes, categories, operations) |
+| 3 | v2 + module « Mes achats » (`finance` : comptes, categories, echeanciers, operations, budgets, preferences) |
 
 L'import accepte toute version de 1 a `CURRENT_VERSION` (sections absentes ignorees) et refuse un fichier plus recent avec `IMPORT_UNSUPPORTED_VERSION`. Chaque element est valide avant ecriture (memes regles que les contraintes SQL) : un element invalide est signale dans `ImportReport.errors` sans interrompre les autres. Le mode apercu (`dryRun=true`) execute l'import puis annule la transaction : son rapport est exactement celui de l'import reel. Les doublons sont ignores (taches : meme identifiant, ou meme titre et date de creation ; projets : meme nom ; sessions et Top 3 : meme identifiant ou meme date et position). Une session n'est rattachee a une tache existante que si leurs identifiants concordent. Les preferences du fichier remplacent les preferences courantes, apres validation complete.
 

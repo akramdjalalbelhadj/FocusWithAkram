@@ -30,13 +30,18 @@
         {{ op().account.name }}
       }
     </p>
-    @if (op().status !== 'COMPLETED' || op().essential || op().exceptional) {
+    @if (op().status !== 'COMPLETED' || op().essential || op().exceptional || op().scheduleId) {
       <div class="flex flex-wrap gap-1 mt-1">
         @if (op().status !== 'COMPLETED') {
           <span
             class="badge"
             [class]="op().overdue ? 'badge-danger' : op().status === 'PLANNED' ? 'badge-brand' : ''"
             >{{ status() }}</span
+          >
+        }
+        @if (op().scheduleId) {
+          <span class="badge" title="Échéance d’un échéancier"
+            ><ff-icon name="repeat" [size]="11" />Échéance</span
           >
         }
         @if (op().essential) {
@@ -80,6 +85,14 @@
           op().type === 'INCOME' ? 'Marquer comme reçu' : 'Marquer comme payé'
         }}
       </button>
+      @if (op().scheduleId) {
+        <button cdkMenuItem class="menu-item" (click)="actions.adjust(op())">
+          <ff-icon name="pencil" [size]="16" />Ajuster cette échéance
+        </button>
+        <button cdkMenuItem class="menu-item" (click)="actions.skip(op())">
+          <ff-icon name="skip" [size]="16" />Sauter cette échéance
+        </button>
+      }
     }
     @if (editable()) {
       <button cdkMenuItem class="menu-item" (click)="actions.editOperation(op())">
@@ -96,7 +109,7 @@
         <ff-icon name="x" [size]="16" />Annuler
       </button>
     }
-    @if (op().type !== 'OPENING_BALANCE') {
+    @if (op().type !== 'OPENING_BALANCE' && !op().virtual) {
       <div class="menu-sep" role="separator"></div>
       <button cdkMenuItem class="menu-item danger" (click)="actions.delete(op())">
         <ff-icon name="trash" [size]="16" />Supprimer

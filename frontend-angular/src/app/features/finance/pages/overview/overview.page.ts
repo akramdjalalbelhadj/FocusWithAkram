@@ -10,7 +10,7 @@ import { ChartComponent, chartTheme } from '../../../../shared/ui/chart/chart';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { EmptyComponent, ErrorComponent, SkeletonComponent } from '../../../../shared/ui/states';
 import { OperationRowComponent } from '../../components/operation-row/operation-row';
-import { ACCOUNT_TYPE_LABEL, ACCOUNT_TYPES } from '../../finance-labels';
+import { ACCOUNT_TYPE_LABEL, ACCOUNT_TYPES, BUDGET_STATE } from '../../finance-labels';
 import { FinanceActions } from '../../services/finance-actions.service';
 
 /** Vue d'ensemble : soldes du jour, bilan du mois choisi, echeances et repartition des depenses. */
@@ -37,6 +37,8 @@ export class FinanceOverviewPage {
   protected readonly loader = new Loader(() => this.api.overview(this.month()));
   protected readonly data = computed(() => this.loader.data());
   protected readonly money = formatMoney;
+  protected readonly states = BUDGET_STATE;
+  protected readonly Math = Math;
   protected readonly typeLabel = ACCOUNT_TYPE_LABEL;
   protected readonly typeIcon = Object.fromEntries(ACCOUNT_TYPES.map((t) => [t.value, t.icon]));
 

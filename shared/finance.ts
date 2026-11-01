@@ -13,6 +13,11 @@ export type OperationType =
 export type OperationStatus = "PLANNED" | "COMPLETED" | "CANCELLED";
 export type Direction = "CREDIT" | "DEBIT";
 export type IncomeKind = "SALARY" | "BONUS" | "GIFT" | "SIDE_ACTIVITY" | "OTHER";
+export type ScheduleKind = "SALARY" | "SUBSCRIPTION" | "BILL" | "INSTALLMENT" | "OTHER";
+export type Frequency = "WEEKLY" | "MONTHLY" | "YEARLY";
+export type ScheduleStatus = "ACTIVE" | "PAUSED" | "ENDED";
+export type BudgetState = "NONE" | "OK" | "WARNING" | "OVER";
+export type ValueSource = "MONTH" | "DEFAULT" | "NONE";
 
 export interface FinanceAccount {
   id: string;
@@ -75,7 +80,8 @@ export interface CategoryRef {
 }
 
 export interface Operation {
-  id: string;
+  /** Absent pour une échéance calculée non encore enregistrée (`virtual`). */
+  id: string | null;
   account: AccountRef;
   targetAccount: AccountRef | null;
   type: OperationType;
@@ -97,6 +103,11 @@ export interface Operation {
   overdue: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Échéancier dont l'opération est l'échéance `dueDate`. */
+  scheduleId: string | null;
+  dueDate: string | null;
+  /** Échéance calculée, pas encore enregistrée : on la réalise, la saute ou l'ajuste depuis son échéancier. */
+  virtual: boolean;
 }
 
 export interface OperationBody {
@@ -140,6 +151,8 @@ export interface MonthTotals {
   exceptionalPaid: number;
   refunds: number;
   expensesPlanned: number;
+  essentialPlanned: number;
+  variablePlanned: number;
   savedToSavings: number;
   unspent: number;
 }
@@ -164,6 +177,89 @@ export interface FinanceOverview {
   byCategory: CategoryTotal[];
   upcoming: Operation[];
   overdueCount: number;
+  budget: BudgetGauge;
+  safetyReserve: number;
+}
+
+/** Jauge du plafond variable : vert (OK), orange (WARNING, du seuil au plafond), rouge (OVER) ou NONE. */
+export interface BudgetGauge {
+  cap: number | null;
+  used: number;
+  remaining: number | null;
+  percent: number | null;
+  state: BudgetState;
+}
+
+export interface BudgetView {
+  month: string;
+  variableCap: number | null;
+  capSource: ValueSource;
+  savingsTarget: number | null;
+  savingsTargetSource: ValueSource;
+  warningPercent: number;
+  totals: MonthTotals;
+  essentialExpected: number;
+  variableRemaining: number | null;
+  variableUsedPercent: number | null;
+  state: BudgetState;
+  /** Revenus attendus − indispensables attendues − plafond variable (null sans plafond). */
+  theoreticalSavings: number | null;
+  incomes: Operation[];
+  essentials: Operation[];
+  plannedVariable: Operation[];
+}
+
+export interface BudgetBody {
+  variableCap: number | null;
+  savingsTarget: number | null;
+}
+
+export interface FinancePreferences {
+  safetyReserve: number;
+  savingsFloor: number;
+  defaultVariableCap: number | null;
+  defaultSavingsTarget: number | null;
+  warningPercent: number;
+}
+
+export interface Schedule {
+  id: string;
+  label: string;
+  type: "INCOME" | "EXPENSE";
+  kind: ScheduleKind;
+  account: AccountRef;
+  category: CategoryRef | null;
+  incomeKind: IncomeKind | null;
+  amount: number;
+  essential: boolean;
+  frequency: Frequency;
+  intervalCount: number;
+  startDate: string;
+  endDate: string | null;
+  status: ScheduleStatus;
+  notes: string | null;
+  nextDueDate: string | null;
+  monthlyEquivalent: number;
+  annualEquivalent: number;
+  hasOperations: boolean;
+}
+
+export interface ScheduleBody {
+  label: string;
+  type: "INCOME" | "EXPENSE";
+  kind: ScheduleKind;
+  accountId: string;
+  categoryId: string | null;
+  incomeKind: IncomeKind | null;
+  amount: number;
+  essential: boolean;
+  frequency: Frequency;
+  intervalCount: number;
+  startDate: string;
+  endDate: string | null;
+  /** Paiement en plusieurs fois : nombre d'échéances (fixe la date de fin). */
+  occurrences: number | null;
+  notes: string | null;
 }
 
 export interface FinanceImportSummary {
@@ -173,4 +269,8 @@ export interface FinanceImportSummary {
   categoriesReused: number;
   operationsCreated: number;
   operationsSkipped: number;
+  schedulesCreated: number;
+  schedulesSkipped: number;
+  budgetsRestored: number;
+  preferencesRestored: boolean;
 }

@@ -2,13 +2,23 @@ import { Dialog } from '@angular/cdk/dialog';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 import { FinanceApi } from '../../../core/api/finance.api';
-import { FinanceAccount, FinanceCategory, Operation, OperationBody } from '../../../core/api/models';
+import {
+  FinanceAccount,
+  FinanceCategory,
+  FinancePreferences,
+  Operation,
+  OperationBody,
+  Schedule,
+  ScheduleKind,
+} from '../../../core/api/models';
 import { RefreshService } from '../../../core/services/refresh.service';
 import { SettingsStore } from '../../../core/services/settings.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { formatMoney } from '../../../core/util/money';
 import { ConfirmData, ConfirmDialogComponent } from '../../../shared/ui/dialogs';
 import { AccountDialogComponent } from '../components/account-dialog/account-dialog';
+import { BudgetDialogComponent, BudgetDialogData } from '../components/budget-dialog/budget-dialog';
+import { ScheduleDialogComponent } from '../components/schedule-dialog/schedule-dialog';
 import {
   AmountDialogComponent,
   AmountDialogData,
@@ -53,7 +63,7 @@ export class FinanceActions {
       accountId: expense.account.id,
       categoryId: expense.category?.id,
       label: `Remboursement — ${expense.label}`,
-      refundOfId: expense.id,
+      refundOfId: expense.id ?? undefined,
     });
   }
 
@@ -70,26 +80,74 @@ export class FinanceActions {
       confirmLabel: 'Valider',
     });
     if (!result?.date) return false;
-    return this.run(() => this.api.complete(op.id, result.amount, result.date!), 'Opération réalisée.');
+    const date = result.date;
+    if (op.scheduleId && op.dueDate) {
+      const scheduleId = op.scheduleId;
+      const due = op.dueDate;
+      return this.run(
+        () => this.api.completeOccurrence(scheduleId, due, result.amount, date),
+        'Échéance réalisée.',
+      );
+    }
+    const id = op.id;
+    return !!id && this.run(() => this.api.complete(id, result.amount, date), 'Opération réalisée.');
+  }
+
+  /** Saute une échéance (mois sans salaire, abonnement non renouvelé) : elle n'est plus attendue. */
+  async skip(op: Operation): Promise<boolean> {
+    if (!op.scheduleId || !op.dueDate) return false;
+    const scheduleId = op.scheduleId;
+    const due = op.dueDate;
+    const ok = await this.confirm({
+      title: 'Sauter cette échéance ?',
+      message: `« ${op.label} » du ${due.split('-').reverse().join('/')} ne sera plus attendue. L’échéancier continue pour les suivantes.`,
+      confirmLabel: 'Sauter',
+    });
+    return ok && this.run(() => this.api.skipOccurrence(scheduleId, due), 'Échéance sautée.');
+  }
+
+  /** Ajuste le montant ou la date d'une seule échéance, sans modifier l'échéancier. */
+  async adjust(op: Operation): Promise<boolean> {
+    if (!op.scheduleId || !op.dueDate) return false;
+    const scheduleId = op.scheduleId;
+    const due = op.dueDate;
+    const result = await this.askAmount({
+      title: 'Ajuster cette échéance',
+      message: `${op.label} : montant et date prévus pour cette fois seulement.`,
+      amountLabel: 'Montant prévu',
+      amount: op.amount,
+      date: op.date,
+      confirmLabel: 'Ajuster',
+    });
+    if (!result?.date) return false;
+    const date = result.date;
+    return this.run(
+      () => this.api.adjustOccurrence(scheduleId, due, result.amount, date),
+      'Échéance ajustée.',
+    );
   }
 
   async cancel(op: Operation): Promise<boolean> {
+    const id = op.id;
+    if (!id) return false;
     const ok = await this.confirm({
       title: 'Annuler l’opération ?',
       message: `« ${op.label} » restera dans l’historique, sans effet sur les soldes ni les budgets.`,
       confirmLabel: 'Annuler l’opération',
     });
-    return ok && this.run(() => this.api.cancel(op.id), 'Opération annulée.');
+    return ok && this.run(() => this.api.cancel(id), 'Opération annulée.');
   }
 
   async delete(op: Operation): Promise<boolean> {
+    const id = op.id;
+    if (!id) return false;
     const ok = await this.confirm({
       title: 'Supprimer l’opération ?',
       message: `« ${op.label} » (${formatMoney(op.amount)}) sera définitivement effacée. Pour une opération qui n’a pas eu lieu, préférez « Annuler », qui la conserve dans l’historique.`,
       confirmLabel: 'Supprimer',
       danger: true,
     });
-    return ok && this.run(() => this.api.deleteOperation(op.id), 'Opération supprimée.');
+    return ok && this.run(() => this.api.deleteOperation(id), 'Opération supprimée.');
   }
 
   async editAccount(account: FinanceAccount | null): Promise<boolean> {
@@ -176,6 +234,53 @@ export class FinanceActions {
       danger: true,
     });
     return ok && this.run(() => this.api.deleteCategory(category.id), 'Catégorie supprimée.');
+  }
+
+  async editSchedule(schedule: Schedule | null, kind?: ScheduleKind): Promise<boolean> {
+    const ok = await firstValueFrom(
+      this.dialog.open<boolean>(ScheduleDialogComponent, {
+        data: { schedule, kind },
+        backdropClass: 'ff-backdrop',
+      }).closed,
+    );
+    if (ok) this.done(schedule ? 'Échéancier modifié.' : 'Échéancier créé.');
+    return !!ok;
+  }
+
+  async scheduleAction(schedule: Schedule, action: 'pause' | 'resume' | 'end'): Promise<boolean> {
+    if (action === 'end') {
+      const ok = await this.confirm({
+        title: 'Résilier l’échéancier ?',
+        message: `« ${schedule.label} » ne produira plus d’échéance après aujourd’hui. Son historique est conservé.`,
+        confirmLabel: 'Résilier',
+        danger: true,
+      });
+      if (!ok) return false;
+    }
+    const messages = { pause: 'Échéancier suspendu.', resume: 'Échéancier repris.', end: 'Échéancier résilié.' };
+    return this.run(() => this.api.scheduleAction(schedule.id, action), messages[action]);
+  }
+
+  async deleteSchedule(schedule: Schedule): Promise<boolean> {
+    const ok = await this.confirm({
+      title: 'Supprimer l’échéancier ?',
+      message: `« ${schedule.label} » n’a aucune échéance enregistrée : il sera définitivement supprimé.`,
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    return ok && this.run(() => this.api.deleteSchedule(schedule.id), 'Échéancier supprimé.');
+  }
+
+  async editBudget(data: BudgetDialogData): Promise<boolean> {
+    const ok = await firstValueFrom(
+      this.dialog.open<boolean>(BudgetDialogComponent, { data, backdropClass: 'ff-backdrop' }).closed,
+    );
+    if (ok) this.done('Budget enregistré.');
+    return !!ok;
+  }
+
+  savePreferences(body: FinancePreferences): Promise<boolean> {
+    return this.run(() => this.api.updatePreferences(body), 'Préférences enregistrées.');
   }
 
   private async openOperation(data: OperationDialogData, success: string): Promise<boolean> {

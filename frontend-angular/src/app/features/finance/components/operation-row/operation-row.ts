@@ -46,7 +46,8 @@ export class OperationRowComponent {
   protected readonly status = computed(() => statusLabel(this.op()));
   protected readonly typeLabel = computed(() => OPERATION_TYPE_LABEL[this.op().type]);
   protected readonly editable = computed(
-    () => this.op().type !== 'OPENING_BALANCE' && this.op().type !== 'ADJUSTMENT',
+    () =>
+      !this.op().virtual && this.op().type !== 'OPENING_BALANCE' && this.op().type !== 'ADJUSTMENT',
   );
   protected readonly money = formatMoney;
   protected readonly longDate = longDate;

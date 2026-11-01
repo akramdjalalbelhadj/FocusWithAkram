@@ -111,6 +111,10 @@ Le module **Mes achats** (menu, ou G puis B) suit votre argent réel. Ses règle
 8. **Annuler ou supprimer** : « Annuler » garde l’opération dans l’historique sans effet ; « Supprimer » l’efface (erreur de saisie). Le solde initial ne se supprime pas : il se corrige.
 9. **Catégories** : dans **Réglages**, créez, renommez, déplacez ou archivez catégories et sous-catégories. Une catégorie déjà utilisée s’archive au lieu d’être supprimée, pour que l’historique reste lisible.
 
+10. **Échéancier** : déclarez votre salaire, vos abonnements, charges fixes et paiements en plusieurs fois (montant habituel, périodicité, première échéance, fin éventuelle). Leurs échéances apparaissent comme **prévues** dans la vue d’ensemble et le budget, jamais comme payées : menu **⋯ → Marquer comme payé / reçu** (montant réel), **Ajuster cette échéance** (autre montant ou date pour cette fois) ou **Sauter cette échéance** (mois sans salaire, abonnement non renouvelé). Suspendez, reprenez ou résiliez un échéancier ; son historique est conservé.
+11. **Budget** : fixez pour le mois un **plafond des dépenses variables** et un **objectif d’épargne** (ou des valeurs par défaut dans **Réglages**). La jauge est verte, orange à partir du seuil d’alerte (80 % par défaut), rouge au-delà du plafond ; une dépense réelle n’est jamais bloquée. Le budget affiche aussi les revenus reçus et attendus, les dépenses indispensables du mois et l’épargne théorique (revenus attendus − indispensables − plafond).
+12. **Préférences financières** (Réglages) : réserve de sécurité, plancher d’épargne, plafond et objectif par défaut, seuil d’alerte.
+
 La **Vue d’ensemble** montre le disponible, l’épargne, les revenus reçus et attendus, les dépenses du mois (indispensables et variables), le non dépensé, les opérations à venir ou en retard et la répartition par catégorie. **Opérations** filtre l’historique par période, type, statut, compte, catégorie, nature, montant et texte.
 
 ## 12. Recherche et raccourcis

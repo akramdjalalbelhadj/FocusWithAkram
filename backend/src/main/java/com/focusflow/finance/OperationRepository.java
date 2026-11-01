@@ -60,4 +60,13 @@ public interface OperationRepository extends JpaRepository<Operation, UUID>, Jpa
     @EntityGraph(attributePaths = {"account", "targetAccount", "category", "category.parent", "refundOf"})
     @Query("select o from Operation o order by o.date asc, o.createdAt asc")
     List<Operation> findAllForBackup();
+
+    /** Echeances enregistrees (realisees, sautees ou ajustees) dont la date d'echeance tombe dans [from, to]. */
+    @EntityGraph(attributePaths = {"account", "category", "category.parent", "schedule"})
+    @Query("select o from Operation o where o.schedule is not null and o.dueDate between :from and :to")
+    List<Operation> findOccurrencesBetween(LocalDate from, LocalDate to);
+
+    java.util.Optional<Operation> findByScheduleIdAndDueDate(UUID scheduleId, LocalDate dueDate);
+
+    boolean existsByScheduleId(UUID scheduleId);
 }

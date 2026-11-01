@@ -22,6 +22,8 @@ export class FinanceShellPage {
   protected readonly tabs = [
     { path: 'overview', label: 'Vue d’ensemble', icon: 'dashboard' },
     { path: 'operations', label: 'Opérations', icon: 'receipt' },
+    { path: 'budget', label: 'Budget', icon: 'target' },
+    { path: 'schedules', label: 'Échéancier', icon: 'repeat' },
     { path: 'settings', label: 'Réglages', icon: 'settings' },
   ];
   protected readonly needsSetup = computed(

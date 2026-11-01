@@ -8,6 +8,7 @@ import com.focusflow.finance.dto.OperationResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,11 +28,16 @@ public class FinanceOverviewService {
 
     private final AccountService accounts;
     private final OperationRepository operations;
+    private final ScheduleService schedules;
+    private final BudgetService budgets;
     private final FinanceDates dates;
 
-    public FinanceOverviewService(AccountService accounts, OperationRepository operations, FinanceDates dates) {
+    public FinanceOverviewService(AccountService accounts, OperationRepository operations, ScheduleService schedules,
+                                  BudgetService budgets, FinanceDates dates) {
         this.accounts = accounts;
         this.operations = operations;
+        this.schedules = schedules;
+        this.budgets = budgets;
         this.dates = dates;
     }
 
@@ -49,24 +55,31 @@ public class FinanceOverviewService {
                 savings = savings.add(a.balance());
             }
         }
-        List<Operation> ops = operations.findBetween(m.atDay(1), m.atEndOfMonth());
-        List<Operation> planned = operations.findPlannedUntil(today.plusDays(UPCOMING_DAYS));
-        List<OperationResponse> upcoming = planned.stream().map(o -> FinanceMapper.toResponse(o, today)).toList();
+        List<Operation> plan = budgets.monthPlan(m);
+        MonthTotals totals = totals(plan);
+        // A venir : operations prevues et echeances calculees, des retards encore proposes aux 30 prochains jours.
+        List<Operation> planned = new ArrayList<>(operations.findPlannedUntil(today.plusDays(UPCOMING_DAYS)));
+        planned.addAll(schedules.virtualOccurrences(schedules.overdueWindowStart(), today.plusDays(UPCOMING_DAYS)));
+        List<OperationResponse> upcoming = planned.stream()
+                .sorted(Comparator.comparing(Operation::getDate))
+                .map(o -> FinanceMapper.toResponse(o, today)).toList();
         int overdue = (int) upcoming.stream().filter(OperationResponse::overdue).count();
-        return new FinanceOverview(m, today, all, available, savings, totals(ops), byCategory(ops), upcoming, overdue);
+        return new FinanceOverview(m, today, all, available, savings, totals, byCategory(plan), upcoming, overdue,
+                budgets.gauge(m, totals), budgets.preferences().getSafetyReserve());
     }
 
     /** Bilan d'un ensemble d'operations ; voir {@link MonthTotals} pour la definition de chaque montant. */
     static MonthTotals totals(List<Operation> ops) {
         BigDecimal incomeExpected = Money.ZERO, incomeReceived = Money.ZERO, expenses = Money.ZERO,
                 essential = Money.ZERO, variable = Money.ZERO, exceptional = Money.ZERO, refunds = Money.ZERO,
-                expensesPlanned = Money.ZERO, saved = Money.ZERO;
+                expensesPlanned = Money.ZERO, essentialPlanned = Money.ZERO, variablePlanned = Money.ZERO,
+                saved = Money.ZERO;
         for (Operation o : ops) {
             boolean done = o.getStatus() == OperationStatus.COMPLETED;
             switch (o.getType()) {
                 case INCOME -> {
                     if (o.getStatus() != OperationStatus.CANCELLED) {
-                        incomeExpected = incomeExpected.add(o.getPlannedAmount() != null ? o.getPlannedAmount() : o.getAmount());
+                        incomeExpected = incomeExpected.add(o.expectedAmount());
                     }
                     if (done) incomeReceived = incomeReceived.add(o.getAmount());
                 }
@@ -78,6 +91,8 @@ public class FinanceOverviewService {
                         if (o.isExceptional()) exceptional = exceptional.add(o.getAmount());
                     } else if (o.getStatus() == OperationStatus.PLANNED) {
                         expensesPlanned = expensesPlanned.add(o.getAmount());
+                        if (o.isEssential()) essentialPlanned = essentialPlanned.add(o.getAmount());
+                        else variablePlanned = variablePlanned.add(o.getAmount());
                     }
                 }
                 case PURCHASE_REFUND -> {
@@ -104,7 +119,7 @@ public class FinanceOverviewService {
         }
         BigDecimal unspent = incomeReceived.subtract(expenses).subtract(saved);
         return new MonthTotals(incomeExpected, incomeReceived, expenses, essential, variable, exceptional, refunds,
-                expensesPlanned, saved, unspent);
+                expensesPlanned, essentialPlanned, variablePlanned, saved, unspent);
     }
 
     /** Depenses payees nettes par categorie racine, de la plus couteuse a la moins couteuse. */

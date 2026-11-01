@@ -1,0 +1,61 @@
+<form
+  class="card w-[min(28rem,calc(100vw-1.5rem))] p-6 anim-pop shadow-modal"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="bud-title"
+>
+  <h2 id="bud-title" class="text-lg font-bold mb-1">Budget de {{ data.monthTitle }}</h2>
+  <p class="text-sm text-muted mb-4">
+    Laissez un champ vide pour reprendre la valeur par défaut définie dans Réglages.
+  </p>
+  <div class="space-y-4">
+    <div>
+      <label class="field-label" for="bud-cap">Plafond des dépenses variables</label>
+      <div class="relative">
+        <input
+          id="bud-cap"
+          name="cap"
+          class="input pr-8 text-right tabular-nums"
+          inputmode="decimal"
+          autocomplete="off"
+          [placeholder]="data.budget.capSource === 'DEFAULT' ? money(data.budget.variableCap) + ' (défaut)' : 'Aucun'"
+          [ngModel]="cap()"
+          (ngModelChange)="cap.set($event); error.set('')"
+          cdkFocusInitial
+        />
+        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
+      </div>
+      <p class="field-hint">
+        Dépenses non indispensables du mois (restaurants, loisirs…). Un dépassement est signalé, jamais
+        bloqué.
+      </p>
+    </div>
+    <div>
+      <label class="field-label" for="bud-target">Objectif d’épargne du mois</label>
+      <div class="relative">
+        <input
+          id="bud-target"
+          name="target"
+          class="input pr-8 text-right tabular-nums"
+          inputmode="decimal"
+          autocomplete="off"
+          [placeholder]="
+            data.budget.savingsTargetSource === 'DEFAULT'
+              ? money(data.budget.savingsTarget) + ' (défaut)'
+              : 'Aucun'
+          "
+          [ngModel]="target()"
+          (ngModelChange)="target.set($event); error.set('')"
+        />
+        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
+      </div>
+    </div>
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">Enregistrer</button>
+  </div>
+</form>
