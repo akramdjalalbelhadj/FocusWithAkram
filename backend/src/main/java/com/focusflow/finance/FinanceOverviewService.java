@@ -73,7 +73,7 @@ public class FinanceOverviewService {
         BigDecimal incomeExpected = Money.ZERO, incomeReceived = Money.ZERO, expenses = Money.ZERO,
                 essential = Money.ZERO, variable = Money.ZERO, exceptional = Money.ZERO, refunds = Money.ZERO,
                 expensesPlanned = Money.ZERO, essentialPlanned = Money.ZERO, variablePlanned = Money.ZERO,
-                saved = Money.ZERO;
+                goalPurchases = Money.ZERO, saved = Money.ZERO;
         for (Operation o : ops) {
             boolean done = o.getStatus() == OperationStatus.COMPLETED;
             switch (o.getType()) {
@@ -86,7 +86,9 @@ public class FinanceOverviewService {
                 case EXPENSE -> {
                     if (done) {
                         expenses = expenses.add(o.getAmount());
-                        if (o.isEssential()) essential = essential.add(o.getAmount());
+                        // Un achat d'objectif compte dans les depenses mais pas dans le plafond variable (D4).
+                        if (o.getGoal() != null) goalPurchases = goalPurchases.add(o.getAmount());
+                        else if (o.isEssential()) essential = essential.add(o.getAmount());
                         else variable = variable.add(o.getAmount());
                         if (o.isExceptional()) exceptional = exceptional.add(o.getAmount());
                     } else if (o.getStatus() == OperationStatus.PLANNED) {
@@ -100,7 +102,9 @@ public class FinanceOverviewService {
                         refunds = refunds.add(o.getAmount());
                         expenses = expenses.subtract(o.getAmount());
                         // Un remboursement reduit la famille de depense d'origine ; sans origine connue, le variable.
-                        if (o.getRefundOf() != null && o.getRefundOf().isEssential()) essential = essential.subtract(o.getAmount());
+                        Operation origin = o.getRefundOf();
+                        if (origin != null && origin.getGoal() != null) goalPurchases = goalPurchases.subtract(o.getAmount());
+                        else if (origin != null && origin.isEssential()) essential = essential.subtract(o.getAmount());
                         else variable = variable.subtract(o.getAmount());
                     }
                 }
@@ -119,7 +123,7 @@ public class FinanceOverviewService {
         }
         BigDecimal unspent = incomeReceived.subtract(expenses).subtract(saved);
         return new MonthTotals(incomeExpected, incomeReceived, expenses, essential, variable, exceptional, refunds,
-                expensesPlanned, essentialPlanned, variablePlanned, saved, unspent);
+                expensesPlanned, essentialPlanned, variablePlanned, goalPurchases, saved, unspent);
     }
 
     /** Depenses payees nettes par categorie racine, de la plus couteuse a la moins couteuse. */

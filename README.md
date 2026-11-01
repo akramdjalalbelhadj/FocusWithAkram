@@ -1,6 +1,6 @@
 # FocusWithAkram
 
-Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros. Le module de finances personnelles **« Mes achats »** est en cours de livraison : comptes, opérations, catégories, bilan mensuel, échéancier (salaire, abonnements, charges) et budget sont disponibles ; achats prévus et faisabilité, prêts et analyses suivent (voir le [suivi de la refonte v2](docs/suivi/refonte-v2.md)).
+Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros. Le module de finances personnelles **« Mes achats »** est en cours de livraison : comptes, opérations, catégories, bilan mensuel, échéancier (salaire, abonnements, charges), budget, achats prévus avec matrice, prévision de trésorerie et calcul de faisabilité sont disponibles ; prêts, statistiques, alertes et simulations suivent (voir le [suivi de la refonte v2](docs/suivi/refonte-v2.md)).
 
 Toute la documentation est indexée dans [docs/README.md](docs/README.md).
 

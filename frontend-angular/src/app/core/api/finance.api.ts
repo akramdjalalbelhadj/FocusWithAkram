@@ -10,11 +10,16 @@ import {
   FinanceCategory,
   FinanceOverview,
   FinancePreferences,
+  Forecast,
+  Goal,
+  GoalBody,
+  GoalFeasibility,
   Operation,
   OperationBody,
   OperationQuery,
   OperationType,
   Page,
+  PurchaseBody,
   Schedule,
   ScheduleBody,
   UpdateAccountBody,
@@ -166,5 +171,53 @@ export class FinanceApi {
 
   updatePreferences(body: FinancePreferences): Observable<FinancePreferences> {
     return this.http.put<FinancePreferences>(`${BASE}/preferences`, body);
+  }
+
+  // ---- Achats prévus et prévision ----
+
+  forecast(): Observable<Forecast> {
+    return this.http.get<Forecast>(`${BASE}/forecast`);
+  }
+
+  goals(): Observable<Goal[]> {
+    return this.http.get<Goal[]>(`${BASE}/goals`);
+  }
+
+  previewGoal(body: GoalBody, id: string | null): Observable<GoalFeasibility> {
+    return this.http.post<GoalFeasibility>(`${BASE}/goals/preview`, body, {
+      params: id ? { id } : {},
+    });
+  }
+
+  createGoal(body: GoalBody): Observable<Goal> {
+    return this.http.post<Goal>(`${BASE}/goals`, body);
+  }
+
+  updateGoal(id: string, body: GoalBody): Observable<Goal> {
+    return this.http.put<Goal>(`${BASE}/goals/${id}`, body);
+  }
+
+  deleteGoal(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/goals/${id}`);
+  }
+
+  reserveGoal(id: string, amount: number): Observable<Goal> {
+    return this.http.put<Goal>(`${BASE}/goals/${id}/reservation`, { amount });
+  }
+
+  purchaseGoal(id: string, body: PurchaseBody): Observable<Goal> {
+    return this.http.post<Goal>(`${BASE}/goals/${id}/purchase`, body);
+  }
+
+  postponeGoal(id: string, targetDate: string): Observable<Goal> {
+    return this.http.post<Goal>(`${BASE}/goals/${id}/postpone`, { targetDate });
+  }
+
+  goalAction(id: string, action: 'abandon' | 'reopen'): Observable<Goal> {
+    return this.http.post<Goal>(`${BASE}/goals/${id}/${action}`, {});
+  }
+
+  moveGoal(id: string, important: boolean, urgent: boolean, position: number): Observable<Goal> {
+    return this.http.put<Goal>(`${BASE}/goals/${id}/position`, { important, urgent, position });
   }
 }

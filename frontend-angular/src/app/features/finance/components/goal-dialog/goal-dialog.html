@@ -1,0 +1,172 @@
+<form
+  class="card w-[min(46rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="goal-title"
+>
+  <h2 id="goal-title" class="text-lg font-bold mb-4">
+    {{ data.goal ? 'Modifier l’achat prévu' : 'Nouvel achat prévu' }}
+  </h2>
+
+  <div class="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-5">
+    <div class="space-y-4">
+      <div>
+        <label class="field-label" for="goal-name">Produit ou service</label>
+        <input
+          id="goal-name"
+          class="input"
+          formControlName="name"
+          maxlength="120"
+          placeholder="Samsung Galaxy Watch"
+          cdkFocusInitial
+        />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label" for="goal-price">Prix estimé</label>
+          <input
+            id="goal-price"
+            class="input text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="estimatedPrice"
+            placeholder="0,00"
+          />
+        </div>
+        <div>
+          <label class="field-label" for="goal-max">Maximum acceptable</label>
+          <input
+            id="goal-max"
+            class="input text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="maxPrice"
+            placeholder="Facultatif"
+          />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label" for="goal-date">Date cible</label>
+          <input id="goal-date" type="date" class="input" formControlName="targetDate" />
+        </div>
+        <div>
+          <label class="field-label" for="goal-status">Statut</label>
+          <select id="goal-status" class="input" formControlName="status">
+            <option value="CONSIDERED">Envisagé</option>
+            <option value="PLANNED">Planifié</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="field-label" for="goal-cat">Catégorie (facultative)</label>
+        <select id="goal-cat" class="input" formControlName="categoryId">
+          <option value="">Aucune</option>
+          @for (c of categories(); track c.id) {
+            <optgroup [label]="c.name">
+              <option [value]="c.id">{{ c.name }} (général)</option>
+              @for (s of c.children; track s.id) {
+                <option [value]="s.id">{{ s.name }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+      </div>
+      <fieldset>
+        <legend class="field-label">Priorité</legend>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-start gap-2 rounded-xl border border-line p-2.5 cursor-pointer hover:bg-surface-2">
+            <input type="checkbox" class="mt-0.5 size-4 accent-[var(--brand)]" formControlName="important" />
+            <span class="text-sm"
+              ><span class="font-semibold">Important</span
+              ><span class="block text-muted text-xs">Un vrai besoin</span></span
+            >
+          </label>
+          <label class="flex items-start gap-2 rounded-xl border border-line p-2.5 cursor-pointer hover:bg-surface-2">
+            <input type="checkbox" class="mt-0.5 size-4 accent-[var(--brand)]" formControlName="urgent" />
+            <span class="text-sm"
+              ><span class="font-semibold">Urgent</span
+              ><span class="block text-muted text-xs">Échéance proche</span></span
+            >
+          </label>
+        </div>
+      </fieldset>
+      <label class="flex items-start gap-2 rounded-xl border border-line p-2.5 cursor-pointer hover:bg-surface-2">
+        <input type="checkbox" class="mt-0.5 size-4 accent-[var(--brand)]" formControlName="fundedBySavings" />
+        <span class="text-sm"
+          ><span class="font-semibold">Financé par l’épargne</span
+          ><span class="block text-muted text-xs"
+            >Peut puiser dans l’épargne, sans descendre sous le plancher fixé dans Réglages</span
+          ></span
+        >
+      </label>
+      <div>
+        <label class="field-label" for="goal-desc">Description (facultative)</label>
+        <textarea id="goal-desc" class="input" rows="2" formControlName="description"></textarea>
+      </div>
+    </div>
+
+    <aside class="rounded-2xl bg-surface-2 p-4 self-start" aria-live="polite" aria-labelledby="goal-feas">
+      <h3 id="goal-feas" class="text-sm font-bold mb-2">Faisabilité</h3>
+      @if (preview().feasibility; as f) {
+        <span class="badge" [class]="verdicts[f.verdict].badge"
+          ><ff-icon [name]="verdicts[f.verdict].icon" [size]="12" />{{ verdicts[f.verdict].label }}</span
+        >
+        <p class="text-sm mt-2">{{ sentence() }}</p>
+        <dl class="mt-3 space-y-1 text-sm">
+          @for (row of details(); track row.label) {
+            <div class="flex justify-between gap-2">
+              <dt class="text-muted">{{ row.label }}</dt>
+              <dd class="font-semibold tabular-nums text-right">{{ row.value }}</dd>
+            </div>
+          }
+        </dl>
+        @for (n of notes(); track n) {
+          <p class="text-xs text-muted mt-2 flex gap-1"><ff-icon name="info" [size]="12" class="mt-0.5" />{{ n }}</p>
+        }
+        @if (f.verdict === 'NOT_FEASIBLE' || f.verdict === 'RISKY') {
+          <p class="text-xs font-semibold text-muted uppercase tracking-wide mt-4 mb-1.5">Possibilités</p>
+          <div class="flex flex-col gap-1.5">
+            @if (f.feasibleDate && f.feasibleDate !== f.evaluatedDate) {
+              <button type="button" class="btn btn-secondary btn-sm justify-start" (click)="postponeTo(f.feasibleDate)">
+                <ff-icon name="calendar" [size]="14" />Reporter au {{ longDate(f.feasibleDate) }}
+              </button>
+            }
+            @if (f.affordableAtDate > 0 && f.affordableAtDate < f.need) {
+              <button type="button" class="btn btn-secondary btn-sm justify-start" (click)="reduceTo(f.affordableAtDate)">
+                <ff-icon name="trending-down" [size]="14" />Réduire le budget à {{ money(f.affordableAtDate) }}
+              </button>
+            }
+            @if (f.monthlyEffort) {
+              <p class="text-sm rounded-lg bg-surface p-2">
+                <ff-icon name="piggy-bank" [size]="14" class="align-[-2px]" /> Ou mettre de côté
+                <strong>{{ money(f.monthlyEffort) }}</strong> de plus chaque mois d’ici la date cible.
+              </p>
+            }
+            @if (!form.value.important) {
+              <button type="button" class="btn btn-secondary btn-sm justify-start" (click)="raisePriority()">
+                <ff-icon name="flag" [size]="14" />Le rendre prioritaire (important)
+              </button>
+            }
+          </div>
+          <p class="text-xs text-muted mt-2">Vous pouvez aussi enregistrer l’objectif tel quel.</p>
+        }
+      } @else if (preview().loading) {
+        <p class="text-sm text-muted">Calcul en cours…</p>
+      } @else {
+        <p class="text-sm text-muted">Saisissez un nom, un prix et une date pour évaluer l’achat.</p>
+      }
+    </aside>
+  </div>
+
+  @if (error()) {
+    <p class="field-error mt-3" role="alert">{{ error() }}</p>
+  }
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ data.goal ? 'Enregistrer' : 'Ajouter l’achat' }}
+    </button>
+  </div>
+</form>

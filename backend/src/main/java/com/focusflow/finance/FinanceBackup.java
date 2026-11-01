@@ -3,6 +3,7 @@ package com.focusflow.finance;
 import com.focusflow.finance.dto.FinanceBackupData;
 import com.focusflow.finance.dto.FinanceBackupData.AccountData;
 import com.focusflow.finance.dto.FinanceBackupData.BudgetData;
+import com.focusflow.finance.dto.FinanceBackupData.GoalData;
 import com.focusflow.finance.dto.FinanceBackupData.CategoryData;
 import com.focusflow.finance.dto.FinanceBackupData.OperationData;
 import com.focusflow.finance.dto.FinanceBackupData.PreferencesData;
@@ -36,18 +37,20 @@ public class FinanceBackup {
     private final OperationRepository operations;
     private final ScheduleRepository schedules;
     private final MonthlyBudgetRepository budgets;
+    private final GoalRepository goals;
     private final FinancePreferencesRepository preferences;
     private final FinanceDates dates;
     private final Clock clock;
 
     public FinanceBackup(AccountRepository accounts, CategoryRepository categories, OperationRepository operations,
-                         ScheduleRepository schedules, MonthlyBudgetRepository budgets,
+                         ScheduleRepository schedules, MonthlyBudgetRepository budgets, GoalRepository goals,
                          FinancePreferencesRepository preferences, FinanceDates dates, Clock clock) {
         this.accounts = accounts;
         this.categories = categories;
         this.operations = operations;
         this.schedules = schedules;
         this.budgets = budgets;
+        this.goals = goals;
         this.preferences = preferences;
         this.dates = dates;
         this.clock = clock;
@@ -71,6 +74,12 @@ public class FinanceBackup {
                                 s.isEssential(), s.getFrequency(), s.getIntervalCount(), s.getStartDate(), s.getEndDate(),
                                 s.getStatus(), s.getNotes(), s.getCreatedAt(), s.getUpdatedAt()))
                         .toList(),
+                goals.findAllOrdered().stream()
+                        .map(g -> new GoalData(g.getId(), g.getName(), g.getCategory() == null ? null : g.getCategory().getId(),
+                                g.getDescription(), g.getEstimatedPrice(), g.getMaxPrice(), g.getTargetDate(), g.isImportant(),
+                                g.isUrgent(), g.getStatus(), g.getReservedAmount(), g.isFundedBySavings(), g.getPosition(),
+                                g.getNotes(), g.getCreatedAt(), g.getUpdatedAt()))
+                        .toList(),
                 operations.findAllForBackup().stream()
                         .map(o -> new OperationData(o.getId(), o.getAccount().getId(),
                                 o.getTargetAccount() == null ? null : o.getTargetAccount().getId(), o.getType(),
@@ -78,7 +87,8 @@ public class FinanceBackup {
                                 o.getCategory() == null ? null : o.getCategory().getId(), o.getIncomeKind(), o.getLabel(),
                                 o.getDescription(), o.isEssential(), o.isExceptional(),
                                 o.getRefundOf() == null ? null : o.getRefundOf().getId(), o.getCreatedAt(), o.getUpdatedAt(),
-                                o.getSchedule() == null ? null : o.getSchedule().getId(), o.getDueDate()))
+                                o.getSchedule() == null ? null : o.getSchedule().getId(), o.getDueDate(),
+                                o.getGoal() == null ? null : o.getGoal().getId()))
                         .toList(),
                 budgets.findAllByOrderByMonthAsc().stream()
                         .map(b -> new BudgetData(b.getMonth(), b.getVariableCap(), b.getSavingsTarget()))
@@ -93,16 +103,17 @@ public class FinanceBackup {
     @Transactional
     public FinanceImportSummary importData(FinanceBackupData data, Consumer<String> errors) {
         Instant now = Instant.now(clock);
-        int[] counts = new int[9];
+        int[] counts = new int[11];
         Map<UUID, Account> accountMap = importAccounts(nullToEmpty(data.accounts()), now, counts, errors);
         Map<UUID, Category> categoryMap = importCategories(nullToEmpty(data.categories()), now, counts, errors);
         Map<UUID, Schedule> scheduleMap = importSchedules(nullToEmpty(data.schedules()), accountMap, categoryMap, now,
                 counts, errors);
-        importOperations(nullToEmpty(data.operations()), accountMap, categoryMap, scheduleMap, now, counts, errors);
+        Map<UUID, Goal> goalMap = importGoals(nullToEmpty(data.goals()), categoryMap, now, counts, errors);
+        importOperations(nullToEmpty(data.operations()), accountMap, categoryMap, scheduleMap, goalMap, now, counts, errors);
         importBudgets(nullToEmpty(data.budgets()), counts, errors);
         boolean preferencesRestored = data.preferences() != null && importPreferences(data.preferences(), errors);
         return new FinanceImportSummary(counts[0], counts[1], counts[2], counts[3], counts[4], counts[5], counts[6],
-                counts[7], counts[8], preferencesRestored);
+                counts[7], counts[8], preferencesRestored, counts[9], counts[10]);
     }
 
     private Map<UUID, Account> importAccounts(List<AccountData> list, Instant now, int[] counts, Consumer<String> errors) {
@@ -214,6 +225,42 @@ public class FinanceBackup {
         return map;
     }
 
+    private Map<UUID, Goal> importGoals(List<GoalData> list, Map<UUID, Category> categoryMap, Instant now, int[] counts,
+                                        Consumer<String> errors) {
+        Map<UUID, Goal> map = new HashMap<>();
+        for (GoalData d : list) {
+            try {
+                if (d.id() != null) {
+                    Goal existing = goals.findById(d.id()).orElse(null);
+                    if (existing != null) {
+                        map.put(d.id(), existing);
+                        counts[10]++;
+                        continue;
+                    }
+                }
+                Category category = d.categoryId() == null ? null
+                        : categoryMap.containsKey(d.categoryId()) ? categoryMap.get(d.categoryId())
+                        : categories.findById(d.categoryId()).orElse(null);
+                GoalStatus status = d.status() == null ? GoalStatus.PLANNED : d.status();
+                // Un objectif clos est recree ouvert puis clos, pour passer par les memes regles que la saisie.
+                Goal g = Goal.restored(d.id(), new Goal.Draft(d.name(), category, d.description(), d.estimatedPrice(),
+                                d.maxPrice(), d.targetDate(), Boolean.TRUE.equals(d.important()),
+                                Boolean.TRUE.equals(d.urgent()), status.isOpen() ? status : GoalStatus.PLANNED,
+                                Boolean.TRUE.equals(d.fundedBySavings()), d.notes()),
+                        status.isOpen() ? d.reservedAmount() : null, d.position() == null ? 0 : d.position(),
+                        d.createdAt() != null ? d.createdAt() : now, d.updatedAt());
+                if (status == GoalStatus.PURCHASED) g.markPurchased(g.getUpdatedAt());
+                if (status == GoalStatus.ABANDONED) g.abandon(g.getUpdatedAt());
+                g = goals.save(g);
+                if (d.id() != null) map.put(d.id(), g);
+                counts[9]++;
+            } catch (RuntimeException e) {
+                errors.accept("Objectif '" + d.name() + "' : " + e.getMessage());
+            }
+        }
+        return map;
+    }
+
     private void importBudgets(List<BudgetData> list, int[] counts, Consumer<String> errors) {
         for (BudgetData d : list) {
             try {
@@ -265,7 +312,8 @@ public class FinanceBackup {
     }
 
     private void importOperations(List<OperationData> list, Map<UUID, Account> accountMap, Map<UUID, Category> categoryMap,
-                                  Map<UUID, Schedule> scheduleMap, Instant now, int[] counts, Consumer<String> errors) {
+                                  Map<UUID, Schedule> scheduleMap, Map<UUID, Goal> goalMap, Instant now, int[] counts,
+                                  Consumer<String> errors) {
         Map<UUID, Operation> imported = new HashMap<>();
         Set<UUID> seen = new HashSet<>();
         // Les remboursements apres les depenses qu'ils remboursent.
@@ -305,6 +353,10 @@ public class FinanceBackup {
                         d.plannedAmount(), d.createdAt() != null ? d.createdAt() : now, d.updatedAt());
                 if (schedule != null) {
                     o.linkOccurrence(schedule, d.dueDate());
+                }
+                if (d.goalId() != null) {
+                    Goal goal = goalMap.containsKey(d.goalId()) ? goalMap.get(d.goalId()) : goals.findById(d.goalId()).orElse(null);
+                    if (goal != null) o.linkGoal(goal);
                 }
                 Operation saved = operations.save(o);
                 if (d.id() != null) imported.put(d.id(), saved);

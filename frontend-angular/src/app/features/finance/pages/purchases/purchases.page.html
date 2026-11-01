@@ -1,0 +1,134 @@
+<div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+  <div class="flex rounded-xl border border-line p-1 gap-1" role="tablist" aria-label="Affichage">
+    <button
+      type="button"
+      role="tab"
+      class="rounded-lg px-3 py-1.5 text-sm font-semibold"
+      [attr.aria-selected]="view() === 'list'"
+      [class]="view() === 'list' ? 'bg-brand-soft text-brand' : 'text-muted'"
+      (click)="view.set('list')"
+    >
+      <ff-icon name="list-checks" [size]="14" class="align-[-2px]" /> Par priorité
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="rounded-lg px-3 py-1.5 text-sm font-semibold"
+      [attr.aria-selected]="view() === 'matrix'"
+      [class]="view() === 'matrix' ? 'bg-brand-soft text-brand' : 'text-muted'"
+      (click)="view.set('matrix')"
+    >
+      <ff-icon name="grid" [size]="14" class="align-[-2px]" /> Matrice
+    </button>
+  </div>
+  <button type="button" class="btn btn-primary btn-sm" (click)="actions.editGoal(null)">
+    <ff-icon name="plus" [size]="14" />Achat prévu
+  </button>
+</div>
+
+@if (forecast.data(); as f) {
+  <section class="card p-5 mb-4" aria-labelledby="pur-forecast">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h3 id="pur-forecast" class="section-title !mb-0">Prévision de trésorerie</h3>
+      <p class="text-sm text-muted">
+        Point le plus bas après achats :
+        <strong [class.text-danger]="f.lowest.afterGoals < f.safetyReserve">{{ money(f.lowest.afterGoals) }}</strong>
+        le {{ longDate(f.lowest.date) }}
+      </p>
+    </div>
+    <ff-chart
+      [option]="forecastChart"
+      [height]="240"
+      label="Courbe : disponible prévu jour par jour, avant et après les achats prévus"
+    />
+    <p class="text-xs text-muted mt-1">
+      Revenus et échéances prévus, dépenses variables anticipées selon le plafond, épargne du mois mise de
+      côté au salaire.
+      @if (!f.capDefined) {
+        Aucun plafond variable : les dépenses courantes futures ne sont pas anticipées.
+      }
+      @if (!f.hasIncome) {
+        Aucun revenu prévu.
+      }
+    </p>
+  </section>
+}
+
+@if (goals.error()) {
+  <ff-error (retry)="goals.load()" />
+} @else if (goals.loading()) {
+  <ff-skeleton [count]="3" [height]="120" />
+} @else if (!open().length && !closed().length) {
+  <div class="card">
+    <ff-empty
+      icon="cart"
+      title="Aucun achat prévu"
+      hint="Ajoutez un produit ou un service que vous comptez acheter : l’application vérifie s’il est finançable à la date voulue."
+    >
+      <button type="button" class="btn btn-primary btn-sm mt-2" (click)="actions.editGoal(null)">
+        Ajouter un achat prévu
+      </button>
+    </ff-empty>
+  </div>
+} @else {
+  @if (view() === 'list') {
+    @if (open().length) {
+      <div class="grid md:grid-cols-2 gap-3">
+        @for (g of open(); track g.id) {
+          <ff-goal-card [goal]="g" />
+        }
+      </div>
+    }
+  } @else {
+    <div class="pur-matrix" cdkDropListGroup>
+      @for (q of quadrants; track q.key) {
+        <section class="pur-quadrant" [attr.data-quadrant]="q.key" [attr.aria-labelledby]="'pq-' + q.key">
+          <header class="pur-quadrant-header">
+            <div class="min-w-0">
+              <h3 [id]="'pq-' + q.key" class="font-bold">{{ q.key }} · {{ q.label }}</h3>
+              <p class="text-xs opacity-80">{{ q.hint }}</p>
+            </div>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm btn-icon"
+              [attr.aria-label]="'Ajouter un achat en ' + q.label"
+              (click)="actions.editGoal(null, { important: q.important, urgent: q.urgent })"
+            >
+              <ff-icon name="plus" [size]="16" />
+            </button>
+          </header>
+          <div
+            cdkDropList
+            [cdkDropListData]="q.key"
+            (cdkDropListDropped)="drop($event)"
+            class="pur-quadrant-list"
+            [attr.aria-label]="'Achats ' + q.label"
+          >
+            @for (g of byQuadrant()[q.key]; track g.id) {
+              <div cdkDrag [cdkDragData]="g" class="cursor-grab active:cursor-grabbing">
+                <ff-goal-card [goal]="g" [compact]="true" />
+              </div>
+            } @empty {
+              <p class="text-sm opacity-70 text-center py-4">Glissez un achat ici.</p>
+            }
+          </div>
+        </section>
+      }
+    </div>
+    <p class="text-xs text-muted mt-2">
+      L’ordre de financement suit les quadrants (Q1 d’abord), puis la date cible : déplacer un achat change
+      sa priorité dans la prévision.
+    </p>
+  }
+
+  @if (closed().length) {
+    <section class="mt-6" aria-labelledby="pur-history">
+      <h3 id="pur-history" class="section-title">Achats réalisés et abandonnés</h3>
+      <div class="grid md:grid-cols-2 gap-3">
+        @for (g of closed(); track g.id) {
+          <ff-goal-card [goal]="g" [compact]="true" />
+        }
+      </div>
+    </section>
+  }
+}

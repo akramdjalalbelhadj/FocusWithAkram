@@ -1,0 +1,25 @@
+<form
+  class="card w-[min(24rem,calc(100vw-1.5rem))] p-6 anim-pop shadow-modal"
+  (ngSubmit)="date() && ref.close(date())"
+  role="dialog"
+  aria-labelledby="date-title"
+>
+  <h2 id="date-title" class="text-lg font-bold mb-1">{{ data.title }}</h2>
+  <p class="text-sm text-muted mb-4">{{ data.message }}</p>
+  <label class="field-label" for="date-value">{{ data.label }}</label>
+  <input
+    id="date-value"
+    name="date"
+    type="date"
+    class="input"
+    [min]="data.min ?? null"
+    [ngModel]="date()"
+    (ngModelChange)="date.set($event)"
+    cdkFocusInitial
+  />
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="!date()">{{ data.confirmLabel }}</button>
+  </div>
+</form>
+  

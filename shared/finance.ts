@@ -18,6 +18,9 @@ export type Frequency = "WEEKLY" | "MONTHLY" | "YEARLY";
 export type ScheduleStatus = "ACTIVE" | "PAUSED" | "ENDED";
 export type BudgetState = "NONE" | "OK" | "WARNING" | "OVER";
 export type ValueSource = "MONTH" | "DEFAULT" | "NONE";
+export type GoalStatus = "CONSIDERED" | "PLANNED" | "POSTPONED" | "PURCHASED" | "ABANDONED";
+export type Verdict = "FEASIBLE" | "RISKY" | "NOT_FEASIBLE" | "UNKNOWN";
+export type GoalNote = "NO_ACCOUNT" | "NO_INCOME" | "NO_CAP" | "TARGET_PASSED" | "LATE_INCOME";
 
 export interface FinanceAccount {
   id: string;
@@ -153,6 +156,8 @@ export interface MonthTotals {
   expensesPlanned: number;
   essentialPlanned: number;
   variablePlanned: number;
+  /** Achats d'objectifs : comptés dans les dépenses, hors plafond variable. */
+  goalPurchasesPaid: number;
   savedToSavings: number;
   unspent: number;
 }
@@ -273,4 +278,96 @@ export interface FinanceImportSummary {
   schedulesSkipped: number;
   budgetsRestored: number;
   preferencesRestored: boolean;
+  goalsCreated: number;
+  goalsSkipped: number;
+}
+
+/** Faisabilité d'un objectif calculée par la prévision de trésorerie (montants en euros). */
+export interface GoalFeasibility {
+  goalId: string;
+  verdict: Verdict;
+  evaluatedDate: string;
+  /** Première date où l'achat est réalisable (null : aucune dans l'horizon). */
+  feasibleDate: string | null;
+  retainedDate: string | null;
+  need: number;
+  reserved: number;
+  remainingToFund: number;
+  availableAtDate: number;
+  lowestAfterPurchase: number;
+  margin: number;
+  fromSavings: number;
+  /** Montant le plus élevé réalisable à la date cible. */
+  affordableAtDate: number;
+  /** Épargne supplémentaire par mois qui rendrait l'achat réalisable à la date cible. */
+  monthlyEffort: number | null;
+  dependsOnLateIncome: boolean;
+  notes: GoalNote[];
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  category: CategoryRef | null;
+  description: string | null;
+  estimatedPrice: number;
+  maxPrice: number | null;
+  targetDate: string;
+  important: boolean;
+  urgent: boolean;
+  quadrant: "Q1" | "Q2" | "Q3" | "Q4";
+  status: GoalStatus;
+  reservedAmount: number;
+  fundedBySavings: boolean;
+  position: number;
+  notes: string | null;
+  purchasedAmount: number | null;
+  purchasedDate: string | null;
+  purchaseOperationId: string | null;
+  /** Absente pour un objectif acheté ou abandonné. */
+  feasibility: GoalFeasibility | null;
+  createdAt: string;
+}
+
+export interface GoalBody {
+  name: string;
+  categoryId: string | null;
+  description: string | null;
+  estimatedPrice: number;
+  maxPrice: number | null;
+  targetDate: string;
+  important: boolean;
+  urgent: boolean;
+  status: "CONSIDERED" | "PLANNED" | "POSTPONED";
+  fundedBySavings: boolean;
+  notes: string | null;
+}
+
+export interface PurchaseBody {
+  amount: number;
+  date: string;
+  accountId: string;
+  categoryId: string | null;
+  label: string | null;
+}
+
+export interface ForecastPoint {
+  date: string;
+  available: number;
+  savings: number;
+  afterGoals: number;
+}
+
+export interface Forecast {
+  today: string;
+  horizon: string;
+  startAvailable: number;
+  startSavings: number;
+  safetyReserve: number;
+  savingsFloor: number;
+  capDefined: boolean;
+  hasIncome: boolean;
+  points: ForecastPoint[];
+  lowest: ForecastPoint;
+  goals: GoalFeasibility[];
 }

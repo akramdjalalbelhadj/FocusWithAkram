@@ -1,0 +1,115 @@
+<article class="card p-4" [class.opacity-70]="!open()">
+  <div class="flex items-start gap-3">
+    <div class="min-w-0 flex-1">
+      <h3 class="font-bold truncate" [title]="goal().name">{{ goal().name }}</h3>
+      <p class="text-xs text-muted mt-0.5">
+        @if (goal().status === 'PURCHASED') {
+          Acheté le {{ longDate(goal().purchasedDate ?? goal().targetDate) }}
+        } @else {
+          {{ statusLabel[goal().status] }} · cible : {{ longDate(goal().targetDate) }}
+        }
+        @if (goal().category; as c) {
+          · {{ c.rootId === c.id ? c.name : c.rootName + ' › ' + c.name }}
+        }
+      </p>
+    </div>
+    <div class="text-right flex-none">
+      <p class="font-bold tabular-nums">
+        {{ money(goal().status === 'PURCHASED' ? goal().purchasedAmount : goal().estimatedPrice) }}
+      </p>
+      @if (gap(); as g) {
+        <p class="text-xs tabular-nums" [class.text-success]="g < 0" [class.text-danger]="g > 0">
+          {{ g > 0 ? '+' : '' }}{{ money(g) }} vs estimé
+        </p>
+      } @else if (goal().maxPrice && open()) {
+        <p class="text-xs text-muted tabular-nums">max {{ money(goal().maxPrice) }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm btn-icon flex-none -mr-1"
+      [attr.aria-label]="'Actions sur « ' + goal().name + ' »'"
+      [cdkMenuTriggerFor]="menu"
+    >
+      <ff-icon name="more" />
+    </button>
+  </div>
+
+  @if (open()) {
+    <div class="mt-3">
+      <div class="flex justify-between text-xs text-muted mb-1">
+        <span>Réservé {{ money(goal().reservedAmount) }}</span>
+        <span>{{ funded() }} %</span>
+      </div>
+      <div class="h-1.5 rounded-full bg-surface-2 overflow-hidden" aria-hidden="true">
+        <div class="h-full rounded-full bg-brand" [style.width.%]="funded()"></div>
+      </div>
+    </div>
+    @if (goal().feasibility; as f) {
+      <div class="mt-3 flex flex-wrap items-center gap-1.5">
+        <span class="badge" [class]="verdicts[f.verdict].badge"
+          ><ff-icon [name]="verdicts[f.verdict].icon" [size]="11" />{{ verdicts[f.verdict].label }}</span
+        >
+        @if (goal().fundedBySavings) {
+          <span class="badge"><ff-icon name="piggy-bank" [size]="11" />Épargne</span>
+        }
+        @if (compact() && f.verdict === 'NOT_FEASIBLE' && f.feasibleDate) {
+          <span class="text-xs text-muted">dès le {{ longDate(f.feasibleDate) }}</span>
+        }
+      </div>
+      @if (!compact()) {
+        <p class="text-sm mt-2">{{ sentence() }}</p>
+        @for (n of notes(); track n) {
+          <p class="text-xs text-muted mt-1">{{ n }}</p>
+        }
+      }
+    }
+  }
+</article>
+
+<ng-template #menu>
+  <div cdkMenu class="menu anim-pop" aria-label="Actions">
+    @if (open()) {
+      <button cdkMenuItem class="menu-item" (click)="actions.purchaseGoal(goal())">
+        <ff-icon name="cart" [size]="16" />Je l’ai acheté
+      </button>
+      <button cdkMenuItem class="menu-item" (click)="actions.reserveGoal(goal())">
+        <ff-icon name="piggy-bank" [size]="16" />Réserver de l’argent
+      </button>
+      <button cdkMenuItem class="menu-item" (click)="actions.editGoal(goal())">
+        <ff-icon name="pencil" [size]="16" />Modifier
+      </button>
+      <button
+        cdkMenuItem
+        class="menu-item"
+        (click)="actions.postponeGoal(goal(), goal().feasibility?.feasibleDate)"
+      >
+        <ff-icon name="calendar" [size]="16" />Reporter
+      </button>
+      <div class="menu-sep" role="separator"></div>
+      @for (q of moves(); track q.key) {
+        <button
+          cdkMenuItem
+          class="menu-item"
+          (click)="actions.moveGoal(goal(), q.important, q.urgent, 0)"
+        >
+          <ff-icon name="grid" [size]="16" />Déplacer en {{ q.label }}
+        </button>
+      }
+      <div class="menu-sep" role="separator"></div>
+      <button cdkMenuItem class="menu-item" (click)="actions.abandonGoal(goal())">
+        <ff-icon name="x" [size]="16" />Abandonner
+      </button>
+    } @else if (goal().status === 'ABANDONED') {
+      <button cdkMenuItem class="menu-item" (click)="actions.reopenGoal(goal())">
+        <ff-icon name="restore" [size]="16" />Envisager de nouveau
+      </button>
+    }
+    @if (goal().status !== 'PURCHASED') {
+      <div class="menu-sep" role="separator"></div>
+      <button cdkMenuItem class="menu-item danger" (click)="actions.deleteGoal(goal())">
+        <ff-icon name="trash" [size]="16" />Supprimer
+      </button>
+    }
+  </div>
+</ng-template>

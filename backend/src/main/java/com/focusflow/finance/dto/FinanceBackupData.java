@@ -3,6 +3,7 @@ package com.focusflow.finance.dto;
 import com.focusflow.finance.AccountType;
 import com.focusflow.finance.Direction;
 import com.focusflow.finance.Frequency;
+import com.focusflow.finance.GoalStatus;
 import com.focusflow.finance.IncomeKind;
 import com.focusflow.finance.OperationStatus;
 import com.focusflow.finance.OperationType;
@@ -19,7 +20,8 @@ import java.util.UUID;
  * preferences, avec leurs identifiants. Toutes les listes sont facultatives.
  */
 public record FinanceBackupData(List<AccountData> accounts, List<CategoryData> categories, List<ScheduleData> schedules,
-                                List<OperationData> operations, List<BudgetData> budgets, PreferencesData preferences) {
+                                List<GoalData> goals, List<OperationData> operations, List<BudgetData> budgets,
+                                PreferencesData preferences) {
 
     public record AccountData(UUID id, String name, AccountType type, Boolean archived, Integer position,
                               Instant createdAt) {
@@ -33,7 +35,13 @@ public record FinanceBackupData(List<AccountData> accounts, List<CategoryData> c
                                 Direction direction, LocalDate date, BigDecimal amount, BigDecimal plannedAmount,
                                 UUID categoryId, IncomeKind incomeKind, String label, String description,
                                 Boolean essential, Boolean exceptional, UUID refundOfId, Instant createdAt,
-                                Instant updatedAt, UUID scheduleId, LocalDate dueDate) {
+                                Instant updatedAt, UUID scheduleId, LocalDate dueDate, UUID goalId) {
+    }
+
+    public record GoalData(UUID id, String name, UUID categoryId, String description, BigDecimal estimatedPrice,
+                           BigDecimal maxPrice, LocalDate targetDate, Boolean important, Boolean urgent, GoalStatus status,
+                           BigDecimal reservedAmount, Boolean fundedBySavings, Integer position, String notes,
+                           Instant createdAt, Instant updatedAt) {
     }
 
     public record ScheduleData(UUID id, String label, OperationType type, ScheduleKind kind, UUID accountId,

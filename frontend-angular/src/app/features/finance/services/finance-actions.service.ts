@@ -6,6 +6,7 @@ import {
   FinanceAccount,
   FinanceCategory,
   FinancePreferences,
+  Goal,
   Operation,
   OperationBody,
   Schedule,
@@ -18,6 +19,9 @@ import { formatMoney } from '../../../core/util/money';
 import { ConfirmData, ConfirmDialogComponent } from '../../../shared/ui/dialogs';
 import { AccountDialogComponent } from '../components/account-dialog/account-dialog';
 import { BudgetDialogComponent, BudgetDialogData } from '../components/budget-dialog/budget-dialog';
+import { DateDialogComponent, DateDialogData } from '../components/date-dialog/date-dialog';
+import { GoalDialogComponent } from '../components/goal-dialog/goal-dialog';
+import { PurchaseDialogComponent } from '../components/purchase-dialog/purchase-dialog';
 import { ScheduleDialogComponent } from '../components/schedule-dialog/schedule-dialog';
 import {
   AmountDialogComponent,
@@ -281,6 +285,93 @@ export class FinanceActions {
 
   savePreferences(body: FinancePreferences): Promise<boolean> {
     return this.run(() => this.api.updatePreferences(body), 'Préférences enregistrées.');
+  }
+
+  // ---- Achats prévus ----
+
+  async editGoal(goal: Goal | null, quadrant?: { important: boolean; urgent: boolean }): Promise<boolean> {
+    const ok = await firstValueFrom(
+      this.dialog.open<boolean>(GoalDialogComponent, {
+        data: { goal, ...quadrant },
+        backdropClass: 'ff-backdrop',
+      }).closed,
+    );
+    if (ok) this.done(goal ? 'Achat prévu modifié.' : 'Achat prévu ajouté.');
+    return !!ok;
+  }
+
+  /** Réserve une part du disponible libre pour l'objectif (0 pour libérer la réservation). */
+  async reserveGoal(goal: Goal): Promise<boolean> {
+    const result = await this.askAmount({
+      title: 'Réserver pour cet achat',
+      message: `${goal.name} — ${formatMoney(goal.estimatedPrice)}. L’argent réservé reste sur vos comptes mais n’est plus compté comme libre pour les autres achats. Saisissez 0 pour libérer la réservation.`,
+      amountLabel: 'Montant réservé au total',
+      amount: goal.reservedAmount,
+      confirmLabel: 'Réserver',
+      allowZero: true,
+    });
+    if (!result) return false;
+    return this.run(() => this.api.reserveGoal(goal.id, result.amount), 'Réservation enregistrée.');
+  }
+
+  async purchaseGoal(goal: Goal): Promise<boolean> {
+    const ok = await firstValueFrom(
+      this.dialog.open<boolean>(PurchaseDialogComponent, { data: goal, backdropClass: 'ff-backdrop' }).closed,
+    );
+    if (ok) this.done('Achat enregistré.');
+    return !!ok;
+  }
+
+  async postponeGoal(goal: Goal, suggested?: string | null): Promise<boolean> {
+    const data: DateDialogData = {
+      title: 'Reporter l’achat',
+      message: `${goal.name} : nouvelle date cible. La réservation éventuelle est conservée.`,
+      label: 'Nouvelle date cible',
+      date: suggested ?? goal.targetDate,
+      min: this.settings.today(),
+      confirmLabel: 'Reporter',
+    };
+    const date = await firstValueFrom(
+      this.dialog.open<string>(DateDialogComponent, { data, backdropClass: 'ff-backdrop' }).closed,
+    );
+    if (!date) return false;
+    return this.run(() => this.api.postponeGoal(goal.id, date), 'Achat reporté.');
+  }
+
+  async abandonGoal(goal: Goal): Promise<boolean> {
+    const ok = await this.confirm({
+      title: 'Abandonner cet achat ?',
+      message: `« ${goal.name} » reste dans l’historique ; sa réservation de ${formatMoney(goal.reservedAmount)} est libérée.`,
+      confirmLabel: 'Abandonner',
+    });
+    return ok && this.run(() => this.api.goalAction(goal.id, 'abandon'), 'Achat abandonné.');
+  }
+
+  reopenGoal(goal: Goal): Promise<boolean> {
+    return this.run(() => this.api.goalAction(goal.id, 'reopen'), 'Achat de nouveau envisagé.');
+  }
+
+  async deleteGoal(goal: Goal): Promise<boolean> {
+    const ok = await this.confirm({
+      title: 'Supprimer cet achat prévu ?',
+      message: `« ${goal.name} » sera définitivement supprimé. Pour garder une trace, préférez « Abandonner ».`,
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    return ok && this.run(() => this.api.deleteGoal(goal.id), 'Achat prévu supprimé.');
+  }
+
+  /** Déplacement dans la matrice : sans message, la carte change simplement de quadrant. */
+  async moveGoal(goal: Goal, important: boolean, urgent: boolean, position: number): Promise<boolean> {
+    try {
+      await firstValueFrom(this.api.moveGoal(goal.id, important, urgent, position));
+      this.refresh.bump();
+      return true;
+    } catch (e) {
+      this.toast.errorFrom(e);
+      this.refresh.bump();
+      return false;
+    }
   }
 
   private async openOperation(data: OperationDialogData, success: string): Promise<boolean> {

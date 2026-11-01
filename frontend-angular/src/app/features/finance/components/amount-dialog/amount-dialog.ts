@@ -9,6 +9,8 @@ export interface AmountDialogData {
   amountLabel: string;
   amount?: number | null;
   allowNegative?: boolean;
+  /** Accepte zero (liberer une reservation). */
+  allowZero?: boolean;
   /** Demande aussi une date (AAAA-MM-JJ), bornee a `maxDate`. */
   date?: string;
   maxDate?: string;
@@ -40,7 +42,7 @@ export class AmountDialogComponent {
 
   protected submit(): void {
     const value = parseAmount(this.amount(), this.data.allowNegative);
-    if (value === null || (!this.data.allowNegative && value <= 0)) {
+    if (value === null || (!this.data.allowNegative && (value < 0 || (value === 0 && !this.data.allowZero)))) {
       this.error.set('Saisissez un montant valide, au centime près (ex. 12,50).');
       return;
     }

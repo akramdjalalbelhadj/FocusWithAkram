@@ -69,4 +69,10 @@ public interface OperationRepository extends JpaRepository<Operation, UUID>, Jpa
     java.util.Optional<Operation> findByScheduleIdAndDueDate(UUID scheduleId, LocalDate dueDate);
 
     boolean existsByScheduleId(UUID scheduleId);
+
+    /** Depenses reelles des objectifs d'achat (une par objectif achete). */
+    @EntityGraph(attributePaths = {"goal", "account", "category"})
+    @Query("select o from Operation o where o.goal is not null and o.status = com.focusflow.finance.OperationStatus.COMPLETED "
+            + "order by o.date asc")
+    List<Operation> findGoalPurchases();
 }

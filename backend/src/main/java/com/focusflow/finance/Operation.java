@@ -90,6 +90,11 @@ public class Operation {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    /** Objectif d'achat dont cette depense est l'achat reel (hors plafond variable, decision D4). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "goal_id")
+    private Goal goal;
+
     /** Echeance calculee, jamais enregistree : sert aux previsions et au budget. */
     @Transient
     private boolean virtual;
@@ -212,6 +217,14 @@ public class Operation {
         dueDate = due;
     }
 
+    /** Rattache une depense a l'objectif d'achat qu'elle realise. */
+    public void linkGoal(Goal g) {
+        if (type != OperationType.EXPENSE) {
+            throw ApiException.rule("INVALID_OPERATION", "Seule une depense peut realiser un objectif d'achat.");
+        }
+        goal = g;
+    }
+
     void markVirtual() {
         virtual = true;
     }
@@ -316,6 +329,7 @@ public class Operation {
     public Schedule getSchedule() { return schedule; }
     public LocalDate getDueDate() { return dueDate; }
     public boolean isVirtual() { return virtual; }
+    public Goal getGoal() { return goal; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

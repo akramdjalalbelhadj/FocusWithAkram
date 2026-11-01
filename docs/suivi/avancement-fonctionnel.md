@@ -26,7 +26,8 @@ Relevé du **1 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 | FWA-F018 Import / export          | Livré                  | Livré                      | Livré                          | Sauvegarde v3 (préférences, Top 3, finances), import élément par élément, doublons et CSV testés.                  |
 | FWA-F019 Mes achats — socle       | Livré                  | Livré                      | Non commencé                   | 18 tests d’intégration et unitaires ; recette navigateur sur base jetable. |
 | FWA-F020 Mes achats — budget      | Livré                  | Livré                      | Non commencé                   | Échéancier, budget, préférences : 14 tests dédiés ; recette navigateur. |
-| FWA-F021 à F023 Mes achats        | À faire (lots 6 à 8)   | À faire                    | Non commencé                   | Voir le [suivi de la refonte v2](refonte-v2.md). |
+| FWA-F021 Mes achats — achats prévus | Livré                | Livré                      | Non commencé                   | Moteur testé sur 12 scénarios chiffrés ; 6 tests d'intégration ; recette navigateur. |
+| FWA-F022 / F023 Mes achats        | À faire (lots 7 et 8)  | À faire                    | Non commencé                   | Voir le [suivi de la refonte v2](refonte-v2.md). |
 
 ## 2. Modifications fonctionnelles récentes
 

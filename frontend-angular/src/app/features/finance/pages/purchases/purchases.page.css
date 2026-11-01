@@ -1,0 +1,63 @@
+/* Matrice des achats : memes couleurs de quadrants que la matrice des taches, contenu distinct. */
+.pur-matrix {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+@media (min-width: 64rem) {
+  .pur-matrix {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pur-quadrant[data-quadrant='Q1'] {
+  --quadrant-color: var(--q1);
+  --quadrant-soft: var(--q1-soft);
+  --quadrant-line: var(--q1-line);
+}
+
+.pur-quadrant[data-quadrant='Q2'] {
+  --quadrant-color: var(--q2);
+  --quadrant-soft: var(--q2-soft);
+  --quadrant-line: var(--q2-line);
+}
+
+.pur-quadrant[data-quadrant='Q3'] {
+  --quadrant-color: var(--q3);
+  --quadrant-soft: var(--q3-soft);
+  --quadrant-line: var(--q3-line);
+}
+
+.pur-quadrant[data-quadrant='Q4'] {
+  --quadrant-color: var(--q4);
+  --quadrant-soft: var(--q4-soft);
+  --quadrant-line: var(--q4-line);
+}
+
+.pur-quadrant {
+  display: flex;
+  flex-direction: column;
+  min-height: 12rem;
+  border: 1px solid var(--quadrant-line);
+  border-radius: var(--radius-lg);
+  background: var(--quadrant-soft);
+  padding: 0.75rem;
+}
+
+.pur-quadrant-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--quadrant-color);
+  padding: 0.25rem 0.25rem 0.75rem;
+}
+
+.pur-quadrant-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 4rem;
+}
