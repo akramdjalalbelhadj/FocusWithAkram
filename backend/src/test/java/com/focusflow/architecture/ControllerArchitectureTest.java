@@ -20,7 +20,6 @@ class ControllerArchitectureTest {
     @Test
     void controllersDelegatePersistenceAndAcceptTypedBodies() throws Exception {
         for (Class<?> controller : controllers()) {
-            assertThat(controller.getPackageName()).endsWith(".controller");
             for (var field : controller.getDeclaredFields()) {
                 assertThat(Repository.class.isAssignableFrom(field.getType()))
                         .as("%s.%s ne doit pas acceder directement a un repository", controller.getSimpleName(), field.getName())

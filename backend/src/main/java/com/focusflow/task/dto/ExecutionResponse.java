@@ -1,6 +1,6 @@
 package com.focusflow.task.dto;
 
-import com.focusflow.task.model.TaskTiming;
+import com.focusflow.task.TaskTiming;
 import java.time.Instant;
 import java.util.List;
 

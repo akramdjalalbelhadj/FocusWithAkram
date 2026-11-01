@@ -1,8 +1,8 @@
 package com.focusflow.task.dto;
 
-import com.focusflow.task.enums.Quadrant;
-import com.focusflow.task.enums.TaskStatus;
-import com.focusflow.task.model.TaskTiming;
+import com.focusflow.task.Quadrant;
+import com.focusflow.task.TaskStatus;
+import com.focusflow.task.TaskTiming;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

@@ -1,6 +1,6 @@
 package com.focusflow.pomodoro.dto;
 
-import com.focusflow.pomodoro.enums.SessionStatus;
+import com.focusflow.pomodoro.SessionStatus;
 import java.time.Instant;
 import java.util.UUID;
 

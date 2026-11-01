@@ -1,6 +1,6 @@
 package com.focusflow.transfer.dto;
 
-import com.focusflow.task.enums.TaskStatus;
+import com.focusflow.task.TaskStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

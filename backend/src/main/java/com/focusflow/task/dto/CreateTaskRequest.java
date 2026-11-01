@@ -1,6 +1,6 @@
 package com.focusflow.task.dto;
 
-import com.focusflow.task.enums.Quadrant;
+import com.focusflow.task.Quadrant;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

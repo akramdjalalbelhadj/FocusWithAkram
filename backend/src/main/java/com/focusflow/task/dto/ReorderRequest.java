@@ -1,6 +1,6 @@
 package com.focusflow.task.dto;
 
-import com.focusflow.task.enums.Quadrant;
+import com.focusflow.task.Quadrant;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;

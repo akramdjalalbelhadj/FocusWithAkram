@@ -1,8 +1,8 @@
 package com.focusflow.task.dto;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.focusflow.common.dto.PatchRequest;
-import com.focusflow.task.enums.Quadrant;
+import com.focusflow.common.PatchRequest;
+import com.focusflow.task.Quadrant;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

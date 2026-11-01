@@ -1,7 +1,7 @@
 package com.focusflow.project.dto;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.focusflow.common.dto.PatchRequest;
+import com.focusflow.common.PatchRequest;
 import java.time.Instant;
 
 /** Champs modifiables de cette ressource ; presence et null explicite sont conserves. */

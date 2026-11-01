@@ -1,6 +1,6 @@
 package com.focusflow.task.dto;
 
-import com.focusflow.task.enums.TaskStatus;
+import com.focusflow.task.TaskStatus;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
