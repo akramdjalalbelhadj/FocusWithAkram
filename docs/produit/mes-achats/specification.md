@@ -1,6 +1,6 @@
 # « Mes achats » — spécification fonctionnelle
 
-Version **0.1 du 1 novembre 2026 — proposition à valider**. Ce document traduit le besoin en règles précises avant toute implémentation. Les points **[À trancher]** attendent une décision du propriétaire ; les points **[Par défaut]** s'appliquent sauf avis contraire. Une fois validé, il devient la référence des lots 4 à 8 (voir le [suivi](../../suivi/refonte-v2.md)).
+Version **1.0 du 1 novembre 2026 — validée** (décisions D1 à D6 ci-dessous). Ce document traduit le besoin en règles précises avant toute implémentation. Les points **[À trancher]** attendent une décision du propriétaire ; les points **[Par défaut]** s'appliquent sauf avis contraire. Une fois validé, il devient la référence des lots 4 à 8 (voir le [suivi](../../suivi/refonte-v2.md)).
 
 ## 1. Principes
 
@@ -78,7 +78,7 @@ Modèle commun au salaire, aux abonnements et aux charges récurrentes : libell�
 Mois, plafond variable, objectif d'épargne. À défaut de budget saisi, les valeurs par défaut des préférences financières s'appliquent. Les dépenses indispensables du mois sont celles des échéanciers et opérations marquées indispensables : il n'y a rien à ressaisir chaque mois, seulement à ajuster.
 
 ### 4.6 Préférences financières
-Réserve de sécurité, objectif d'épargne mensuel par défaut, plafond variable par défaut, seuils d'alerte budgétaire **[Par défaut] 80 % et 100 %**, compte par défaut.
+Réserve de sécurité, plancher d'épargne (D3), objectif d'épargne mensuel par défaut, plafond variable par défaut, seuils d'alerte budgétaire **[Par défaut] 80 % et 100 %**, compte par défaut.
 
 ### 4.7 Objectif d'achat
 Nom, catégorie, description, prix estimé, montant maximal acceptable, date cible, **important** et **urgent** (le quadrant en dérive, comme pour les tâches : urgence et importance restent deux critères indépendants), statut, montant réservé, notes, opération d'achat liée une fois l'achat fait.
@@ -92,7 +92,7 @@ Personne, sens (`ACCORDE` ou `EMPRUNTE`), montant, date, échéance prévue, not
 | --- | --- |
 | Revenus prévus / reçus | Occurrences de revenus du mois, prévues / réalisées |
 | Dépenses indispensables prévues / payées | Échéances et opérations indispensables du mois |
-| Dépenses variables payées | Dépenses non indispensables réalisées du mois, moins leurs remboursements **[À trancher : achats d'objectifs inclus ou non]** |
+| Dépenses variables payées | Dépenses non indispensables réalisées du mois, moins leurs remboursements, **hors achats d'objectifs** (D4). Les dépenses exceptionnelles non indispensables y entrent. |
 | Plafond consommé | Dépenses variables payées ÷ plafond |
 | Reste variable | Plafond − dépenses variables payées (négatif = dépassement) |
 | État | Vert sous 80 %, orange de 80 % à 100 %, rouge au-delà, avec avertissement explicite. L'enregistrement d'une dépense réelle n'est **jamais** bloqué. |
@@ -105,7 +105,7 @@ Les dépenses exceptionnelles sont signalées à part dans le bilan du mois ; el
 Calcul jour par jour, d'aujourd'hui à l'horizon, sur le **solde disponible** :
 
 1. **Point de départ** : solde disponible réel d'aujourd'hui.
-2. **Entrées prévues** : occurrences de revenus aux dates d'échéance. Un revenu attendu dont la date est passée sans réception est « en retard » **[À trancher : compté ou non]**. Remboursements de prêts attendus à leur échéance **[À trancher : comptés ou non]**.
+2. **Entrées prévues** : occurrences de revenus aux dates d'échéance. Un salaire attendu dont la date est passée sans réception est « en retard » : il reste compté (au lendemain) mais rend « risqué » tout verdict qui en dépend (D5). Les remboursements de prêts attendus **ne sont pas comptés** ; ils sont présentés comme scénario favorable (D5).
 3. **Sorties prévues** : échéances indispensables et abonnements actifs ; dépenses prévues saisies ; remboursements d'emprunts à leur échéance.
 4. **Dépenses variables anticipées** : le reste du plafond variable du mois en cours, puis le plafond complet des mois suivants, **réparti uniformément sur les jours** du mois.
 5. **Épargne** : l'objectif d'épargne du mois est retiré du disponible à la date du salaire (« se payer en premier ») ; il est protégé.
@@ -127,19 +127,22 @@ On contrôle le minimum après `T`, et pas seulement le solde au jour `T` : un a
 | Verdict | Condition |
 | --- | --- |
 | **Réalisable** | Condition remplie, avec une marge d'au moins 10 % du prix. |
-| **Risqué** | Condition remplie de justesse (marge < 10 %), ou seulement grâce à une entrée incertaine (revenu en retard, remboursement attendu). |
+| **Risqué** | Condition remplie de justesse (marge < 10 %), ou seulement grâce à un salaire en retard. |
 | **Non réalisable** | Condition non remplie. L'application calcule la **première date réaliste** (premier jour où la condition est remplie), généralement juste après un salaire, ou indique qu'aucune date ne convient dans l'horizon de 24 mois. |
 | **Indéterminé** | Données insuffisantes : aucun compte, aucun solde initial, ou aucun revenu prévu. |
 
 Le détail affiché : montant nécessaire, déjà réservé, reste à financer, disponible prévu à la date, point le plus bas après l'achat, date de faisabilité, entrées incertaines prises en compte. Exemple attendu : « Ton achat de 400 € n'est pas compatible avec ton budget prévisionnel au 1er janvier 2027. Selon tes revenus et dépenses prévus, une date plus réaliste serait le 31 janvier 2027. »
 
-### 7.3 Plusieurs objectifs
+### 7.3 Financement par l'épargne (D3)
+Par défaut, l'épargne existante est intouchable. Un objectif marqué **« financé par l'épargne »** peut puiser dans les comptes d'épargne, sans jamais les faire descendre sous le **plancher d'épargne** fixé dans les préférences. Son calcul ajoute alors au disponible prévu l'épargne mobilisable (épargne réelle − plancher − montants déjà mobilisés par les objectifs prioritaires). L'achat effectif se fait par un virement de l'épargne vers un compte courant, suivi de la dépense.
+
+### 7.4 Plusieurs objectifs
 Les objectifs ouverts sont traités l'un après l'autre par priorité **[Par défaut : quadrant Q1, Q2, Q3, Q4, puis date cible, puis date de création]**. Chaque objectif retenu retire son montant de la prévision à sa date d'achat retenue (date cible si réalisable, sinon première date réaliste) avant d'évaluer le suivant : les mêmes fonds ne sont jamais promis deux fois.
 
-### 7.4 Enregistrer malgré l'avertissement
+### 7.5 Enregistrer malgré l'avertissement
 Un objectif non réalisable s'enregistre quand même. L'interface propose de garder la date (avec avertissement), de reporter à la date réaliste, de réduire le budget, d'ajouter un effort d'épargne mensuel, ou de changer la priorité. Chaque option est recalculée avant confirmation.
 
-### 7.5 Recalcul
+### 7.6 Recalcul
 Rien n'est mémorisé : chaque lecture recalcule. Un salaire reçu, une facture modifiée, une dépense, un autre achat, un changement d'objectif d'épargne ou de date cible se répercutent immédiatement.
 
 ## 8. Cycle de vie d'un achat
@@ -196,17 +199,17 @@ Plafond à 80 % puis dépassé ; échéance importante dans les 7 jours ; solde 
 | Calendrier financier | Moyenne | Moyenne | Lot 8, vue propre au module ; intégration au calendrier des tâches reportée |
 | Multi-devise, rapprochement bancaire, import de relevés | Faible pour l'usage actuel | Élevée | Hors v1 |
 
-## 13. Organisation de l'interface (proposition)
+## 13. Organisation de l'interface
 
-Une seule entrée **« Mes achats »** dans la navigation, avec des onglets : Vue d'ensemble, Opérations, Budget, Abonnements, Achats (liste et matrice), Prêts, Statistiques, Réglages. Un bouton « + Dépense » accessible partout, ainsi qu'un raccourci clavier, ouvrent la saisie rapide.
+Une seule entrée **« Mes achats »** dans la navigation (D6), avec des onglets : Vue d'ensemble, Opérations, Budget, Abonnements, Achats (liste et matrice), Prêts, Statistiques, Réglages. Un bouton « + Dépense » accessible partout, ainsi qu'un raccourci clavier, ouvrent la saisie rapide.
 
 ## 14. Décisions
 
 | # | Sujet | État |
 | --- | --- | --- |
 | D1 | Plusieurs comptes simples (courant, épargne, espèces) ; épargne = virement ; réservations virtuelles | **Validé** le 1 novembre 2026 |
-| D2 | Euro uniquement ; mois civil ; correction par opération ; seuils 80/100 % ; ordre de priorité des objectifs | Par défaut |
-| D3 | L'épargne existante peut-elle financer un achat ? | **À trancher** |
-| D4 | Les achats d'objectifs consomment-ils le plafond variable ? | **À trancher** |
-| D5 | Revenus en retard et remboursements attendus dans la faisabilité | **À trancher** |
-| D6 | Organisation de l'interface (§ 13) | **À trancher** |
+| D2 | Euro uniquement ; mois civil ; correction par opération ; seuils 80/100 % ; ordre de priorité des objectifs | Par défaut (sans objection) |
+| D3 | L'épargne existante finance un achat seulement pour un objectif marqué « financé par l'épargne », au-dessus d'un plancher | **Validé** le 1 novembre 2026 |
+| D4 | Les achats d'objectifs ne consomment pas le plafond variable ; les dépenses exceptionnelles non indispensables, si | **Validé** le 1 novembre 2026 |
+| D5 | Faisabilité : salaires prévus comptés (en retard → « risqué ») ; remboursements de prêts attendus non comptés | **Validé** le 1 novembre 2026 |
+| D6 | Une entrée « Mes achats » avec onglets ; bouton de saisie rapide accessible partout | **Validé** le 1 novembre 2026 |
