@@ -27,7 +27,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 7 | Prêts et emprunts | À faire |
 | 8 | Tableau de bord, statistiques, alertes, simulations | À faire |
 | 9 | Documentation finale et dossier de migration React | À faire |
-| 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projetgent-android`, Kotlin, Jetpack Compose) | Planifié après les lots 7 et 8 |
+| 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Planifié après les lots 7 et 8 |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
