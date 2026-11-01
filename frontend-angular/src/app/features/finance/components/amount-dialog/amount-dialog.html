@@ -18,6 +18,7 @@
           inputmode="decimal"
           autocomplete="off"
           name="amount"
+          [readOnly]="!!data.readonlyAmount"
           [ngModel]="amount()"
           (ngModelChange)="amount.set($event); error.set('')"
           cdkFocusInitial

@@ -1,0 +1,158 @@
+<form
+  class="card w-[min(30rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="loan-title"
+>
+  <h2 id="loan-title" class="text-lg font-bold mb-1">
+    @if (loan) {
+      Modifier {{ loan.direction === 'LENT' ? 'le prêt' : 'l’emprunt' }}
+    } @else {
+      Nouveau prêt ou emprunt
+    }
+  </h2>
+  <p class="text-sm text-muted mb-4">
+    @if (loan) {
+      {{ money(loan.principal) }} depuis le {{ loan.startDate.split('-').reverse().join('/') }}. Pour
+      corriger le montant ou la date, annulez-le puis saisissez-le de nouveau.
+    } @else {
+      Ni une dépense ni un revenu : le solde du compte change et le reste dû est suivi jusqu’au
+      dernier remboursement.
+    }
+  </p>
+  <div class="space-y-4">
+    @if (!loan) {
+      <div class="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Sens">
+        @for (d of directions; track d.value) {
+          <button
+            type="button"
+            role="radio"
+            class="rounded-xl border px-2 py-2 text-sm font-semibold"
+            [attr.aria-checked]="direction() === d.value"
+            [class]="
+              direction() === d.value
+                ? 'border-brand bg-brand-soft text-brand'
+                : 'border-line text-muted hover:bg-surface-2'
+            "
+            (click)="direction.set(d.value)"
+          >
+            {{ d.label }}
+          </button>
+        }
+      </div>
+    }
+    <div>
+      <label class="field-label" for="loan-person">{{
+        direction() === 'LENT' ? 'Prêté à' : 'Emprunté à'
+      }}</label>
+      <input
+        id="loan-person"
+        name="person"
+        class="input"
+        maxlength="120"
+        autocomplete="off"
+        [ngModel]="person()"
+        (ngModelChange)="person.set($event); error.set('')"
+        cdkFocusInitial
+      />
+    </div>
+    @if (!loan) {
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label" for="loan-amount">Montant</label>
+          <input
+            id="loan-amount"
+            name="amount"
+            class="input text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            [ngModel]="amount()"
+            (ngModelChange)="amount.set($event); error.set('')"
+          />
+        </div>
+        <div>
+          <label class="field-label" for="loan-start">Date</label>
+          <input
+            id="loan-start"
+            name="start"
+            type="date"
+            class="input"
+            [max]="today"
+            [ngModel]="startDate()"
+            (ngModelChange)="startDate.set($event); error.set('')"
+          />
+        </div>
+      </div>
+    }
+    <div>
+      <label class="field-label" for="loan-due">Remboursement prévu le (facultatif)</label>
+      <input
+        id="loan-due"
+        name="due"
+        type="date"
+        class="input"
+        [ngModel]="dueDate()"
+        (ngModelChange)="dueDate.set($event); error.set('')"
+      />
+      <p class="field-hint">
+        @if (direction() === 'LENT') {
+          Un remboursement attendu n’est jamais compté comme argent disponible dans les prévisions.
+        } @else {
+          Le reste dû est déduit des prévisions à cette date.
+        }
+      </p>
+    </div>
+    @if (!loan) {
+      <label class="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          class="size-4 mt-0.5 accent-[var(--brand)]"
+          [checked]="!recordDisbursement()"
+          (change)="recordDisbursement.set(!$any($event.target).checked)"
+        />
+        <span
+          >Prêt antérieur au suivi<span class="block text-muted text-xs"
+            >L’argent a bougé avant votre solde de départ : aucun mouvement n’est enregistré, seul le
+            reste dû est suivi.</span
+          ></span
+        >
+      </label>
+      @if (recordDisbursement()) {
+        <div>
+          <label class="field-label" for="loan-account">{{
+            direction() === 'LENT' ? 'Compte débité' : 'Compte crédité'
+          }}</label>
+          <select
+            id="loan-account"
+            name="account"
+            class="input"
+            [ngModel]="accountId()"
+            (ngModelChange)="accountId.set($event)"
+          >
+            @for (a of accounts(); track a.id) {
+              <option [value]="a.id">{{ a.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    }
+    <div>
+      <label class="field-label" for="loan-notes">Notes (facultatives)</label>
+      <input
+        id="loan-notes"
+        name="notes"
+        class="input"
+        maxlength="500"
+        [ngModel]="notes()"
+        (ngModelChange)="notes.set($event)"
+      />
+    </div>
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">Enregistrer</button>
+  </div>
+</form>

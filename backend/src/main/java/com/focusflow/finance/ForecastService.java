@@ -46,17 +46,19 @@ public class ForecastService {
     private final BudgetService budgets;
     private final MonthlyBudgetRepository monthlyBudgets;
     private final GoalRepository goals;
+    private final LoanService loans;
     private final FinanceDates dates;
 
     public ForecastService(AccountService accounts, OperationRepository operations, ScheduleService schedules,
                            BudgetService budgets, MonthlyBudgetRepository monthlyBudgets, GoalRepository goals,
-                           FinanceDates dates) {
+                           LoanService loans, FinanceDates dates) {
         this.accounts = accounts;
         this.operations = operations;
         this.schedules = schedules;
         this.budgets = budgets;
         this.monthlyBudgets = monthlyBudgets;
         this.goals = goals;
+        this.loans = loans;
         this.dates = dates;
     }
 
@@ -120,6 +122,19 @@ public class ForecastService {
             hasIncome |= o.getType() == OperationType.INCOME;
         }
 
+        // Prets : une dette est remboursee a son echeance (sans echeance, sa date est inconnue) ; un remboursement
+        // attendu d'un pret accorde n'est pas de l'argent disponible (D5) : il n'est que signale.
+        BigDecimal expectedRepayments = Money.ZERO;
+        for (LoanService.LoanState s : loans.states()) {
+            if (!"OPEN".equals(s.status()) || s.loan().getDueDate() == null) continue;
+            if (s.loan().getDirection() == LoanDirection.BORROWED) {
+                LocalDate due = s.loan().getDueDate().isBefore(today) ? today : s.loan().getDueDate();
+                events.add(new Event(due, s.remaining().negate(), Money.ZERO, false));
+            } else if (!s.loan().getDueDate().isAfter(horizon)) {
+                expectedRepayments = expectedRepayments.add(s.remaining());
+            }
+        }
+
         // Mois : depenses variables restant a anticiper et epargne a mettre de cote.
         List<Operation> window = new ArrayList<>(operations.findBetween(YearMonth.from(today).atDay(1), horizon));
         window.addAll(virtual.stream().filter(o -> !o.getDate().isBefore(YearMonth.from(today).atDay(1))).toList());
@@ -156,7 +171,7 @@ public class ForecastService {
                 .map(r -> feasibility(r, byId.get(r.id()), today, hasAccount, incomeExpected, capKnown)).toList();
         return new ForecastResponse(today, horizon, available, savings, prefs.getSafetyReserve(), prefs.getSavingsFloor(),
                 capKnown, incomeExpected, result.points().stream().map(ForecastService::point).toList(),
-                point(result.lowest()), feasibility);
+                point(result.lowest()), feasibility, expectedRepayments);
     }
 
     /** Effet d'une operation prevue sur le disponible et l'epargne ; une operation en retard compte aujourd'hui. */
@@ -166,7 +181,8 @@ public class ForecastService {
         BigDecimal dS = Money.ZERO;
         boolean fromAvailable = o.getAccount().getType().isAvailable();
         switch (o.getType()) {
-            case INCOME, PURCHASE_REFUND, OPENING_BALANCE, ADJUSTMENT -> {
+            case INCOME, PURCHASE_REFUND, OPENING_BALANCE, ADJUSTMENT, LOAN_GIVEN, LOAN_COLLECTED, LOAN_TAKEN,
+                 LOAN_REPAID -> {
                 BigDecimal signed = o.getDirection() == Direction.CREDIT ? amount : amount.negate();
                 if (fromAvailable) dA = signed;
                 else dS = signed;

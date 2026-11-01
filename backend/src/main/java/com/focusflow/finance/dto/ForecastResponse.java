@@ -6,9 +6,11 @@ import java.util.List;
 
 /**
  * Prevision de tresorerie jusqu'a `horizon`. `capDefined` faux : les depenses variables futures ne sont pas
- * anticipees (aucun plafond) ; `hasIncome` faux : aucun revenu prevu dans l'horizon.
+ * anticipees (aucun plafond) ; `hasIncome` faux : aucun revenu prevu dans l'horizon. Les dettes sont deduites a leur
+ * echeance ; `expectedRepayments` (remboursements attendus de prets accordes) n'est pas compte (scenario favorable).
  */
 public record ForecastResponse(LocalDate today, LocalDate horizon, BigDecimal startAvailable, BigDecimal startSavings,
                                BigDecimal safetyReserve, BigDecimal savingsFloor, boolean capDefined, boolean hasIncome,
-                               List<ForecastPoint> points, ForecastPoint lowest, List<GoalFeasibility> goals) {
+                               List<ForecastPoint> points, ForecastPoint lowest, List<GoalFeasibility> goals,
+                               BigDecimal expectedRepayments) {
 }

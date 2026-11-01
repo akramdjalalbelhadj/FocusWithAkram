@@ -28,6 +28,10 @@ export const OPERATION_TYPE_LABEL: Record<OperationType, string> = {
   TRANSFER: 'Virement',
   OPENING_BALANCE: 'Solde initial',
   ADJUSTMENT: 'Correction du solde',
+  LOAN_GIVEN: 'Prêt accordé',
+  LOAN_COLLECTED: 'Remboursement reçu',
+  LOAN_TAKEN: 'Emprunt reçu',
+  LOAN_REPAID: 'Remboursement versé',
 };
 
 /** Types saisis directement (le solde initial et les corrections naissent du compte). */

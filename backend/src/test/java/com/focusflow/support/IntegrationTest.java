@@ -50,7 +50,7 @@ public abstract class IntegrationTest {
     @BeforeEach
     protected void resetState() {
         jdbc.execute("TRUNCATE pomodoro_session, daily_goal, task_execution, subtask, task_tag, task, tag, project, "
-                + "fin_operation, fin_goal, fin_schedule, fin_budget, fin_category, fin_account RESTART IDENTITY CASCADE");
+                + "fin_operation, fin_loan, fin_goal, fin_schedule, fin_budget, fin_category, fin_account RESTART IDENTITY CASCADE");
         jdbc.update("UPDATE fin_preferences SET safety_reserve = DEFAULT, savings_floor = DEFAULT, "
                 + "default_variable_cap = NULL, default_savings_target = NULL, warning_percent = DEFAULT");
         jdbc.update("UPDATE user_settings SET time_zone = DEFAULT, week_starts_on = DEFAULT, theme = DEFAULT, "

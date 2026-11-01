@@ -7,10 +7,11 @@ import java.util.List;
 
 /**
  * Vue d'ensemble : soldes reels du jour et bilan du mois demande. `upcoming` liste les operations prevues
- * en retard puis celles des 30 prochains jours, echeances calculees comprises ; `budget` est la jauge du plafond variable.
+ * en retard puis celles des 30 prochains jours ; `receivables` / `debts` : restes dus des prets en cours ; echeances calculees comprises ; `budget` est la jauge du plafond variable.
  */
 public record FinanceOverview(YearMonth month, LocalDate today, List<AccountResponse> accounts,
                               BigDecimal availableBalance, BigDecimal savingsBalance, MonthTotals totals,
                               List<CategoryTotal> byCategory, List<OperationResponse> upcoming, int overdueCount,
-                              BudgetGauge budget, BigDecimal safetyReserve) {
+                              BudgetGauge budget, BigDecimal safetyReserve, BigDecimal receivables,
+                              BigDecimal debts) {
 }

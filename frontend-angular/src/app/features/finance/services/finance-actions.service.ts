@@ -7,6 +7,8 @@ import {
   FinanceCategory,
   FinancePreferences,
   Goal,
+  Loan,
+  LoanDirection,
   Operation,
   OperationBody,
   Schedule,
@@ -21,6 +23,8 @@ import { AccountDialogComponent } from '../components/account-dialog/account-dia
 import { BudgetDialogComponent, BudgetDialogData } from '../components/budget-dialog/budget-dialog';
 import { DateDialogComponent, DateDialogData } from '../components/date-dialog/date-dialog';
 import { GoalDialogComponent } from '../components/goal-dialog/goal-dialog';
+import { LoanDialogComponent } from '../components/loan-dialog/loan-dialog';
+import { RepaymentDialogComponent } from '../components/repayment-dialog/repayment-dialog';
 import { PurchaseDialogComponent } from '../components/purchase-dialog/purchase-dialog';
 import { ScheduleDialogComponent } from '../components/schedule-dialog/schedule-dialog';
 import {
@@ -372,6 +376,53 @@ export class FinanceActions {
       this.refresh.bump();
       return false;
     }
+  }
+
+  // ---- Prêts et emprunts ----
+
+  async editLoan(loan: Loan | null, direction?: LoanDirection): Promise<boolean> {
+    const ok = await firstValueFrom(
+      this.dialog.open<boolean>(LoanDialogComponent, {
+        data: { loan, direction },
+        backdropClass: 'ff-backdrop',
+      }).closed,
+    );
+    if (ok) this.done(loan ? 'Prêt modifié.' : 'Prêt enregistré.');
+    return !!ok;
+  }
+
+  async repayLoan(loan: Loan): Promise<boolean> {
+    const ok = await firstValueFrom(
+      this.dialog.open<boolean>(RepaymentDialogComponent, { data: loan, backdropClass: 'ff-backdrop' })
+        .closed,
+    );
+    if (ok) this.done('Remboursement enregistré.');
+    return !!ok;
+  }
+
+  /** Abandon explicite du reste dû : aucun mouvement d'argent, le prêt est clos. */
+  async writeOffLoan(loan: Loan): Promise<boolean> {
+    const result = await this.askAmount({
+      title: loan.direction === 'LENT' ? 'Abandonner le reste dû ?' : 'Dette remise ?',
+      message: `${loan.person} : ${formatMoney(loan.remaining)} ne ${loan.direction === 'LENT' ? 'vous seront' : 'seront'} plus ${loan.direction === 'LENT' ? 'remboursés' : 'à rembourser'}. Aucun argent ne bouge ; le prêt est clos et reste dans l’historique.`,
+      amountLabel: 'Montant régularisé',
+      amount: loan.remaining,
+      readonlyAmount: true,
+      withNote: true,
+      confirmLabel: 'Régulariser',
+    });
+    if (!result) return false;
+    return this.run(() => this.api.writeOffLoan(loan.id, result.note), 'Prêt régularisé.');
+  }
+
+  async cancelLoan(loan: Loan): Promise<boolean> {
+    const ok = await this.confirm({
+      title: 'Annuler ce prêt ?',
+      message: `Pour un prêt saisi par erreur : le prêt de ${formatMoney(loan.principal)} (${loan.person}) et ses remboursements sont annulés et n’ont plus d’effet sur les soldes.`,
+      confirmLabel: 'Annuler le prêt',
+      danger: true,
+    });
+    return ok && this.run(() => this.api.cancelLoan(loan.id), 'Prêt annulé.');
   }
 
   private async openOperation(data: OperationDialogData, success: string): Promise<boolean> {

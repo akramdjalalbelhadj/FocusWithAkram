@@ -14,6 +14,8 @@ import {
   Goal,
   GoalBody,
   GoalFeasibility,
+  Loan,
+  LoanBody,
   Operation,
   OperationBody,
   OperationQuery,
@@ -219,5 +221,30 @@ export class FinanceApi {
 
   moveGoal(id: string, important: boolean, urgent: boolean, position: number): Observable<Goal> {
     return this.http.put<Goal>(`${BASE}/goals/${id}/position`, { important, urgent, position });
+  }
+  // ---- Prêts et emprunts ----
+
+  loans(): Observable<Loan[]> {
+    return this.http.get<Loan[]>(`${BASE}/loans`);
+  }
+
+  createLoan(body: LoanBody): Observable<Loan> {
+    return this.http.post<Loan>(`${BASE}/loans`, body);
+  }
+
+  updateLoan(id: string, body: { person: string; dueDate: string | null; notes: string | null }): Observable<Loan> {
+    return this.http.put<Loan>(`${BASE}/loans/${id}`, body);
+  }
+
+  repayLoan(id: string, amount: number, date: string, accountId: string): Observable<Loan> {
+    return this.http.post<Loan>(`${BASE}/loans/${id}/repayments`, { amount, date, accountId });
+  }
+
+  writeOffLoan(id: string, reason: string | null): Observable<Loan> {
+    return this.http.post<Loan>(`${BASE}/loans/${id}/write-off`, { reason });
+  }
+
+  cancelLoan(id: string): Observable<Loan> {
+    return this.http.post<Loan>(`${BASE}/loans/${id}/cancel`, {});
   }
 }

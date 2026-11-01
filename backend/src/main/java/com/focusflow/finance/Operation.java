@@ -90,6 +90,11 @@ public class Operation {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    /** Pret ou emprunt dont cette operation est le versement ou un remboursement. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loan_id")
+    private Loan loan;
+
     /** Objectif d'achat dont cette depense est l'achat reel (hors plafond variable, decision D4). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "goal_id")
@@ -149,8 +154,8 @@ public class Operation {
         }
         OperationType t = d.type();
         Direction dir = switch (t) {
-            case INCOME, PURCHASE_REFUND -> Direction.CREDIT;
-            case EXPENSE, TRANSFER -> Direction.DEBIT;
+            case INCOME, PURCHASE_REFUND, LOAN_COLLECTED, LOAN_TAKEN -> Direction.CREDIT;
+            case EXPENSE, TRANSFER, LOAN_GIVEN, LOAN_REPAID -> Direction.DEBIT;
             case OPENING_BALANCE, ADJUSTMENT -> {
                 if (d.direction() == null) {
                     throw ApiException.rule("INVALID_OPERATION", "Le sens du solde ou de la correction est obligatoire.");
@@ -185,6 +190,9 @@ public class Operation {
         if (d.refundOf() != null && (t != OperationType.PURCHASE_REFUND || d.refundOf().getType() != OperationType.EXPENSE)) {
             throw ApiException.rule("INVALID_OPERATION", "Un remboursement d'achat ne peut se rattacher qu'a une depense.");
         }
+        if (loan != null && !t.isLoanMovement()) {
+            throw ApiException.rule("INVALID_OPERATION", "Un mouvement de pret garde son type de mouvement de pret.");
+        }
         if (schedule != null && t != schedule.getType()) {
             throw ApiException.rule("INVALID_OPERATION", "L'echeance d'un echeancier garde le type de son echeancier.");
         }
@@ -215,6 +223,14 @@ public class Operation {
         }
         schedule = s;
         dueDate = due;
+    }
+
+    /** Rattache un mouvement de pret (versement ou remboursement) a son pret. */
+    public void linkLoan(Loan l) {
+        if (l == null || !type.isLoanMovement()) {
+            throw ApiException.rule("INVALID_OPERATION", "Seul un mouvement de pret se rattache a un pret.");
+        }
+        loan = l;
     }
 
     /** Rattache une depense a l'objectif d'achat qu'elle realise. */
@@ -330,6 +346,7 @@ public class Operation {
     public LocalDate getDueDate() { return dueDate; }
     public boolean isVirtual() { return virtual; }
     public Goal getGoal() { return goal; }
+    public Loan getLoan() { return loan; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

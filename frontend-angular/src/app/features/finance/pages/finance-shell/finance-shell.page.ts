@@ -25,6 +25,7 @@ export class FinanceShellPage {
     { path: 'budget', label: 'Budget', icon: 'target' },
     { path: 'purchases', label: 'Achats prévus', icon: 'cart' },
     { path: 'schedules', label: 'Échéancier', icon: 'repeat' },
+    { path: 'loans', label: 'Prêts', icon: 'hand-coins' },
     { path: 'settings', label: 'Réglages', icon: 'settings' },
   ];
   protected readonly needsSetup = computed(

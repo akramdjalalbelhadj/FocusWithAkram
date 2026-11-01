@@ -70,6 +70,11 @@ public interface OperationRepository extends JpaRepository<Operation, UUID>, Jpa
 
     boolean existsByScheduleId(UUID scheduleId);
 
+    /** Mouvements des prets (versements et remboursements), du plus ancien au plus recent. */
+    @EntityGraph(attributePaths = {"account", "loan"})
+    @Query("select o from Operation o where o.loan is not null order by o.date asc, o.createdAt asc")
+    List<Operation> findLoanMovements();
+
     /** Depenses reelles des objectifs d'achat (une par objectif achete). */
     @EntityGraph(attributePaths = {"goal", "account", "category"})
     @Query("select o from Operation o where o.goal is not null and o.status = com.focusflow.finance.OperationStatus.COMPLETED "

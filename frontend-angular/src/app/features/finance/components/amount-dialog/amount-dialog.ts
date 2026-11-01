@@ -11,6 +11,8 @@ export interface AmountDialogData {
   allowNegative?: boolean;
   /** Accepte zero (liberer une reservation). */
   allowZero?: boolean;
+  /** Montant affiche pour information, non modifiable. */
+  readonlyAmount?: boolean;
   /** Demande aussi une date (AAAA-MM-JJ), bornee a `maxDate`. */
   date?: string;
   maxDate?: string;

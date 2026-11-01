@@ -9,7 +9,11 @@ export type OperationType =
   | "PURCHASE_REFUND"
   | "TRANSFER"
   | "OPENING_BALANCE"
-  | "ADJUSTMENT";
+  | "ADJUSTMENT"
+  | "LOAN_GIVEN"
+  | "LOAN_COLLECTED"
+  | "LOAN_TAKEN"
+  | "LOAN_REPAID";
 export type OperationStatus = "PLANNED" | "COMPLETED" | "CANCELLED";
 export type Direction = "CREDIT" | "DEBIT";
 export type IncomeKind = "SALARY" | "BONUS" | "GIFT" | "SIDE_ACTIVITY" | "OTHER";
@@ -18,6 +22,8 @@ export type Frequency = "WEEKLY" | "MONTHLY" | "YEARLY";
 export type ScheduleStatus = "ACTIVE" | "PAUSED" | "ENDED";
 export type BudgetState = "NONE" | "OK" | "WARNING" | "OVER";
 export type ValueSource = "MONTH" | "DEFAULT" | "NONE";
+export type LoanDirection = "LENT" | "BORROWED";
+export type LoanStatus = "OPEN" | "SETTLED" | "WRITTEN_OFF" | "CANCELLED";
 export type GoalStatus = "CONSIDERED" | "PLANNED" | "POSTPONED" | "PURCHASED" | "ABANDONED";
 export type Verdict = "FEASIBLE" | "RISKY" | "NOT_FEASIBLE" | "UNKNOWN";
 export type GoalNote = "NO_ACCOUNT" | "NO_INCOME" | "NO_CAP" | "TARGET_PASSED" | "LATE_INCOME";
@@ -184,6 +190,10 @@ export interface FinanceOverview {
   overdueCount: number;
   budget: BudgetGauge;
   safetyReserve: number;
+  /** Restes dus des prêts accordés en cours. */
+  receivables: number;
+  /** Restes dus des emprunts en cours. */
+  debts: number;
 }
 
 /** Jauge du plafond variable : vert (OK), orange (WARNING, du seuil au plafond), rouge (OVER) ou NONE. */
@@ -280,6 +290,8 @@ export interface FinanceImportSummary {
   preferencesRestored: boolean;
   goalsCreated: number;
   goalsSkipped: number;
+  loansCreated: number;
+  loansSkipped: number;
 }
 
 /** Faisabilité d'un objectif calculée par la prévision de trésorerie (montants en euros). */
@@ -370,4 +382,38 @@ export interface Forecast {
   points: ForecastPoint[];
   lowest: ForecastPoint;
   goals: GoalFeasibility[];
+  /** Remboursements attendus de prêts accordés : non comptés (scénario favorable). */
+  expectedRepayments: number;
+}
+
+/** Prêt accordé ou emprunt, avec son état calculé par le serveur. */
+export interface Loan {
+  id: string;
+  person: string;
+  direction: LoanDirection;
+  principal: number;
+  startDate: string;
+  dueDate: string | null;
+  notes: string | null;
+  repaid: number;
+  writtenOffAmount: number;
+  writtenOffDate: string | null;
+  writtenOffReason: string | null;
+  remaining: number;
+  status: LoanStatus;
+  overdue: boolean;
+  movements: Operation[];
+  createdAt: string;
+}
+
+export interface LoanBody {
+  person: string;
+  direction: LoanDirection;
+  amount: number;
+  startDate: string;
+  dueDate: string | null;
+  accountId: string | null;
+  /** Faux : prêt antérieur au suivi, sans mouvement d'argent enregistré. */
+  recordDisbursement: boolean;
+  notes: string | null;
 }

@@ -18,8 +18,8 @@ backend/src/main/java/com/focusflow/
   settings/        UserSettings (singleton), SettingsService, SettingsMapper, dto/
   dashboard/       indicateurs et Top 3 ; eisenhower/ matrice ; statistics/ agregations ; search/ recherche
   finance/         module « Mes achats » : Account, Category, Operation, Schedule (echeancier), MonthlyBudget,
-                   FinancePreferences, Goal (objectif d'achat), ForecastEngine (calcul pur) et ForecastService,
-                   Money, FinanceDates, services (comptes, operations, echeancier, budget, objectifs),
+                   FinancePreferences, Goal (objectif d'achat), Loan (pret ou emprunt), ForecastEngine (calcul pur) et ForecastService,
+                   Money, FinanceDates, services (comptes, operations, echeancier, budget, objectifs, prets),
                    FinanceOverviewService (bilan du mois), FinanceBackup (section de sauvegarde), dto/
   transfer/        export CSV/JSON, sauvegarde versionnee et import, dto/
 ```
@@ -92,9 +92,9 @@ Regles metier : [specification de « Mes achats »](../produit/mes-achats/specif
 - **Echeanciers** : les echeances sont calculees depuis la date de depart (`Schedule.nth`, sans derive de fin de mois). Seule une echeance realisee, sautee ou ajustee est enregistree, comme operation liee (`schedule_id`, `due_date`, index unique) : une echeance ne peut pas etre payee deux fois. Les echeances a venir sont des operations **virtuelles** (`Operation.virtual`, jamais persistees) reutilisees par le budget, la vue d'ensemble et, plus tard, la prevision. Les echeances passees non confirmees restent proposees 92 jours (`ScheduleService.OVERDUE_LOOKBACK_DAYS`).
 - **Budget** : `BudgetService` combine operations du mois et echeances virtuelles ; plafond et objectif du mois (`fin_budget`) ou par defaut (`fin_preferences`) ; jauge OK / WARNING (seuil inclus jusqu'au plafond) / OVER calculee sur les valeurs exactes.
 - **Prevision et faisabilite** : `ForecastEngine` est un calcul pur (sans Spring ni base), teste sur des scenarios chiffres a la main. Il calcule jour par jour le disponible et l'epargne (operations prevues et en retard, echeances, depenses variables restantes reparties au centime sur le mois, epargne du mois retiree au salaire) puis evalue les objectifs ouverts par priorite (quadrant, date cible, anciennete). Un achat est realisable si le disponible libre reste au-dessus de la reserve de securite sur [date, date + 92 jours] ; chaque objectif retenu est deduit avant le suivant (pas de double comptage) ; les reservations n'appartiennent qu'a leur objectif ; un objectif « finance par l'epargne » peut puiser au-dessus du plancher. `ForecastService` prepare les entrees ; tout est recalcule a chaque lecture.
-- **Migrations** : `V2__finance_core.sql` (tables), `V3__finance_default_categories.sql` (categories initiales), `V4__finance_budget_schedules.sql` (preferences, budgets, echeanciers, lien operation-echeance), `V5__finance_goals.sql` (objectifs d'achat, lien depense-objectif). Additives : aucune donnee existante n'est modifiee.
+- **Migrations** : `V2__finance_core.sql` (tables), `V3__finance_default_categories.sql` (categories initiales), `V4__finance_budget_schedules.sql` (preferences, budgets, echeanciers, lien operation-echeance), `V5__finance_goals.sql` (objectifs d'achat, lien depense-objectif), `V6__finance_loans.sql` (prets et emprunts, mouvements de pret lies). Additives : aucune donnee existante n'est modifiee.
 
-API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`), `schedules` (CRUD, `/{id}/pause|resume|end`, `/{id}/occurrences/{AAAA-MM-JJ}/complete|skip`, `PUT /{id}/occurrences/{date}`), `budget?month=` et `PUT budget/{AAAA-MM}`, `preferences` (GET/PUT), `forecast`, `goals` (CRUD, `preview`, `/{id}/reservation`, `/{id}/purchase`, `/{id}/postpone|abandon|reopen`, `/{id}/position`).
+API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`), `schedules` (CRUD, `/{id}/pause|resume|end`, `/{id}/occurrences/{AAAA-MM-JJ}/complete|skip`, `PUT /{id}/occurrences/{date}`), `budget?month=` et `PUT budget/{AAAA-MM}`, `preferences` (GET/PUT), `forecast`, `goals` (CRUD, `preview`, `/{id}/reservation`, `/{id}/purchase`, `/{id}/postpone|abandon|reopen`, `/{id}/position`), `loans` (liste, detail, creation, `PUT /{id}` personne/echeance/notes, `/{id}/repayments`, `/{id}/write-off`, `/{id}/cancel`).
 
 ## Sauvegarde et import
 
@@ -104,7 +104,7 @@ API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/rec
 | --- | --- |
 | 1 | projets, taches (etiquettes, sous-taches, cycles), sessions Pomodoro terminees |
 | 2 | v1 + preferences (`settings`) + Top 3 quotidien (`dailyGoals`) |
-| 3 | v2 + module « Mes achats » (`finance` : comptes, categories, echeanciers, objectifs d'achat, operations, budgets, preferences) |
+| 3 | v2 + module « Mes achats » (`finance` : comptes, categories, echeanciers, objectifs d'achat, prets, operations, budgets, preferences) |
 
 L'import accepte toute version de 1 a `CURRENT_VERSION` (sections absentes ignorees) et refuse un fichier plus recent avec `IMPORT_UNSUPPORTED_VERSION`. Chaque element est valide avant ecriture (memes regles que les contraintes SQL) : un element invalide est signale dans `ImportReport.errors` sans interrompre les autres. Le mode apercu (`dryRun=true`) execute l'import puis annule la transaction : son rapport est exactement celui de l'import reel. Les doublons sont ignores (taches : meme identifiant, ou meme titre et date de creation ; projets : meme nom ; sessions et Top 3 : meme identifiant ou meme date et position). Une session n'est rattachee a une tache existante que si leurs identifiants concordent. Les preferences du fichier remplacent les preferences courantes, apres validation complete.
 

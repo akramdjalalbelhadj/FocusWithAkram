@@ -24,7 +24,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 4 | Socle finance : comptes, catégories, opérations, solde, corrections | Livré |
 | 5 | Revenus prévus/reçus, budget mensuel, épargne, abonnements | Livré |
 | 6 | Objectifs d'achat, matrice d'achats, moteur de prévision, faisabilité | Livré |
-| 7 | Prêts et emprunts | À faire |
+| 7 | Prêts et emprunts | Livré |
 | 8 | Tableau de bord, statistiques, alertes, simulations | À faire |
 | 9 | Documentation finale et dossier de migration React | À faire |
 | 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Planifié après les lots 7 et 8 |
@@ -126,6 +126,18 @@ Vérifications : 140 tests backend, 31 tests Angular, lint et build. Recette sur
 
 Précision de règle : tous les objectifs ouverts (envisagés, planifiés, reportés) entrent dans la prévision par ordre de priorité, comme le prévoit la spécification validée ; un achat « envisagé » peu prioritaire (Q4) passe donc après les autres.
 
+### Réalisé au lot 7 — prêts et emprunts
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Schéma | `V6__finance_loans.sql` : table `fin_loan` (personne, sens, montant, dates, régularisation, annulation) ; quatre types d'opération de prêt (`LOAN_GIVEN`, `LOAN_COLLECTED`, `LOAN_TAKEN`, `LOAN_REPAID`) liés obligatoirement à un prêt (contrainte `ck_fin_operation_loan`) ; contraintes de type et de sens recréées | Tests d'intégration |
+| Règles | Versement et remboursements modifient les soldes mais ne sont ni revenus ni dépenses ; reste dû, statut (en cours, remboursé, régularisé, annulé) et retard calculés ; remboursement limité au reste dû ; régularisation explicite sans mouvement d'argent ; annulation qui annule aussi les mouvements ; « prêt antérieur au suivi » sans mouvement ; mouvements de prêt non saisissables ni modifiables comme opérations ordinaires | 7 tests d'intégration |
+| Prévision | Une dette est déduite à son échéance (à aujourd'hui si elle est dépassée) ; les remboursements attendus des prêts accordés sont signalés (`expectedRepayments`) mais jamais comptés comme disponibles (D5) | Test « emprunt de 500 € à rembourser le 20/11 : achat de 400 € au 05/11 non réalisable » |
+| Vue d'ensemble, sauvegarde | Créances et dettes en cours (`receivables`, `debts`) ; section `loans` de la sauvegarde v3 et `loanId` sur les opérations, import idempotent (`loansCreated`, `loansSkipped`) | Aller-retour sauvegarde puis réimport sans doublon |
+| Angular | Onglet **Prêts** (« On me doit » / « Je dois », reste dû, barre de progression, historique dépliable), dialogues de prêt et de remboursement, régularisation, annulation ; bandeau créances/dettes dans la vue d'ensemble ; libellés et icône des mouvements de prêt dans les opérations | 31 tests unitaires, lint, build ; recette navigateur |
+
+Vérifications : 147 tests backend, 31 tests Angular, lint et build ; React compile toujours (types partagés étendus, aucun fichier React modifié). Recette sur base jetable : compte de 1 200 €, prêt de 300 € à Sami (en retard, échéance au 25/10) et emprunt antérieur de 400 € ; remboursement partiel de 120,50 € saisi au format français → reste dû 179,50 € ; régularisation du reste → créances à 0 € ; vue d'ensemble : disponible 1 020,50 €, « Vous devez 400,00 € », aucune dépense ni aucun revenu comptés.
+
 ## 4. Adaptations React à prévoir (phase 2)
 
 | Origine | Adaptation |
@@ -133,4 +145,5 @@ Précision de règle : tous les objectifs ouverts (envisagés, planifiés, repor
 | Lot 0 | `frontend-react/README.md` pointe vers `docs/frontend-architecture.md` et `docs/how-to-run-frontends.md`, devenus `docs/technique/architecture-frontend.md` et `docs/technique/exploitation.md` |
 | Lot 1 | `ImportReport` contient `settingsRestored`, `dailyGoalsCreated`, `dailyGoalsSkipped` (sauvegarde v2) : les afficher dans l'aperçu d'import React. Champs ajoutés, aucun champ retiré : React compile sans changement |
 | Lot 4 | Implémenter le module « Mes achats » : contrats dans `shared/finance.ts`, API `/api/v1/finance` (voir l'architecture backend), entrée de navigation `/finance` (G puis B), raccourci E. `ImportReport.finance` (sauvegarde v3) à afficher dans l'aperçu d'import |
+| Lot 7 | `OperationType` compte quatre types de mouvements de prêt (`LOAN_*`) à libeller ; `FinanceOverview.receivables` / `debts`, `ForecastResponse.expectedRepayments`, type `Loan` et API `/api/v1/finance/loans` ; `ImportReport.finance.loansCreated` / `loansSkipped` |
 | Lot 0 | La suite E2E (`frontend-react/e2e`, `playwright.config.ts`) écrit dans `docs/test-results/` et `docs/screenshots/`, désormais ignorés par Git ; envisager de la déplacer hors du dossier React puisqu'elle teste aussi Angular |

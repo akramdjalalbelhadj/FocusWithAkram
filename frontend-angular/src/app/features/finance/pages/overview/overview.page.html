@@ -88,6 +88,26 @@
     </div>
   </section>
 
+  @if (d.receivables > 0 || d.debts > 0) {
+    <a
+      routerLink="../loans"
+      class="card p-3 mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm hover:bg-surface-2"
+    >
+      <ff-icon name="hand-coins" class="text-muted" />
+      @if (d.receivables > 0) {
+        <span
+          >On vous doit <strong class="tabular-nums">{{ money(d.receivables) }}</strong></span
+        >
+      }
+      @if (d.debts > 0) {
+        <span
+          >Vous devez <strong class="tabular-nums text-danger">{{ money(d.debts) }}</strong></span
+        >
+      }
+      <span class="text-muted ml-auto">Voir les prêts</span>
+    </a>
+  }
+
   @if (d.budget.state !== 'NONE') {
     <a
       routerLink="../budget"

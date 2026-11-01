@@ -5,6 +5,7 @@ import com.focusflow.finance.Direction;
 import com.focusflow.finance.Frequency;
 import com.focusflow.finance.GoalStatus;
 import com.focusflow.finance.IncomeKind;
+import com.focusflow.finance.LoanDirection;
 import com.focusflow.finance.OperationStatus;
 import com.focusflow.finance.OperationType;
 import com.focusflow.finance.ScheduleKind;
@@ -20,8 +21,8 @@ import java.util.UUID;
  * preferences, avec leurs identifiants. Toutes les listes sont facultatives.
  */
 public record FinanceBackupData(List<AccountData> accounts, List<CategoryData> categories, List<ScheduleData> schedules,
-                                List<GoalData> goals, List<OperationData> operations, List<BudgetData> budgets,
-                                PreferencesData preferences) {
+                                List<GoalData> goals, List<LoanData> loans, List<OperationData> operations,
+                                List<BudgetData> budgets, PreferencesData preferences) {
 
     public record AccountData(UUID id, String name, AccountType type, Boolean archived, Integer position,
                               Instant createdAt) {
@@ -35,7 +36,12 @@ public record FinanceBackupData(List<AccountData> accounts, List<CategoryData> c
                                 Direction direction, LocalDate date, BigDecimal amount, BigDecimal plannedAmount,
                                 UUID categoryId, IncomeKind incomeKind, String label, String description,
                                 Boolean essential, Boolean exceptional, UUID refundOfId, Instant createdAt,
-                                Instant updatedAt, UUID scheduleId, LocalDate dueDate, UUID goalId) {
+                                Instant updatedAt, UUID scheduleId, LocalDate dueDate, UUID goalId, UUID loanId) {
+    }
+
+    public record LoanData(UUID id, String person, LoanDirection direction, BigDecimal principal, LocalDate startDate,
+                           LocalDate dueDate, String notes, BigDecimal writtenOffAmount, LocalDate writtenOffDate,
+                           String writtenOffReason, Boolean cancelled, Instant createdAt, Instant updatedAt) {
     }
 
     public record GoalData(UUID id, String name, UUID categoryId, String description, BigDecimal estimatedPrice,

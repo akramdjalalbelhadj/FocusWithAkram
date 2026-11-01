@@ -40,6 +40,10 @@ export class OperationRowComponent {
         TRANSFER: 'transfer',
         OPENING_BALANCE: 'landmark',
         ADJUSTMENT: 'scale',
+        LOAN_GIVEN: 'hand-coins',
+        LOAN_COLLECTED: 'hand-coins',
+        LOAN_TAKEN: 'hand-coins',
+        LOAN_REPAID: 'hand-coins',
       } as const
     )[o.type];
   });
@@ -47,7 +51,10 @@ export class OperationRowComponent {
   protected readonly typeLabel = computed(() => OPERATION_TYPE_LABEL[this.op().type]);
   protected readonly editable = computed(
     () =>
-      !this.op().virtual && this.op().type !== 'OPENING_BALANCE' && this.op().type !== 'ADJUSTMENT',
+      !this.op().virtual &&
+      !['OPENING_BALANCE', 'ADJUSTMENT', 'LOAN_GIVEN', 'LOAN_COLLECTED', 'LOAN_TAKEN', 'LOAN_REPAID'].includes(
+        this.op().type,
+      ),
   );
   protected readonly money = formatMoney;
   protected readonly longDate = longDate;

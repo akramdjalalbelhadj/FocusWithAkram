@@ -4,6 +4,7 @@ import com.focusflow.finance.dto.FinanceBackupData;
 import com.focusflow.finance.dto.FinanceBackupData.AccountData;
 import com.focusflow.finance.dto.FinanceBackupData.BudgetData;
 import com.focusflow.finance.dto.FinanceBackupData.GoalData;
+import com.focusflow.finance.dto.FinanceBackupData.LoanData;
 import com.focusflow.finance.dto.FinanceBackupData.CategoryData;
 import com.focusflow.finance.dto.FinanceBackupData.OperationData;
 import com.focusflow.finance.dto.FinanceBackupData.PreferencesData;
@@ -38,12 +39,14 @@ public class FinanceBackup {
     private final ScheduleRepository schedules;
     private final MonthlyBudgetRepository budgets;
     private final GoalRepository goals;
+    private final LoanRepository loans;
     private final FinancePreferencesRepository preferences;
     private final FinanceDates dates;
     private final Clock clock;
 
     public FinanceBackup(AccountRepository accounts, CategoryRepository categories, OperationRepository operations,
                          ScheduleRepository schedules, MonthlyBudgetRepository budgets, GoalRepository goals,
+                         LoanRepository loans,
                          FinancePreferencesRepository preferences, FinanceDates dates, Clock clock) {
         this.accounts = accounts;
         this.categories = categories;
@@ -51,6 +54,7 @@ public class FinanceBackup {
         this.schedules = schedules;
         this.budgets = budgets;
         this.goals = goals;
+        this.loans = loans;
         this.preferences = preferences;
         this.dates = dates;
         this.clock = clock;
@@ -80,6 +84,11 @@ public class FinanceBackup {
                                 g.isUrgent(), g.getStatus(), g.getReservedAmount(), g.isFundedBySavings(), g.getPosition(),
                                 g.getNotes(), g.getCreatedAt(), g.getUpdatedAt()))
                         .toList(),
+                loans.findAllOrdered().stream()
+                        .map(l -> new LoanData(l.getId(), l.getPerson(), l.getDirection(), l.getPrincipal(), l.getStartDate(),
+                                l.getDueDate(), l.getNotes(), l.getWrittenOffAmount(), l.getWrittenOffDate(),
+                                l.getWrittenOffReason(), l.isCancelled(), l.getCreatedAt(), l.getUpdatedAt()))
+                        .toList(),
                 operations.findAllForBackup().stream()
                         .map(o -> new OperationData(o.getId(), o.getAccount().getId(),
                                 o.getTargetAccount() == null ? null : o.getTargetAccount().getId(), o.getType(),
@@ -88,7 +97,8 @@ public class FinanceBackup {
                                 o.getDescription(), o.isEssential(), o.isExceptional(),
                                 o.getRefundOf() == null ? null : o.getRefundOf().getId(), o.getCreatedAt(), o.getUpdatedAt(),
                                 o.getSchedule() == null ? null : o.getSchedule().getId(), o.getDueDate(),
-                                o.getGoal() == null ? null : o.getGoal().getId()))
+                                o.getGoal() == null ? null : o.getGoal().getId(),
+                                o.getLoan() == null ? null : o.getLoan().getId()))
                         .toList(),
                 budgets.findAllByOrderByMonthAsc().stream()
                         .map(b -> new BudgetData(b.getMonth(), b.getVariableCap(), b.getSavingsTarget()))
@@ -103,17 +113,19 @@ public class FinanceBackup {
     @Transactional
     public FinanceImportSummary importData(FinanceBackupData data, Consumer<String> errors) {
         Instant now = Instant.now(clock);
-        int[] counts = new int[11];
+        int[] counts = new int[13];
         Map<UUID, Account> accountMap = importAccounts(nullToEmpty(data.accounts()), now, counts, errors);
         Map<UUID, Category> categoryMap = importCategories(nullToEmpty(data.categories()), now, counts, errors);
         Map<UUID, Schedule> scheduleMap = importSchedules(nullToEmpty(data.schedules()), accountMap, categoryMap, now,
                 counts, errors);
         Map<UUID, Goal> goalMap = importGoals(nullToEmpty(data.goals()), categoryMap, now, counts, errors);
-        importOperations(nullToEmpty(data.operations()), accountMap, categoryMap, scheduleMap, goalMap, now, counts, errors);
+        Map<UUID, Loan> loanMap = importLoans(nullToEmpty(data.loans()), now, counts, errors);
+        importOperations(nullToEmpty(data.operations()), accountMap, categoryMap, scheduleMap, goalMap, loanMap, now,
+                counts, errors);
         importBudgets(nullToEmpty(data.budgets()), counts, errors);
         boolean preferencesRestored = data.preferences() != null && importPreferences(data.preferences(), errors);
         return new FinanceImportSummary(counts[0], counts[1], counts[2], counts[3], counts[4], counts[5], counts[6],
-                counts[7], counts[8], preferencesRestored, counts[9], counts[10]);
+                counts[7], counts[8], preferencesRestored, counts[9], counts[10], counts[11], counts[12]);
     }
 
     private Map<UUID, Account> importAccounts(List<AccountData> list, Instant now, int[] counts, Consumer<String> errors) {
@@ -261,6 +273,30 @@ public class FinanceBackup {
         return map;
     }
 
+    private Map<UUID, Loan> importLoans(List<LoanData> list, Instant now, int[] counts, Consumer<String> errors) {
+        Map<UUID, Loan> map = new HashMap<>();
+        for (LoanData d : list) {
+            try {
+                if (d.id() != null) {
+                    Loan existing = loans.findById(d.id()).orElse(null);
+                    if (existing != null) {
+                        map.put(d.id(), existing);
+                        counts[12]++;
+                        continue;
+                    }
+                }
+                Loan l = loans.save(Loan.restored(d.id(), d.person(), d.direction(), d.principal(), d.startDate(),
+                        d.dueDate(), d.notes(), d.writtenOffAmount(), d.writtenOffDate(), d.writtenOffReason(),
+                        Boolean.TRUE.equals(d.cancelled()), d.createdAt() != null ? d.createdAt() : now, d.updatedAt()));
+                if (d.id() != null) map.put(d.id(), l);
+                counts[11]++;
+            } catch (RuntimeException e) {
+                errors.accept("Pret '" + d.person() + "' : " + e.getMessage());
+            }
+        }
+        return map;
+    }
+
     private void importBudgets(List<BudgetData> list, int[] counts, Consumer<String> errors) {
         for (BudgetData d : list) {
             try {
@@ -312,8 +348,8 @@ public class FinanceBackup {
     }
 
     private void importOperations(List<OperationData> list, Map<UUID, Account> accountMap, Map<UUID, Category> categoryMap,
-                                  Map<UUID, Schedule> scheduleMap, Map<UUID, Goal> goalMap, Instant now, int[] counts,
-                                  Consumer<String> errors) {
+                                  Map<UUID, Schedule> scheduleMap, Map<UUID, Goal> goalMap, Map<UUID, Loan> loanMap,
+                                  Instant now, int[] counts, Consumer<String> errors) {
         Map<UUID, Operation> imported = new HashMap<>();
         Set<UUID> seen = new HashSet<>();
         // Les remboursements apres les depenses qu'ils remboursent.
@@ -353,6 +389,14 @@ public class FinanceBackup {
                         d.plannedAmount(), d.createdAt() != null ? d.createdAt() : now, d.updatedAt());
                 if (schedule != null) {
                     o.linkOccurrence(schedule, d.dueDate());
+                }
+                if (d.type() != null && d.type().isLoanMovement()) {
+                    Loan loan = d.loanId() == null ? null
+                            : loanMap.containsKey(d.loanId()) ? loanMap.get(d.loanId()) : loans.findById(d.loanId()).orElse(null);
+                    if (loan == null) {
+                        throw new IllegalArgumentException("pret introuvable pour ce mouvement.");
+                    }
+                    o.linkLoan(loan);
                 }
                 if (d.goalId() != null) {
                     Goal goal = goalMap.containsKey(d.goalId()) ? goalMap.get(d.goalId()) : goals.findById(d.goalId()).orElse(null);
