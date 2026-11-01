@@ -18,7 +18,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 0 | Hygiène du dépôt, réorganisation `docs/` et racine | Livré |
 | 1 | Backend : aplatissement des packages, ArchUnit, import robuste, sauvegarde v2 extensible (compatible v1) | Livré |
 | 2 | Angular : corrections (archives, double toast, recherche, lint autonome, Docker), navigation à source unique | Livré (Docker non construit) |
-| 3 | Spécification fonctionnelle et règles financières de « Mes achats » — validation par le propriétaire | À faire |
+| 3 | Spécification fonctionnelle et règles financières de « Mes achats » — validation par le propriétaire | [Proposition rédigée](../produit/mes-achats/specification.md), en attente des décisions D3 à D6 |
 | 4 | Socle finance : comptes, catégories, opérations, solde, corrections | À faire |
 | 5 | Revenus prévus/reçus, budget mensuel, épargne, abonnements | À faire |
 | 6 | Objectifs d'achat, matrice d'achats, moteur de prévision, faisabilité | À faire |

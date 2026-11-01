@@ -19,6 +19,7 @@ docs/
 | --- | --- | --- |
 | [Cahier des charges](produit/cahier-des-charges.md) | Quel produit construit-on et selon quelles règles ? | Produit, développement, recette |
 | [Guide d'utilisation](produit/guide-utilisation.md) | Comment accomplir les tâches courantes ? | Utilisateur |
+| [« Mes achats » — spécification](produit/mes-achats/specification.md) | Quelles règles financières le module applique-t-il ? | Produit, développement, recette |
 | [Architecture backend](technique/architecture-backend.md) | Comment le serveur est-il organisé (packages, DTO, erreurs, transactions) ? | Développement |
 | [Architecture frontend](technique/architecture-frontend.md) | Comment les interfaces Angular et React sont-elles organisées ? | Développement |
 | [Design détaillé](technique/design.md) | Comment composer et faire évoluer les interfaces ? | Design, frontend, recette |
