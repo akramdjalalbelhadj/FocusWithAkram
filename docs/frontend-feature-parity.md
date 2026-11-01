@@ -1,5 +1,7 @@
 # Parité fonctionnelle — état de recette
 
+> **Rapport de lot historique.** Pour l’état courant au 1 novembre 2026, consulter l’[avancement fonctionnel](avancement-fonctionnel.md), l’[avancement technique](avancement-technique.md) et le [design détaillé](design.md). Les chemins et résultats de ce rapport décrivent sa recette initiale.
+
 `fonctionnel` signifie code relié à l’API réelle, avec la preuve indiquée. Cela ne signifie pas que toutes les combinaisons ont été automatisées. `partiel` identifie une différence de couverture ou de présentation. Aucun endpoint fictif. Les règles de dates, de cycles, de statut et d’archivage restent côté Spring Boot.
 
 | Page / fonctionnalité | Angular | React | API réelle | Preuve / test | Écart connu |
@@ -38,3 +40,7 @@
 Les tests UI couvrent les parcours structurants, pas chaque opération de la table. La recette reste partielle pour une certification de parité exhaustive : import/export dans le navigateur, tous les menus, lecteurs d’écran, plusieurs onglets concurrents et fin sonore automatique. Les tests backend ne sont pas présentés comme des tests UI.
 
 Les exemples visuels sont des fixtures déclarées dans `frontend-react/e2e/seed.mjs`, stockées par les vrais endpoints dans une base PostgreSQL séparée. Les applications normales n’utilisent ni mocks ni fixtures. Les dates partagées sont testées pour les journées de 23/25 heures et l’heure ambiguë d’automne.
+
+## Complément — configuration du minuteur
+
+Dans les deux variantes, le panneau complet est dans **Focus / Pomodoro → Configurer**. Durées, objectif, options automatiques, son et notifications ont été retirés des paramètres généraux. Angular enregistre au changement ; React utilise « Enregistrer le minuteur ». Des E2E dédiés vérifient la persistance et la conservation après enregistrement des paramètres généraux.

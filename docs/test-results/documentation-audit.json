@@ -1,0 +1,133 @@
+{
+  "reviewDate": "2026-11-01",
+  "branch": "main",
+  "documentationReviewOnly": true,
+  "backend": {
+    "totalTests": 78,
+    "failures": 0,
+    "errors": 0,
+    "suites": [
+      {
+        "class": "com.focusflow.architecture.ControllerArchitectureTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/architecture/ControllerArchitectureTest.java"
+      },
+      {
+        "class": "com.focusflow.contract.ApiContractIT",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/contract/ApiContractIT.java"
+      },
+      {
+        "class": "com.focusflow.transfer.controller.ImportExportIT",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/transfer/controller/ImportExportIT.java"
+      },
+      {
+        "class": "com.focusflow.transfer.service.CsvEscapingTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/transfer/service/CsvEscapingTest.java"
+      },
+      {
+        "class": "com.focusflow.task.controller.MatrixAndPrioritiesIT",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/task/controller/MatrixAndPrioritiesIT.java"
+      },
+      {
+        "class": "com.focusflow.task.controller.TaskLifecycleIT",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/task/controller/TaskLifecycleIT.java"
+      },
+      {
+        "class": "com.focusflow.task.enums.ArchiveSectionTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/task/enums/ArchiveSectionTest.java"
+      },
+      {
+        "class": "com.focusflow.task.model.TaskTimingTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/task/model/TaskTimingTest.java"
+      },
+      {
+        "class": "com.focusflow.statistics.controller.StatisticsAndArchivesIT",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/statistics/controller/StatisticsAndArchivesIT.java"
+      },
+      {
+        "class": "com.focusflow.pomodoro.controller.PomodoroIT",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/pomodoro/controller/PomodoroIT.java"
+      },
+      {
+        "class": "com.focusflow.pomodoro.entity.PomodoroSessionTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "timestamp": null,
+        "source": "backend/src/test/java/com/focusflow/pomodoro/entity/PomodoroSessionTest.java"
+      }
+    ],
+    "note": "Suite existante et tests de contrat/architecture executes lors de la reorganisation, pas relances pendant la revision documentaire."
+  },
+  "frontend": {
+    "angularUnitTests": 12,
+    "reactUnitTests": 12,
+    "businessE2EHistorical": 12,
+    "pomodoroSettingsE2E": 2,
+    "routeViewportChecks": 36,
+    "historicalAxeAudits": 28,
+    "note": "Resultats de lots precedents ; pas une nouvelle recette complete de la derniere version."
+  },
+  "availableArtifacts": {
+    "historicalSummary": true,
+    "screenshotsDirectory": false,
+    "legacyFunctionalDocument": false,
+    "referencePngCount": 16
+  },
+  "limitations": [
+    "Les anciennes captures ne sont plus disponibles dans la copie locale.",
+    "Les chiffres historiques du summary.json decrivent un lot anterieur au backend reorganise.",
+    "Docker non execute ; contexte shared/ a traiter avant validation.",
+    "Conversion Tailwind Angular partielle ; seul le cas matrice est annonce converti."
+  ]
+}

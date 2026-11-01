@@ -33,7 +33,7 @@ services:
       FOCUSFLOW_CORS_ORIGINS: http://localhost:${FOCUSFLOW_PORT:-8088}
 
   frontend:
-    build: ./frontend
+    build: ./frontend-angular
     restart: unless-stopped
     depends_on:
       - backend

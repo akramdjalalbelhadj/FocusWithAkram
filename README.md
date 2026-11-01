@@ -2,7 +2,9 @@
 
 Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros.
 
-- Documentation fonctionnelle détaillée : [`docs/docs/DOCUMENTATION_FONCTIONNELLE.md`](docs/docs/DOCUMENTATION_FONCTIONNELLE.md)
+- Documentation du projet : [index](docs/README.md) · [cahier des charges](docs/cahier-des-charges.md) · [guide d’utilisation](docs/guide-utilisation.md)
+- Suivi : [avancement fonctionnel](docs/avancement-fonctionnel.md) · [avancement technique backend/frontend](docs/avancement-technique.md) · [checklist](docs/checklist.md)
+- Références : [design détaillé](docs/design.md) · [exploitation](docs/exploitation.md)
 - Deux frontends Angular/React : [lancement et recette](docs/how-to-run-frontends.md) · [comparaison](docs/frontend-comparison.md) · [parité](docs/frontend-feature-parity.md) · [captures et écarts](docs/frontend-visual-regression.md)
 - API interactive (Swagger UI) : <http://localhost:8080/swagger-ui.html> une fois lancé
 
@@ -40,7 +42,7 @@ docker compose up -d --build
 # Application : http://localhost:8088  (publiée sur 127.0.0.1 uniquement)
 ```
 
-`docker-compose.dev.yml` ne démarre que PostgreSQL pour développer avec `mvn spring-boot:run` sans le profil `local`. ⚠️ Les fichiers Docker n'ont pas été exécutés sur le poste de développement (Docker absent) : à vérifier au premier usage.
+`docker-compose.dev.yml` ne démarre que PostgreSQL pour développer avec `mvn spring-boot:run` sans le profil `local`. La composition principale cible Angular ; React n’a pas de service Docker dédié. Docker reste non validé : le contexte de build doit notamment inclure les sources `shared/` importées par Angular. Voir les prérequis et réserves dans l’[exploitation](docs/exploitation.md).
 
 ## Architecture
 
@@ -68,10 +70,11 @@ Choix structurants :
 
 - **Le quadrant n'est pas stocké** : il dérive de `important` × `urgent` (cohérence garantie).
 - **Les règles du cycle de vie** (démarrer / terminer / restaurer) sont dans l'entité `Task` ; les invariants sont aussi imposés par des contraintes SQL.
-- **Le temps Pomodoro est calculé depuis des horodatages** et non compté ; le temps d'une tâche est la somme de ses sessions (pas de double comptage). Voir la documentation, section 16.
+- **Le temps Pomodoro est calculé depuis des horodatages** ; le temps actif d'une tâche est la somme de ses sessions de travail, sans double comptage.
 - **Instants en UTC**, affichage et regroupements dans le fuseau de l'utilisateur.
 - Erreurs au format **ProblemDetail (RFC 9457)** avec un `code` stable.
-- État frontend en **Signals** ; un `RefreshService` recharge toutes les vues après chaque mutation.
+- Angular utilise les **Signals** et `RefreshService` ; React utilise des hooks, des contextes et **TanStack Query**.
+- Les réglages du minuteur sont dans **Focus / Pomodoro → Configurer** : enregistrement automatique Angular, bouton explicite React.
 
 ### Principaux endpoints (`/api/v1`)
 
@@ -79,21 +82,29 @@ Choix structurants :
 
 ## Tests
 
-```bash
-cd backend  && mvn verify                       # 70 tests : unitaires + intégration (PostgreSQL embarqué)
-cd frontend-angular && npx ng test --watch=false        # 12 tests : dates / fuseaux / moteur du minuteur
+```powershell
+# Depuis backend : 78 tests connus, unitaires, intégration, contrat et architecture
+mvn test
+```
+
+```powershell
+# Depuis la racine : 12 tests unitaires par frontend
+npm run test:angular
+npm run test:react
+npm run lint:angular
+npm run lint:react
 ```
 
 Backend : cycle de vie et archivage, comparaison prévu/réel, début rétroactif, restauration et cycles multiples, matrice et ordre, priorités, sous-tâches, machine à états Pomodoro (pause, reprise, idempotence, expiration, pas de double comptage), historique quotidien, statistiques par fuseau, **changements d'heure** (printemps et automne), import / export. Les tests d'intégration utilisent un vrai PostgreSQL embarqué (Testcontainers n'est pas utilisable sans Docker).
 
 ## Configuration
 
-| Variable | Défaut | Rôle |
-|---|---|---|
-| `FOCUSFLOW_DB_URL` / `_USER` / `_PASSWORD` | `jdbc:postgresql://localhost:5432/focusflow` | Base PostgreSQL (hors profil `local`) |
-| `PORT` | `8080` | Port du backend |
-| `FOCUSFLOW_BIND_ADDRESS` | `127.0.0.1` | Interface d'écoute (`0.0.0.0` dans Docker) |
-| `FOCUSFLOW_CORS_ORIGINS` | `http://localhost:4200` | Origines CORS autorisées |
+| Variable                                   | Défaut                                            | Rôle                                       |
+| ------------------------------------------ | ------------------------------------------------- | ------------------------------------------ |
+| `FOCUSFLOW_DB_URL` / `_USER` / `_PASSWORD` | `jdbc:postgresql://localhost:5432/focusflow`      | Base PostgreSQL (hors profil `local`)      |
+| `PORT`                                     | `8080`                                            | Port du backend                            |
+| `FOCUSFLOW_BIND_ADDRESS`                   | `127.0.0.1`                                       | Interface d'écoute (`0.0.0.0` dans Docker) |
+| `FOCUSFLOW_CORS_ORIGINS`                   | localhost et 127.0.0.1 sur les ports 4200 et 5173 | Origines CORS autorisées                   |
 
 ## Sécurité
 
@@ -101,4 +112,4 @@ Usage **personnel local** : pas d'authentification. Le backend n'écoute que sur
 
 ## Limites connues
 
-Voir la section 17 de la documentation fonctionnelle (pas de tests E2E Playwright, Docker non exécuté ici, couverture frontend limitée, pas de synchronisation hors ligne…).
+Les E2E Playwright sont présents. Les validations disponibles et leurs limites sont détaillées dans l’[avancement fonctionnel](docs/avancement-fonctionnel.md). Docker, la recette humaine d’accessibilité et une restauration complète sur environnement vierge restent à valider. Pas d’authentification, de multi-utilisateur ni de synchronisation complète hors ligne. La conversion des utilitaires Tailwind Angular reste partielle.

@@ -1,5 +1,7 @@
 # Audit initial — 1 novembre 2026
 
+> **Rapport de lot historique.** Pour l’état courant au 1 novembre 2026, consulter l’[avancement fonctionnel](avancement-fonctionnel.md), l’[avancement technique](avancement-technique.md) et le [design détaillé](design.md). Les chemins et résultats de ce rapport décrivent sa recette initiale.
+
 État de référence : commit `ca46e18`, branche de travail `codex/frontend-refonte`. Travail utilisateur conservé : suppression de docs/DOCUMENTATION_FONCTIONNELLE.md, documentation déplacée dans docs/docs/, prompt et références non suivis. Aucun reset ni déplacement des sources.
 
 ## Topologie vérifiée

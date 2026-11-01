@@ -1,5 +1,7 @@
 # Design system des deux frontends
 
+La référence complète est désormais [design.md](design.md) : tokens, écrans, composants, états, responsive, accessibilité et écarts entre variantes. Ce document conserve un résumé de l’identité initiale.
+
 Les tokens communs sont dans `shared/design-tokens.css`. Angular et React importent ce fichier. Aucune maquette PNG ne sert de fond d’interface.
 
 | Rôle | Clair | Sombre |

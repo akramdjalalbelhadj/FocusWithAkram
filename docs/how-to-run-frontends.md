@@ -1,5 +1,7 @@
 # Lancer et comparer FocusWithAkram
 
+Guide complémentaire à l’[exploitation](exploitation.md), à l’[avancement technique](avancement-technique.md) et au [guide utilisateur](guide-utilisation.md).
+
 Racine : `D:\Projet\backup_Project\FocusWithAkram`.
 
 ## Installation
@@ -83,7 +85,7 @@ npm run test:e2e -- --grep navigation
 
 Le seed crée une fois les exemples explicites de recette. Les tests suppriment leurs tâches par ID. Volume : 120 tâches supplémentaires, nettoyées dans un `finally`. Les sessions interrompues de recette restent dans l’historique. Le scénario de calendrier utilise novembre 2026 : adapter ses dates et le mois visible lors d’une exécution ultérieure.
 
-Rapports dans `docs/test-results/`, captures dans `docs/screenshots/`. Exécuter les captures après les suites mutantes pour comparer un état identique : Chromium, fr-FR, Europe/Paris, 1440×900, 768×1024 et 390×844.
+Les prochaines recettes écrivent les rapports dans `docs/test-results/` et régénèrent les captures dans `docs/screenshots/` (dossier actuellement absent). Exécuter les captures après les suites mutantes pour comparer un état identique : Chromium, fr-FR, Europe/Paris, 1440×900, 768×1024 et 390×844.
 
 API inaccessible : vérifier `/actuator/health`, port et proxy. 403 en écriture : vérifier Origin/CORS. PostgreSQL embarqué verrouillé : attendre l’arrêt du précédent processus, sans effacer son répertoire. Aucune clé ni compte externe requis.
 
