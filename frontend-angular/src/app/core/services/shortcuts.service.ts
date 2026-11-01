@@ -53,7 +53,7 @@ export class ShortcutsService {
       e.defaultPrevented
     )
       return;
-    const t = e.target as HTMLElement | null;
+    const t = e.target instanceof HTMLElement ? e.target : null;
     if (
       t &&
       (t.isContentEditable ||

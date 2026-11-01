@@ -70,6 +70,14 @@ Correction de l'audit : la journalisation DEBUG du profil local ne concerne que 
 
 Vérifications : 22 tests Angular, lint et build de production sans erreur ni avertissement.
 
+Recette navigateur (1 novembre 2026, backend et base **jetables** sur les ports 18090/54349, Angular sur 4300 ; la base personnelle n'est pas utilisée) :
+
+- Archives : 45 tâches archivées ; « Charger la suite » ajoute les 5 dernières puis disparaît.
+- Mes tâches : 7 frappes rapides dans la recherche donnent **une** requête (`q=Reviser`) et le bon filtrage.
+- Focus : session interrompue côté serveur puis « Pause » dans l'interface → 409, **un seul** message, puis resynchronisation.
+- Navigation : barre mobile (375 px) Accueil / Matrice / Tâches / Focus / Plus ; palette avec ses 9 destinations et raccourcis ; « G puis S » ouvre les statistiques.
+- Le démarrage sur une base absente journalise l'avertissement prévu avec le chemin absolu.
+
 ## 4. Adaptations React à prévoir (phase 2)
 
 | Origine | Adaptation |
