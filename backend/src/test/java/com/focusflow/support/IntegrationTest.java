@@ -49,7 +49,8 @@ public abstract class IntegrationTest {
 
     @BeforeEach
     protected void resetState() {
-        jdbc.execute("TRUNCATE pomodoro_session, daily_goal, task_execution, subtask, task_tag, task, tag, project RESTART IDENTITY CASCADE");
+        jdbc.execute("TRUNCATE pomodoro_session, daily_goal, task_execution, subtask, task_tag, task, tag, project, "
+                + "fin_operation, fin_category, fin_account RESTART IDENTITY CASCADE");
         jdbc.update("UPDATE user_settings SET time_zone = DEFAULT, week_starts_on = DEFAULT, theme = DEFAULT, "
                 + "work_minutes = DEFAULT, short_break_minutes = DEFAULT, long_break_minutes = DEFAULT, "
                 + "sessions_before_long = DEFAULT, auto_start_breaks = DEFAULT, auto_start_work = DEFAULT, "

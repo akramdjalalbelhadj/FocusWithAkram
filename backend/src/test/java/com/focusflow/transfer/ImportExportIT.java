@@ -115,7 +115,7 @@ class ImportExportIT extends IntegrationTest {
     }
 
     @Test
-    void backupV2RestoresSettingsAndTop3() throws Exception {
+    void backupRestoresSettingsAndTop3() throws Exception {
         seed();
         String active = JsonPath.read(mvc.perform(get("/api/v1/tasks")).andReturn().getResponse().getContentAsString(),
                 "$.items[0].id");
@@ -124,7 +124,7 @@ class ImportExportIT extends IntegrationTest {
         mvc.perform(patch("/api/v1/settings").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"theme\":\"DARK\",\"workMinutes\":50}")).andExpect(status().isOk());
         String backup = mvc.perform(get("/api/v1/export/backup")).andReturn().getResponse().getContentAsString();
-        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(2);
+        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(3);
 
         resetState();
         mvc.perform(get("/api/v1/settings")).andExpect(jsonPath("$.theme").value("SYSTEM"));

@@ -2,6 +2,7 @@ package com.focusflow.architecture;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -48,6 +49,21 @@ class ModuleArchitectureTest {
             .that().areNotAnnotatedWith(RestController.class)
             .should().dependOnClassesThat().areAnnotatedWith(RestController.class)
             .because("un controleur est un point d'entree HTTP, jamais une dependance");
+
+    @ArchTest
+    static final ArchRule financeIsIndependentOfProductivityDomains = noClasses()
+            .that().resideInAPackage("com.focusflow.finance..")
+            .should().dependOnClassesThat().resideInAnyPackage("com.focusflow.task..", "com.focusflow.pomodoro..",
+                    "com.focusflow.project..", "com.focusflow.dashboard..", "com.focusflow.eisenhower..",
+                    "com.focusflow.statistics..", "com.focusflow.search..", "com.focusflow.transfer..")
+            .because("le module financier ne depend que de common, config et des preferences");
+
+    @ArchTest
+    static final ArchRule moneyIsNeverAFloatingPointNumber = noFields()
+            .that().areDeclaredInClassesThat().resideInAPackage("com.focusflow.finance..")
+            .should().haveRawType(double.class).orShould().haveRawType(Double.class)
+            .orShould().haveRawType(float.class).orShould().haveRawType(Float.class)
+            .because("les montants sont des decimaux exacts (BigDecimal), jamais des flottants");
 
     @ArchTest
     static final ArchRule dtosDoNotTouchPersistence = noClasses()

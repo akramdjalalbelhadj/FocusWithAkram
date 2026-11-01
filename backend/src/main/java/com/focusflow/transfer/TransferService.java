@@ -2,6 +2,8 @@ package com.focusflow.transfer;
 
 import com.focusflow.common.Patch;
 import com.focusflow.common.exception.ApiException;
+import com.focusflow.finance.FinanceBackup;
+import com.focusflow.finance.dto.FinanceImportSummary;
 import com.focusflow.pomodoro.PomodoroSession;
 import com.focusflow.pomodoro.PomodoroSessionRepository;
 import com.focusflow.project.Project;
@@ -59,11 +61,12 @@ public class TransferService {
     private final PomodoroSessionRepository sessions;
     private final DailyGoalRepository dailyGoals;
     private final SettingsService settings;
+    private final FinanceBackup finance;
     private final Clock clock;
 
     public TransferService(TaskRepository tasks, ProjectRepository projects, TagRepository tags,
                            TaskExecutionRepository executions, PomodoroSessionRepository sessions,
-                           DailyGoalRepository dailyGoals, SettingsService settings, Clock clock) {
+                           DailyGoalRepository dailyGoals, SettingsService settings, FinanceBackup finance, Clock clock) {
         this.tasks = tasks;
         this.projects = projects;
         this.tags = tags;
@@ -71,6 +74,7 @@ public class TransferService {
         this.sessions = sessions;
         this.dailyGoals = dailyGoals;
         this.settings = settings;
+        this.finance = finance;
         this.clock = clock;
     }
 
@@ -91,7 +95,8 @@ public class TransferService {
                 toData(settings.get()),
                 dailyGoals.findAll(Sort.by("goalDate", "position")).stream()
                         .map(g -> new DailyGoalData(g.getGoalDate(), g.getTask().getId(), g.getPosition(), g.getCreatedAt()))
-                        .toList());
+                        .toList(),
+                finance.export());
     }
 
     @Transactional(readOnly = true)
@@ -149,7 +154,7 @@ public class TransferService {
     // ---- Import -------------------------------------------------------------------------------
 
     /**
-     * Importe une sauvegarde (version 1 ou 2).
+     * Importe une sauvegarde (version 1 a 3).
      * <ul>
      *   <li>Les taches deja presentes (meme identifiant, ou meme titre et date de creation) sont ignorees ;
      *       les projets sont rapproches par nom.</li>
@@ -178,12 +183,13 @@ public class TransferService {
         importSessions(file, run);
         importDailyGoals(file, run);
         importSettings(file, run);
+        FinanceImportSummary financeSummary = file.finance() == null ? null : finance.importData(file.finance(), run::error);
         if (dryRun) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
         return new ImportReport(dryRun, run.projectsCreated, run.projectsReused, run.tasksCreated, run.tasksSkipped,
                 run.sessionsCreated, run.sessionsSkipped, run.errors, run.settingsRestored, run.goalsCreated,
-                run.goalsSkipped);
+                run.goalsSkipped, financeSummary);
     }
 
     /** Etat d'un import : correspondances d'identifiants et compteurs du rapport. */
