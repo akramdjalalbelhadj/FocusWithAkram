@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { PriorityMode, Task } from '../../core/api/models';
 import { ProjectsApi, TasksApi } from '../../core/api/tasks.api';
+import { SettingsStore } from '../../core/services/settings.store';
 import { RefreshService } from '../../core/services/refresh.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Loader } from '../../core/util/loader';
@@ -30,12 +31,13 @@ const MODES: { mode: PriorityMode; label: string; icon: string; empty: string }[
   template: `
     <header class="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 class="page-title">Mes tâches</h1>
+        <h1 class="page-title"><span class="page-icon"><ff-icon name="list-checks" [size]="24" /></span>Mes tâches</h1>
         <p class="page-sub">Votre liste de priorités, issue de la matrice d’Eisenhower.</p>
       </div>
       <button type="button" class="btn btn-primary" (click)="actions.create()"><ff-icon name="plus" />Nouvelle tâche</button>
     </header>
 
+    <div class="tasks-layout"><section class="card p-5 min-w-0">
     <div class="flex gap-1 overflow-x-auto pb-1 mb-4 -mx-1 px-1" role="tablist" aria-label="Vues">
       @for (m of modes; track m.mode) {
         <button type="button" role="tab" class="btn btn-sm flex-none" [attr.aria-selected]="mode() === m.mode"
@@ -77,17 +79,32 @@ const MODES: { mode: PriorityMode; label: string; icon: string; empty: string }[
       <p class="text-sm text-muted mb-2" aria-live="polite">{{ sorted().length }} tâche{{ sorted().length > 1 ? 's' : '' }}</p>
       <ul class="space-y-2">
         @for (t of sorted(); track t.id) {
-          <li class="flex flex-col sm:flex-row sm:items-start gap-2">
-            <span class="sm:w-44 flex-none sm:pt-3"><ff-quadrant-badge [q]="t.quadrant" /></span>
+          <li class="flex flex-col sm:flex-row sm:items-start gap-2" (click)="selectedId.set(t.id)">
+            <span class="sm:w-44 flex-none sm:pt-3"><ff-quadrant-badge [compact]="true" [q]="t.quadrant" /></span>
             <div class="flex-1 min-w-0"><ff-task-card [task]="t" /></div>
           </li>
         }
       </ul>
     }
+    </section>
+    @if (selected(); as t) {
+      <aside class="card p-6 task-summary">
+        <span class="badge badge-brand">{{ t.quadrant }} · {{ t.status === 'IN_PROGRESS' ? 'En cours' : t.status === 'DONE' ? 'Terminée' : 'À faire' }}</span>
+        <h2 class="text-xl font-bold mt-5 mb-3">{{ t.title }}</h2><p class="text-sm text-muted mb-5">{{ t.description || 'Aucune description.' }}</p>
+        <div class="border-y border-line py-4 space-y-3 text-sm"><p>Échéance : {{ settings.fmt(t.plannedEndAt) || 'Sans date' }}</p><p>Estimation : {{ t.estimatedMinutes ?? '—' }} min</p><p>Sous-tâches : {{ t.subtasksDone }}/{{ t.subtasksTotal }}</p></div>
+        <div class="mt-5 space-y-3">@for (sub of t.subtasks; track sub.id) { <p class="text-sm text-muted">{{ sub.done ? '✓' : '□' }} {{ sub.title }}</p> }</div>
+        <button class="btn btn-secondary mt-5 w-full" (click)="actions.openDetail(t.id)">Ouvrir le détail complet</button>
+        @if (!t.archivedAt) { <button class="btn btn-primary mt-3 w-full" (click)="actions.focusOn(t)"><ff-icon name="play" />Démarrer un Pomodoro</button> }
+      </aside>
+    }
+    </div>
   `,
 })
 export class TasksPage {
   protected readonly actions = inject(TaskActions);
+  protected readonly settings = inject(SettingsStore);
+  protected readonly selectedId = signal<string | null>(null);
+  protected readonly selected = computed(() => this.sorted().find(t => t.id === this.selectedId()) ?? this.sorted()[0] ?? null);
   private readonly api = inject(TasksApi);
   private readonly refresh = inject(RefreshService);
   private readonly toast = inject(ToastService);

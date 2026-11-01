@@ -6,7 +6,7 @@ import { TasksApi } from '../../core/api/tasks.api';
 import { AppError } from '../../core/interceptors/error.interceptor';
 import { RefreshService } from '../../core/services/refresh.service';
 import { SettingsStore } from '../../core/services/settings.store';
-import { formatDuration, formatTime } from '../../core/util/time';
+import { formatDuration } from '../../core/util/time';
 import { QuadrantBadgeComponent, StatusBadgeComponent } from '../../shared/ui/badges';
 import { IconComponent } from '../../shared/ui/icon';
 import { ErrorComponent, SkeletonComponent } from '../../shared/ui/states';

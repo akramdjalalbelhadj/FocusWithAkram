@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-  Lance FocusWithAkram en local (backend Spring Boot + frontend Angular) sans Docker.
+  Lance FocusWithAkram en local (backend Spring Boot + frontend React) sans Docker.
 
 .DESCRIPTION
   - Backend : profil "local" avec PostgreSQL embarque (donnees conservees dans backend/data/postgres).
-  - Frontend : serveur de developpement Angular avec proxy /api vers le backend.
+  - Frontend : serveur de developpement React avec proxy /api vers le backend.
   - Ctrl+C arrete proprement les deux processus.
 
 .PARAMETER NodeHome
@@ -15,20 +15,20 @@
   Ne lance pas "npm install" meme si node_modules est absent.
 
 .EXAMPLE
-  .\start.ps1
-  .\start.ps1 -NodeHome C:\Users\moi\tools\node-v24.22.2-win-x64
+  .\start_react.ps1
+  .\start_react.ps1 -NodeHome C:\Users\moi\tools\node-v24.22.2-win-x64
 #>
 [CmdletBinding()]
 param(
-  [string]$NodeHome = $(if ($env:FOCUSFLOW_NODE_HOME) { $env:FOCUSFLOW_NODE_HOME } else { 'C:\Users\a952790\tools\node-v24.22.2-win-x64' }),
+  [string]$NodeHome = $(if ($env:FOCUSFLOW_NODE_HOME) { $env:FOCUSFLOW_NODE_HOME } else { (Join-Path $PSScriptRoot '.tools/node_modules/node/bin') }),
   [int]$BackendPort = 8080,
-  [int]$FrontendPort = 4200,
+  [int]$FrontendPort = 5173,
   [switch]$SkipInstall
 )
 
 $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
-$LogDir = Join-Path $Root 'logs'
+$LogDir = Join-Path $Root 'logs/react'
 New-Item -ItemType Directory -Force $LogDir | Out-Null
 
 function Write-Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
@@ -57,7 +57,7 @@ $nodeVersion = [version]((& node -v).TrimStart('v'))
 $nodeOk = ($nodeVersion.Major -ge 26) -or ($nodeVersion.Major -eq 24 -and $nodeVersion.Minor -ge 15) -or
           ($nodeVersion.Major -eq 22 -and ($nodeVersion.Minor -gt 22 -or ($nodeVersion.Minor -eq 22 -and $nodeVersion.Build -ge 3))) -or
           ($nodeVersion.Major -gt 24 -and $nodeVersion.Major -lt 26)
-if (-not $nodeOk) { Fail "Node $nodeVersion est trop ancien pour Angular 22. Utilisez -NodeHome vers un Node >= 22.22.3 / 24.15." }
+if (-not $nodeOk) { Fail "Node $nodeVersion est trop ancien pour les frontends. Utilisez -NodeHome vers un Node >= 22.22.3 / 24.15." }
 
 foreach ($port in @($BackendPort, $FrontendPort)) {
   if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
@@ -66,7 +66,7 @@ foreach ($port in @($BackendPort, $FrontendPort)) {
 }
 
 # ---- Dependances frontend ---------------------------------------------------------------------
-$Frontend = Join-Path $Root 'frontend'
+$Frontend = Join-Path $Root 'frontend-react'
 if (-not $SkipInstall -and -not (Test-Path (Join-Path $Frontend 'node_modules'))) {
   Write-Step 'Installation des dependances frontend (premier lancement)'
   Push-Location $Frontend
@@ -74,6 +74,8 @@ if (-not $SkipInstall -and -not (Test-Path (Join-Path $Frontend 'node_modules'))
 }
 
 # ---- Demarrage --------------------------------------------------------------------------------
+$previousPort = $env:PORT
+$previousApiUrl = $env:FOCUS_API_URL
 $procs = @()
 function Stop-All {
   foreach ($p in $script:procs) {
@@ -105,9 +107,11 @@ try {
   # PORT ne doit pas fuiter vers "ng serve", qui le lit aussi.
   Remove-Item Env:PORT -ErrorAction SilentlyContinue
   Write-Step "Demarrage du frontend (port $FrontendPort)"
-  $npx = (Get-Command npx.cmd).Source
-  $frontend = Start-Process -FilePath $npx -WorkingDirectory $Frontend `
-    -ArgumentList 'ng', 'serve', '--port', $FrontendPort `
+  $env:FOCUS_API_URL = "http://127.0.0.1:$BackendPort"
+  $frontendArgs = @('node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', $FrontendPort)
+  $node = (Get-Command node).Source
+  $frontend = Start-Process -FilePath $node -WorkingDirectory $Frontend `
+    -ArgumentList $frontendArgs `
     -RedirectStandardOutput (Join-Path $LogDir 'frontend.log') -RedirectStandardError (Join-Path $LogDir 'frontend.err.log') -PassThru -WindowStyle Hidden
   $procs += $frontend
 
@@ -115,18 +119,18 @@ try {
   $ready = $false
   while ((Get-Date) -lt $deadline) {
     if ($frontend.HasExited) { Fail "Le frontend s'est arrete. Consultez $(Join-Path $LogDir 'frontend.log')" }
-    try { Invoke-WebRequest "http://localhost:$FrontendPort" -UseBasicParsing -TimeoutSec 2 | Out-Null; $ready = $true; break } catch { }
+    try { Invoke-WebRequest "http://127.0.0.1:$FrontendPort" -UseBasicParsing -TimeoutSec 2 | Out-Null; $ready = $true; break } catch { }
     Start-Sleep -Seconds 2
   }
   if (-not $ready) { Fail "Le frontend n'a pas demarre a temps." }
 
   Write-Host ''
   Write-Host '  FocusWithAkram est pret' -ForegroundColor Green
-  Write-Host "    Application : http://localhost:$FrontendPort"
+  Write-Host "    Application : http://127.0.0.1:$FrontendPort"
   Write-Host "    API / Swagger : http://localhost:$BackendPort/swagger-ui.html"
   Write-Host "    Journaux : $LogDir"
   Write-Host '    Ctrl+C pour arreter.'
-  Start-Process "http://localhost:$FrontendPort" | Out-Null
+  Start-Process "http://127.0.0.1:$FrontendPort" | Out-Null
 
   while (-not $backend.HasExited -and -not $frontend.HasExited) { Start-Sleep -Seconds 2 }
   Write-Host "Un des processus s'est arrete : consultez les journaux dans $LogDir" -ForegroundColor Yellow
@@ -134,4 +138,6 @@ try {
 finally {
   Write-Step 'Arret de FocusWithAkram'
   Stop-All
+  $env:PORT = $previousPort
+  $env:FOCUS_API_URL = $previousApiUrl
 }

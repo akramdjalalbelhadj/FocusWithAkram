@@ -64,7 +64,7 @@ export class ShortcutsHelpComponent {
   template: `
     <a href="#main" class="sr-only-text focus:not-sr-only focus:fixed focus:z-[2000] focus:top-2 focus:left-2 btn btn-primary">Aller au contenu</a>
 
-    <div class="min-h-dvh md:grid" [style.grid-template-columns]="collapsed() ? '4.5rem 1fr' : '16.5rem 1fr'">
+    <div class="min-h-dvh md:grid" [style.grid-template-columns]="collapsed() ? '4.5rem 1fr' : '246px 1fr'">
       <!-- Sidebar (desktop / tablette) -->
       <aside class="hidden md:flex flex-col sticky top-0 h-dvh border-r border-line bg-surface p-3 gap-1" aria-label="Navigation principale">
         <div class="flex items-center gap-2.5 px-2 py-3 mb-1">
@@ -72,13 +72,9 @@ export class ShortcutsHelpComponent {
           @if (!collapsed()) { <span class="font-extrabold text-lg tracking-tight">FocusWithAkram</span> }
         </div>
 
-        <button type="button" class="btn btn-primary w-full mb-2" (click)="actions.create()" [attr.aria-label]="collapsed() ? 'Nouvelle tâche' : null">
-          <ff-icon name="plus" />@if (!collapsed()) { Nouvelle tâche }
-        </button>
-
         <nav class="flex flex-col gap-0.5 flex-1 overflow-y-auto">
           @for (n of nav; track n.path) {
-            <a [routerLink]="n.path" routerLinkActive="!bg-brand-soft !text-brand" [routerLinkActiveOptions]="{ exact: !!n.exact }"
+            <a [routerLink]="n.path" routerLinkActive="nav-active !bg-brand-soft !text-brand" [routerLinkActiveOptions]="{ exact: !!n.exact }"
               class="flex items-center gap-3 rounded-xl px-3 min-h-10 text-muted font-medium hover:bg-surface-2 hover:text-fg"
               [attr.aria-label]="collapsed() ? n.label : null" [title]="collapsed() ? n.label : ''">
               <ff-icon [name]="n.icon" />
@@ -98,6 +94,7 @@ export class ShortcutsHelpComponent {
           </a>
         }
 
+        <div class="sidebar-landscape" aria-hidden="true"><i></i><b></b><span></span></div>
         <button type="button" class="btn btn-ghost w-full justify-start" (click)="toggleCollapsed()" [attr.aria-label]="collapsed() ? 'Déplier la barre latérale' : 'Replier la barre latérale'">
           <ff-icon [name]="collapsed() ? 'chevron-right' : 'chevron-left'" />@if (!collapsed()) { Replier }
         </button>

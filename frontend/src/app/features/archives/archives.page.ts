@@ -40,7 +40,7 @@ interface SectionGroup {
   template: `
     <header class="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 class="page-title">Archives</h1>
+        <h1 class="page-title"><span class="page-icon"><ff-icon name="archive" [size]="24" /></span>Archives</h1>
         <p class="page-sub">Tâches terminées, classées par date réelle de fin.</p>
       </div>
       <div class="flex gap-2">

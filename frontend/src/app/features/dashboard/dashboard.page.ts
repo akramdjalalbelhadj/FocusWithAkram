@@ -26,13 +26,14 @@ import { Top3PickerDialogComponent } from './top3-picker.dialog';
   template: `
     <header class="flex flex-wrap items-end justify-between gap-4 mb-6">
       <div>
-        <p class="text-sm font-semibold text-brand capitalize">{{ today() }}</p>
-        <h1 class="page-title">{{ greeting() }} 👋</h1>
-        <p class="page-sub">{{ summaryLine() }}</p>
+
+        <h1 class="page-title"><span class="page-icon"><ff-icon name="dashboard" [size]="24" /></span>Tableau de bord</h1>
+
       </div>
       <button type="button" class="btn btn-primary" (click)="actions.create()"><ff-icon name="plus" />Nouvelle tâche</button>
     </header>
 
+    <section class="card welcome mb-5 p-6"><p class="text-xs font-bold text-brand">TON ESPACE DE PRODUCTIVITÉ</p><h2 class="text-3xl font-extrabold">{{ greeting() }} Akram 👋</h2><p class="text-muted mt-2">Une nouvelle journée pour avancer sur ce qui compte vraiment.</p></section>
     @if (loader.error()) { <ff-error (retry)="loader.load()" /> }
     @else if (loader.loading()) {
       <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">@for (_ of [1, 2, 3, 4, 5, 6]; track _) { <div class="skeleton h-24"></div> }</div>
@@ -50,10 +51,10 @@ import { Top3PickerDialogComponent } from './top3-picker.dialog';
         }
       </section>
 
-      <div class="grid xl:grid-cols-[minmax(0,1fr)_22rem] gap-6">
-        <div class="space-y-6 min-w-0">
+      <div class="dashboard-layout grid gap-6">
+        <div class="dashboard-column space-y-6 min-w-0">
           <!-- Top 3 -->
-          <section class="card p-5" aria-labelledby="top3-h">
+          <section class="card p-5" aria-labelledby="top3-h" class-placeholder="top">
             <div class="flex items-center justify-between gap-3 mb-4">
               <div>
                 <h2 id="top3-h" class="font-bold text-lg flex items-center gap-2"><ff-icon name="target" class="text-brand" />Priorités du jour</h2>
@@ -92,7 +93,7 @@ import { Top3PickerDialogComponent } from './top3-picker.dialog';
           </section>
         </div>
 
-        <aside class="space-y-6 min-w-0">
+        <aside class="dashboard-column space-y-6 min-w-0">
           <!-- Pomodoro -->
           <section class="card p-5 text-center" aria-labelledby="pomo-h">
             <h2 id="pomo-h" class="section-title mb-3">Pomodoro</h2>
@@ -156,7 +157,7 @@ export class DashboardPage {
   protected readonly today = computed(() => dayLabel(this.loader.data()?.today ?? this.settings.today()));
 
   protected readonly greeting = computed(() => {
-    const h = Number(new Intl.DateTimeFormat('fr-FR', { hour: 'numeric', hourCycle: 'h23', timeZone: this.settings.timeZone() }).format(new Date()));
+    const h = Number(new Intl.DateTimeFormat('fr-FR', { hour: 'numeric', hourCycle: 'h23', timeZone: this.settings.timeZone() }).formatToParts(new Date()).find(p => p.type === 'hour')?.value);
     return h < 5 ? 'Bonne nuit' : h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
   });
 
@@ -203,7 +204,7 @@ export class DashboardPage {
     const c = chartTheme();
     return {
       aria: { enabled: true },
-      grid: { left: 36, right: 36, top: 24, bottom: 28 },
+      grid: { left: 36, right: 36, top: 24, bottom: 60 },
       tooltip: { trigger: 'axis', backgroundColor: c.surface, borderColor: c.line, textStyle: { color: c.fg } },
       legend: { bottom: 0, textStyle: { color: c.muted }, data: ['Tâches terminées', 'Concentration (min)'] },
       xAxis: { type: 'category', data: w.map((x) => weekdayName(x.date).slice(0, 3)), axisLine: { lineStyle: { color: c.line } }, axisLabel: { color: c.muted } },

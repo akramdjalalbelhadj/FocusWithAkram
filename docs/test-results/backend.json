@@ -1,0 +1,74 @@
+[
+  {
+    "name": "com.focusflow.pomodoro.PomodoroIT",
+    "tests": "12",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "51.321"
+  },
+  {
+    "name": "com.focusflow.pomodoro.PomodoroSessionTest",
+    "tests": "11",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.253"
+  },
+  {
+    "name": "com.focusflow.statistics.StatisticsAndArchivesIT",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "8.258"
+  },
+  {
+    "name": "com.focusflow.task.ArchiveSectionTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.005"
+  },
+  {
+    "name": "com.focusflow.task.MatrixAndPrioritiesIT",
+    "tests": "12",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "7.596"
+  },
+  {
+    "name": "com.focusflow.task.TaskLifecycleIT",
+    "tests": "10",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "6.566"
+  },
+  {
+    "name": "com.focusflow.task.TaskTimingTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.01"
+  },
+  {
+    "name": "com.focusflow.transfer.CsvEscapingTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.008"
+  },
+  {
+    "name": "com.focusflow.transfer.ImportExportIT",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "6.85"
+  }
+]

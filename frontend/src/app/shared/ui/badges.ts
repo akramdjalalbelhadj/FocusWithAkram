@@ -20,9 +20,10 @@ export class StatusBadgeComponent {
   imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<span class="badge" [style.background]="'var(--' + q().toLowerCase() + '-soft)'" [style.color]="'var(--' + q().toLowerCase() + ')'">
-    <ff-icon [name]="meta().icon" [size]="12" />{{ q() }} · {{ meta().label }}</span>`,
+    <ff-icon [name]="meta().icon" [size]="12" />{{ q() }}@if (!compact()) { · {{ meta().label }} }</span>`,
 })
 export class QuadrantBadgeComponent {
+  readonly compact = input(false);
   readonly q = input.required<Quadrant>();
   protected readonly meta = computed(() => QUADRANT_META[this.q()]);
 }

@@ -15,7 +15,7 @@ import { TaskActions } from './task-actions.service';
   host: { class: 'block' },
   template: `
     <article class="group relative flex gap-3 rounded-xl border bg-surface p-3 shadow-card transition-shadow hover:shadow-pop"
-      [class]="task().status === 'IN_PROGRESS' ? 'border-info' : 'border-line'" [attr.aria-label]="task().title">
+      [class.compact-row]="compact()" [class]="task().status === 'IN_PROGRESS' ? 'border-info' : 'border-line'" [attr.aria-label]="task().title">
       <button type="button" class="mt-0.5 grid place-items-center size-6 rounded-full flex-none text-subtle hover:text-success"
         [attr.aria-label]="task().status === 'DONE' ? 'Tâche terminée' : 'Terminer la tâche'" [disabled]="!!task().archivedAt"
         (click)="$event.stopPropagation(); actions.complete(task())">
@@ -32,13 +32,13 @@ import { TaskActions } from './task-actions.service';
           @if (!compact()) { <ff-status-badge [status]="task().status" /> }
           @if (task().overdue) { <span class="badge badge-danger"><ff-icon name="alert" [size]="11" />En retard</span> }
           @if (due()) { <span class="chip" [class.!text-danger]="task().overdue"><ff-icon name="calendar" [size]="11" />{{ due() }}</span> }
-          @if (task().project; as p) { <span class="chip"><span class="size-2 rounded-full" [style.background]="p.color"></span>{{ p.name }}</span> }
-          @for (tag of task().tags.slice(0, 2); track tag) { <span class="chip"><ff-icon name="tag" [size]="10" />{{ tag }}</span> }
-          @if (task().tags.length > 2) { <span class="chip">+{{ task().tags.length - 2 }}</span> }
+          @if (!compact() && task().project; as p) { <span class="chip"><span class="size-2 rounded-full" [style.background]="p.color"></span>{{ p.name }}</span> }
+          @for (tag of task().tags.slice(0, compact() ? 0 : 2); track tag) { <span class="chip"><ff-icon name="tag" [size]="10" />{{ tag }}</span> }
+          @if (!compact() && task().tags.length > 2) { <span class="chip">+{{ task().tags.length - 2 }}</span> }
           @if (task().timeSpentSeconds > 0) { <span class="chip"><ff-icon name="timer" [size]="11" />{{ spent() }}</span> }
         </div>
 
-        @if (task().subtasksTotal > 0) {
+        @if (!compact() && task().subtasksTotal > 0) {
           <div class="mt-2 flex items-center gap-2">
             <div class="h-1.5 flex-1 rounded-full bg-surface-3 overflow-hidden" role="progressbar" aria-label="Sous-tâches terminées"
               [attr.aria-valuenow]="task().subtasksDone" aria-valuemin="0" [attr.aria-valuemax]="task().subtasksTotal">
