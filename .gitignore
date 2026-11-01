@@ -24,3 +24,7 @@ test-results/
 playwright-report/
 !docs/historique/**/test-results/
 !docs/historique/**/test-results/**
+
+# Sorties générées par la suite E2E (frontend-react/e2e) : régénérables, non versionnées
+docs/test-results/
+docs/screenshots/

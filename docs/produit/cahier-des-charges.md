@@ -1,6 +1,6 @@
 # FocusWithAkram — cahier des charges
 
-Version documentaire du **1 novembre 2026**. État de livraison : [avancement fonctionnel](avancement-fonctionnel.md). Critères de recette : [checklist](checklist.md). Référence visuelle : [design](design.md).
+Version documentaire du **1 novembre 2026**. État de livraison : [avancement fonctionnel](../suivi/avancement-fonctionnel.md). Critères de recette : [checklist](../suivi/checklist.md). Référence visuelle : [design](../technique/design.md).
 
 ## 1. Contexte et vision
 

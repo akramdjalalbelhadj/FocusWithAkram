@@ -2,7 +2,7 @@
 
 Référence visuelle et règles d’évolution, relevées dans le code le **1 novembre 2026**. Périmètre : Angular et React, neuf pages, thèmes clair/sombre/système, ordinateur et mobile. Ce document distingue **l’existant** des **règles de conception à appliquer lors des prochaines modifications** ; il ne certifie pas que chaque détail est déjà uniformisé.
 
-Sources principales : [tokens communs](../shared/design-tokens.css), [styles Angular](../frontend-angular/src/styles/index.css), [styles React](../frontend-react/src/styles/index.css), [maquettes](references/INDEX_DESIGN.md) et [écarts de recette](frontend-visual-regression.md). Les statuts de livraison restent dans la [checklist](checklist.md).
+Sources principales : [tokens communs](../../shared/design-tokens.css), [styles Angular](../../frontend-angular/src/styles/index.css), [styles React](../../frontend-react/src/styles/index.css), [maquettes](../maquettes/README.md) et [écarts de recette](../historique/2026-11-refonte-frontends/recette-visuelle.md). Les statuts de livraison restent dans la [checklist](../suivi/checklist.md).
 
 ## 1. Intention et identité
 
@@ -156,7 +156,7 @@ Les KPI associent valeur, unité et libellé. Zéro est une donnée valide ; une
 
 Angular et React diffèrent dans les icônes, courbes et géométries. Toute harmonisation doit d’abord préserver la signification des indicateurs, puis les espacements, et seulement ensuite la décoration.
 
-Références : [clair](references/FocusWithAkram_Tableau_de_bord_clair.png), [sombre](references/FocusWithAkram_Tableau_de_bord_sombre.png).
+Références : [clair](../maquettes/FocusWithAkram_Tableau_de_bord_clair.png), [sombre](../maquettes/FocusWithAkram_Tableau_de_bord_sombre.png).
 
 ## 11. Matrice d’Eisenhower : composition détaillée
 
@@ -166,9 +166,9 @@ Les panneaux utilisent les variables couleur/fond/bordure du quadrant. Les filtr
 
 Une carte doit conserver titre, statut, repères de date et commandes pertinentes. Les zones de déplacement, le focus et les commandes clavier donnent un retour perceptible. Ne pas modifier le quadrant seulement à l’écran sans attendre ou vérifier sa persistance.
 
-La page Angular utilise [son template](../frontend-angular/src/app/features/eisenhower/pages/matrix/matrix.page.html) et [sa feuille CSS](../frontend-angular/src/app/features/eisenhower/pages/matrix/matrix.page.css) avec des classes sémantiques. `data-quadrant` et `is-active` expriment la donnée et l’état ; les règles visuelles restent dans la feuille.
+La page Angular utilise [son template](../../frontend-angular/src/app/features/eisenhower/pages/matrix/matrix.page.html) et [sa feuille CSS](../../frontend-angular/src/app/features/eisenhower/pages/matrix/matrix.page.css) avec des classes sémantiques. `data-quadrant` et `is-active` expriment la donnée et l’état ; les règles visuelles restent dans la feuille.
 
-Références : [clair](references/Matrice_Eisenhower_clair.png), [sombre](references/Matrice_Eisenhower_sombre.png).
+Références : [clair](../maquettes/Matrice_Eisenhower_clair.png), [sombre](../maquettes/Matrice_Eisenhower_sombre.png).
 
 ## 12. Mes tâches, formulaires et détail
 
@@ -178,7 +178,7 @@ Le formulaire de tâche sépare identité, classement, planification et contenu 
 
 Le détail distingue prévu, réel et travail actif, puis sous-tâches, notes, sessions et cycles. Un temps absent ne doit pas devenir `0` si cela transforme son sens. La complétion d’une tâche jamais démarrée ouvre la demande de début réel au lieu de choisir arbitrairement une date.
 
-Références : [clair](references/FocusWithAkram_Mes_taches_clair.png), [sombre](references/FocusWithAkram_Mes_taches_sombre.png).
+Références : [clair](../maquettes/FocusWithAkram_Mes_taches_clair.png), [sombre](../maquettes/FocusWithAkram_Mes_taches_sombre.png).
 
 ## 13. Focus / Pomodoro : composition détaillée
 
@@ -201,7 +201,7 @@ Grille à deux colonnes, puis une colonne en petite largeur. Les cases sont alig
 
 Le panneau explique que les durées modifiées concernent les prochaines sessions. Le choix du son possède un label distinct du texte de ses options. En cas de notification refusée, l’option reste désactivée avec une explication ; ne pas afficher une réussite trompeuse.
 
-Sources : [composant Angular](../frontend-angular/src/app/features/pomodoro/components/pomodoro-settings/pomodoro-settings.component.html), [composant React](../frontend-react/src/features/pomodoro/components/pomodoro-settings/pomodoro-settings.tsx). Les maquettes [claire](references/FocusWithAkram_Focus_Pomodoro_clair.png) et [sombre](references/FocusWithAkram_Focus_Pomodoro_sombre.png) précèdent ce panneau complet ; une nouvelle capture est requise pour figer sa recette.
+Sources : [composant Angular](../../frontend-angular/src/app/features/pomodoro/components/pomodoro-settings/pomodoro-settings.component.html), [composant React](../../frontend-react/src/features/pomodoro/components/pomodoro-settings/pomodoro-settings.tsx). Les maquettes [claire](../maquettes/FocusWithAkram_Focus_Pomodoro_clair.png) et [sombre](../maquettes/FocusWithAkram_Focus_Pomodoro_sombre.png) précèdent ce panneau complet ; une nouvelle capture est requise pour figer sa recette.
 
 ### 13.3 États du minuteur
 
@@ -224,7 +224,7 @@ La cellule desktop peut contenir des événements ; le mobile privilégie des re
 
 Le glisser-déposer ne doit pas être la seule voie de replanification ; le détail/formulaire reste accessible. Vérifier le mois de février, les semaines à cheval sur deux mois et le changement de fuseau.
 
-Références : [clair](references/Calendrier_clair.png), [sombre](references/Calendrier_sombre.png).
+Références : [clair](../maquettes/Calendrier_clair.png), [sombre](../maquettes/Calendrier_sombre.png).
 
 ## 15. Statistiques : composition détaillée
 
@@ -236,7 +236,7 @@ Les zéros de la fixture ne doivent pas être remplacés par des courbes décora
 
 Angular utilise ECharts ; React a ses propres rendus SVG/CSS et tableaux. L’équivalence des données est plus importante que l’identité du composant de graphique.
 
-Références : [clair](references/FocusWithAkram_Statistiques_clair.png), [sombre](references/FocusWithAkram_Statistiques_sombre.png).
+Références : [clair](../maquettes/FocusWithAkram_Statistiques_clair.png), [sombre](../maquettes/FocusWithAkram_Statistiques_sombre.png).
 
 ## 16. Projets, archives et paramètres
 
@@ -244,7 +244,7 @@ Références : [clair](references/FocusWithAkram_Statistiques_clair.png), [sombr
 
 Titre/action → recherche et filtre d’archive → grille de cartes. Chaque projet porte couleur/icône, nom, description, progression et aperçu réel de tâches. L’aperçu ouvre le détail ; le pourcentage doit correspondre aux comptes du backend. Les menus distinguent modifier, archiver et supprimer.
 
-Références : [clair](references/FocusWithAkram_Projets_clair.png), [sombre](references/FocusWithAkram_Projets_sombre.png).
+Références : [clair](../maquettes/FocusWithAkram_Projets_clair.png), [sombre](../maquettes/FocusWithAkram_Projets_sombre.png).
 
 ### Archives
 
@@ -329,7 +329,7 @@ Ces écarts doivent guider une recette ou une harmonisation ; ils ne justifient 
 6. Comparer aux références en séparant contenu réel, géométrie, couleur et interaction ; noter l’écart et son impact.
 7. Enregistrer la date, le navigateur, la fixture et les limites ; ne pas écraser silencieusement une preuve plus ancienne.
 
-Le rapport de [régression visuelle](frontend-visual-regression.md) décrit la base historique. Les captures correspondantes sont actuellement absentes de la copie locale ; les régénérer avant une nouvelle comparaison visuelle. Les 28 audits axe sans violation et les contrôles de débordement sont des preuves ciblées ; l’approbation humaine du design reste distincte.
+Le rapport de [régression visuelle](../historique/2026-11-refonte-frontends/recette-visuelle.md) décrit la base historique. Les captures correspondantes sont actuellement absentes de la copie locale ; les régénérer avant une nouvelle comparaison visuelle. Les 28 audits axe sans violation et les contrôles de débordement sont des preuves ciblées ; l’approbation humaine du design reste distincte.
 
 ## 22. Faire évoluer le design
 

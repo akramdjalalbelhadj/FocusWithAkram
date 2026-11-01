@@ -1,6 +1,6 @@
 # Comparaison Angular / React — 1 novembre 2026
 
-> **Rapport de lot historique.** Pour l’état courant au 1 novembre 2026, consulter l’[avancement fonctionnel](avancement-fonctionnel.md), l’[avancement technique](avancement-technique.md) et le [design détaillé](design.md). Les chemins et résultats de ce rapport décrivent sa recette initiale.
+> **Rapport de lot historique.** Pour l’état courant au 1 novembre 2026, consulter l’[avancement fonctionnel](../../suivi/avancement-fonctionnel.md), l’[avancement technique](../../suivi/avancement-technique.md) et le [design détaillé](../../technique/design.md). Les chemins et résultats de ce rapport décrivent sa recette initiale.
 
 Les deux applications sont exécutables et reliées au même backend. La parité des parcours testés est démontrée ; ni la parité exhaustive de tous les menus, ni une reproduction au pixel près des 14 images ne sont déclarées acquises. Voir la matrice fonctionnelle et les 28 lignes de recette visuelle.
 

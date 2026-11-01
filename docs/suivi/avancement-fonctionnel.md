@@ -1,6 +1,6 @@
 # FocusWithAkram — avancement fonctionnel
 
-Relevé du **1 novembre 2026**. Cible : [cahier des charges](cahier-des-charges.md). Contrôles : [checklist](checklist.md). « Livré » signifie présent dans le code et relié à l’API ; cela ne couvre pas automatiquement tous les appareils et tous les scénarios.
+Relevé du **1 novembre 2026**. Cible : [cahier des charges](../produit/cahier-des-charges.md). Contrôles : [checklist](checklist.md). « Livré » signifie présent dans le code et relié à l’API ; cela ne couvre pas automatiquement tous les appareils et tous les scénarios.
 
 ## 1. État des fonctionnalités
 
@@ -45,7 +45,7 @@ Relevé du **1 novembre 2026**. Cible : [cahier des charges](cahier-des-charges.
 | Navigation responsive           | 36 contrôles réussis                                              | 9 routes × 2 tailles × 2 frontends ; pas un essai tactile réel.              |
 | Accessibilité historique        | 28 audits axe sans violation détectée                             | 7 pages × 2 thèmes × 2 variantes ; ne certifie pas toute l’application.      |
 
-Les preuves ne correspondent pas toutes à une unique exécution de la version finale. Les captures antérieures ne montrent pas forcément le nouveau panneau Focus. Voir [l’inventaire daté](test-results/documentation-audit.json) et les [écarts visuels](frontend-visual-regression.md).
+Les preuves ne correspondent pas toutes à une unique exécution de la version finale. Les captures antérieures ne montrent pas forcément le nouveau panneau Focus. Voir [l’inventaire daté](../historique/2026-11-refonte-frontends/test-results/documentation-audit.json) et les [écarts visuels](../historique/2026-11-refonte-frontends/recette-visuelle.md).
 
 ## 4. Partiel ou non livré
 

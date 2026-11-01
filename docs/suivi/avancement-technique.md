@@ -1,6 +1,6 @@
 # FocusWithAkram — avancement technique
 
-Relevé des sources du **1 novembre 2026**, branche `main`. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](exploitation.md). Ce document traite du backend **et des deux frontends**.
+Relevé des sources du **1 novembre 2026**, branche `main`. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends**.
 
 ## 1. Architecture d’ensemble
 
@@ -22,11 +22,11 @@ Le backend est un monolithe modulaire. Les deux interfaces partagent les contrat
 
 | Partie    | Manifest / sources                               | Versions déclarées                                                                              |
 | --------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Backend   | [pom.xml](../backend/pom.xml)                    | Java 25, Spring Boot 4.1.2, springdoc 3.2.0, PostgreSQL, Flyway, JPA, Bean Validation           |
-| Angular   | [package.json](../frontend-angular/package.json) | Angular 22.2.x, TypeScript 6.0.2, RxJS 7.8, Tailwind 4.3, ECharts 6.1, Lucide                   |
-| React     | [package.json](../frontend-react/package.json)   | React 19.3.1, React Router 7.18, TanStack Query 5.105, Vite 8.3, TypeScript 6.0.2, Tailwind 4.3 |
+| Backend   | [pom.xml](../../backend/pom.xml)                    | Java 25, Spring Boot 4.1.2, springdoc 3.2.0, PostgreSQL, Flyway, JPA, Bean Validation           |
+| Angular   | [package.json](../../frontend-angular/package.json) | Angular 22.2.x, TypeScript 6.0.2, RxJS 7.8, Tailwind 4.3, ECharts 6.1, Lucide                   |
+| React     | [package.json](../../frontend-react/package.json)   | React 19.3.1, React Router 7.18, TanStack Query 5.105, Vite 8.3, TypeScript 6.0.2, Tailwind 4.3 |
 | Tests web | Manifest React                                   | Playwright 1.64, axe 4.14, Vitest 5, ESLint 10                                                  |
-| Identité  | [tokens](../shared/design-tokens.css)            | Inter Variable locale ; thèmes via attribut `data-theme` et préférence système                  |
+| Identité  | [tokens](../../shared/design-tokens.css)            | Inter Variable locale ; thèmes via attribut `data-theme` et préférence système                  |
 
 Ces valeurs décrivent les manifests ; les lockfiles déterminent les installations. Node 24.22.2 a été utilisé pour les validations ; les lanceurs acceptent les versions compatibles qu’ils contrôlent. Le Node système 22.12 rencontré pendant la recette est insuffisant pour Angular.
 
@@ -51,7 +51,7 @@ Racine : `backend/src/main/java/com/focusflow`.
 | `common/dto`, `common/util` | Pagination et modifications partielles    | PageResponse, PatchRequest, Patch                                  |
 | `config`                    | Horloge, CORS, PostgreSQL embarqué        | ClockConfig, CorsConfig, EmbeddedPostgresConfig                    |
 
-Domaines : tâches, projets, Pomodoro, préférences, matrice, dashboard, statistiques, recherche et transferts. Ne pas créer un repository ou une entité artificiels pour un domaine qui ne fait qu’agréger des données. Voir [le README backend](../backend/README.md).
+Domaines : tâches, projets, Pomodoro, préférences, matrice, dashboard, statistiques, recherche et transferts. Ne pas créer un repository ou une entité artificiels pour un domaine qui ne fait qu’agréger des données. Voir [le README backend](../technique/architecture-backend.md).
 
 ### 3.2 DTO et mises à jour partielles
 
@@ -72,7 +72,7 @@ Les PATCH utilisent des DTO à setters explicitement typés. `PatchRequest` cons
 - Les invariants temporels des tâches sont dans `Task`. L’unicité de la session Pomodoro et sa machine à états sont contrôlées côté serveur.
 - L’horloge est injectée ; les tests utilisent `MutableClock` pour les dates, pauses, expirations et changements d’heure.
 - PostgreSQL conserve les instants ; Hibernate est configuré en UTC. Les bornes de jours/semaines dépendent de `SettingsService`.
-- Flyway applique [le schéma initial](../backend/src/main/resources/db/migration/V1__initial_schema.sql) ; Hibernate utilise `ddl-auto=validate`.
+- Flyway applique [le schéma initial](../../backend/src/main/resources/db/migration/V1__initial_schema.sql) ; Hibernate utilise `ddl-auto=validate`.
 - Des champs de version et contraintes protègent les modifications concurrentes et les données incohérentes. Les agrégations groupées du mapper limitent les appels répétitifs sur les listes de tâches.
 
 | Table                        | Rôle                                      |
@@ -104,7 +104,7 @@ Préfixe commun `/api/v1` ; documentation interactive `/swagger-ui.html`, docume
 
 ### 3.5 État de validation backend
 
-70 tests existants ont réussi après la réorganisation, puis 8 tests de contrat/architecture supplémentaires. Le JAR `backend/target/focusflow.jar` a été construit avec succès. Le détail actualisé des classes vérifiées est dans [l’inventaire de preuves](test-results/documentation-audit.json).
+70 tests existants ont réussi après la réorganisation, puis 8 tests de contrat/architecture supplémentaires. Le JAR `backend/target/focusflow.jar` a été construit avec succès. Le détail actualisé des classes vérifiées est dans [l’inventaire de preuves](../historique/2026-11-refonte-frontends/test-results/documentation-audit.json).
 
 Les sorties Maven autrefois suivies ont été retirées du suivi Git ; `target/` est ignoré. Les fichiers de données ne doivent pas être placés dans un dossier que `mvn clean` peut supprimer, sauf base jetable de test assumée.
 

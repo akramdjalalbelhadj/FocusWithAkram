@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Lance FocusWithAkram en local (backend Spring Boot + frontend Angular) sans Docker.
+# Lance FocusWithAkram en local (backend Spring Boot + frontend React) sans Docker.
 #
-#   ./start_angular.sh                    # demarre tout
-#   NODE_HOME=/chemin/node ./start_angular.sh   # Node portable si celui du PATH est trop ancien
-#   BACKEND_PORT=8081 FRONTEND_PORT=4300 ./start_angular.sh
+#   ./scripts/start_react.sh                    # demarre tout
+#   NODE_HOME=/chemin/node ./scripts/start_react.sh   # Node portable si celui du PATH est trop ancien
+#   BACKEND_PORT=8081 FRONTEND_PORT=4300 ./scripts/start_react.sh
 #
 # Backend : profil "local" avec PostgreSQL embarque (donnees dans backend/data/postgres).
 # Ctrl+C arrete proprement les deux processus.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$ROOT/logs/angular"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOG_DIR="$ROOT/logs/react"
 BACKEND_PORT="${BACKEND_PORT:-8080}"
-FRONTEND_PORT="${FRONTEND_PORT:-4200}"
+FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 mkdir -p "$LOG_DIR"
 
 step() { printf '\033[36m==> %s\033[0m\n' "$*"; }
@@ -55,9 +55,9 @@ for p in "$BACKEND_PORT" "$FRONTEND_PORT"; do
 done
 
 # ---- Dependances frontend -----------------------------------------------------------------------
-if [ ! -d "$ROOT/frontend-angular/node_modules" ]; then
+if [ ! -d "$ROOT/frontend-react/node_modules" ]; then
   step "Installation des dependances frontend (premier lancement)"
-  (cd "$ROOT/frontend-angular" && npm install)
+  (cd "$ROOT/frontend-react" && npm install)
 fi
 
 # ---- Demarrage ----------------------------------------------------------------------------------
@@ -93,8 +93,7 @@ done
 printf '    \033[32mBackend pret.\033[0m\n'
 
 step "Demarrage du frontend (port $FRONTEND_PORT)"
-printf '{"/api":{"target":"http://127.0.0.1:%s","secure":false,"changeOrigin":true}}\n' "$BACKEND_PORT" >"$LOG_DIR/proxy.conf.json"
-(cd "$ROOT/frontend-angular" && exec node node_modules/@angular/cli/bin/ng.js serve --host 127.0.0.1 --port "$FRONTEND_PORT" --proxy-config "$LOG_DIR/proxy.conf.json") >"$LOG_DIR/frontend.log" 2>&1 &
+(cd "$ROOT/frontend-react" && FOCUS_API_URL="http://127.0.0.1:$BACKEND_PORT" exec node node_modules/vite/bin/vite.js --host 127.0.0.1 --port "$FRONTEND_PORT") >"$LOG_DIR/frontend.log" 2>&1 &
 frontend_pid=$!
 pids+=("$frontend_pid")
 

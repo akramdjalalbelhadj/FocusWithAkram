@@ -1,6 +1,6 @@
 # Parité fonctionnelle — état de recette
 
-> **Rapport de lot historique.** Pour l’état courant au 1 novembre 2026, consulter l’[avancement fonctionnel](avancement-fonctionnel.md), l’[avancement technique](avancement-technique.md) et le [design détaillé](design.md). Les chemins et résultats de ce rapport décrivent sa recette initiale.
+> **Rapport de lot historique.** Pour l’état courant au 1 novembre 2026, consulter l’[avancement fonctionnel](../../suivi/avancement-fonctionnel.md), l’[avancement technique](../../suivi/avancement-technique.md) et le [design détaillé](../../technique/design.md). Les chemins et résultats de ce rapport décrivent sa recette initiale.
 
 `fonctionnel` signifie code relié à l’API réelle, avec la preuve indiquée. Cela ne signifie pas que toutes les combinaisons ont été automatisées. `partiel` identifie une différence de couverture ou de présentation. Aucun endpoint fictif. Les règles de dates, de cycles, de statut et d’archivage restent côté Spring Boot.
 

@@ -1,6 +1,6 @@
 # FocusWithAkram — Angular
 
-Depuis la racine du dépôt : `./start_angular.ps1` (PowerShell) ou `bash ./start_angular.sh` (Bash). Le lanceur démarre aussi le backend local. Pour utiliser un backend déjà lancé, exécuter `npm run angular` depuis la racine.
+Depuis la racine du dépôt : `.\scripts\start_angular.ps1` (PowerShell) ou `bash ./scripts/start_angular.sh` (Bash). Le lanceur démarre aussi le backend local. Pour utiliser un backend déjà lancé, exécuter `npm run angular` depuis la racine.
 
 Interface : `http://127.0.0.1:4200`. Le proxy est défini dans `proxy.conf.json` ; les lanceurs adaptent automatiquement sa cible lorsque le port backend est personnalisé.
 
@@ -8,4 +8,4 @@ Les composants utilisent des templates HTML externes et des feuilles CSS locales
 
 Depuis ce dossier : `npm run build`, `npm test -- --watch=false`. Le lint se lance depuis la racine avec `npm run lint:angular`.
 
-Voir [l'architecture commune](../docs/frontend-architecture.md) et [le guide de lancement et de recette](../docs/how-to-run-frontends.md).
+Voir [l'architecture commune](../docs/technique/architecture-frontend.md) et [le guide de lancement et de recette](../docs/technique/exploitation.md).

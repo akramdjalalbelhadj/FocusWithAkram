@@ -1,36 +1,43 @@
 # FocusWithAkram — documentation
 
-Révision du **1 novembre 2026**, sur la branche `main`. Documentation relue contre les sources du backend, des deux frontends et les résultats de validation disponibles. Cette révision documentaire ne constitue pas une nouvelle exécution des tests.
+Index de la documentation. Le code source reste la source de vérité : un document qui le contredit est à corriger.
+
+## Organisation
+
+```
+docs/
+  produit/      ce que fait l'application et pour qui
+  technique/    comment elle est construite, lancée et exploitée
+  suivi/        où en est le développement et comment le vérifier
+  historique/   rapports de lot datés, figés (ne décrivent plus l'état courant)
+  maquettes/    références graphiques canoniques (PNG)
+```
 
 ## Lire selon son besoin
 
-| Document                                            | Question traitée                                          | Public                          |
-| --------------------------------------------------- | --------------------------------------------------------- | ------------------------------- |
-| [Cahier des charges](cahier-des-charges.md)         | Quel produit construit-on et selon quelles règles ?       | Produit, développement, recette |
-| [Avancement fonctionnel](avancement-fonctionnel.md) | Quelles fonctions sont livrées, partielles ou absentes ?  | Produit, recette                |
-| [Avancement technique](avancement-technique.md)     | Comment fonctionnent le backend, Angular et React ?       | Développement                   |
-| [Checklist](checklist.md)                           | Que faut-il vérifier avant de valider une livraison ?     | Développement, recette          |
-| [Guide d’utilisation](guide-utilisation.md)         | Comment accomplir les tâches courantes ?                  | Utilisateur                     |
-| [Exploitation](exploitation.md)                     | Comment installer, lancer, sauvegarder et diagnostiquer ? | Développement, exploitation     |
-| [Design détaillé](design.md)                        | Comment composer et faire évoluer les interfaces ?        | Design, frontend, recette       |
+| Document | Question traitée | Public |
+| --- | --- | --- |
+| [Cahier des charges](produit/cahier-des-charges.md) | Quel produit construit-on et selon quelles règles ? | Produit, développement, recette |
+| [Guide d'utilisation](produit/guide-utilisation.md) | Comment accomplir les tâches courantes ? | Utilisateur |
+| [Architecture backend](technique/architecture-backend.md) | Comment le serveur est-il organisé (packages, DTO, erreurs, transactions) ? | Développement |
+| [Architecture frontend](technique/architecture-frontend.md) | Comment les interfaces Angular et React sont-elles organisées ? | Développement |
+| [Design détaillé](technique/design.md) | Comment composer et faire évoluer les interfaces ? | Design, frontend, recette |
+| [Exploitation](technique/exploitation.md) | Comment installer, lancer, tester, sauvegarder et diagnostiquer ? | Développement, exploitation |
+| [Avancement fonctionnel](suivi/avancement-fonctionnel.md) | Quelles fonctions sont livrées, partielles ou absentes ? | Produit, recette |
+| [Avancement technique](suivi/avancement-technique.md) | Quel est l'état technique, la dette et les décisions ? | Développement |
+| [Checklist](suivi/checklist.md) | Que faut-il vérifier avant de valider une livraison ? | Développement, recette |
+| [Refonte v2](suivi/refonte-v2.md) | Quelles décisions, quels lots et quelles adaptations React pour la phase en cours ? | Produit, développement |
+| [Historique](historique/README.md) | Que s'est-il passé lors des lots précédents ? | Référence |
+| [Maquettes](maquettes/README.md) | À quoi les écrans doivent-ils ressembler ? | Design, frontend |
 
-Les identifiants `FWA-Fxxx`, `FWA-Nxxx` et `FWA-Txxx` servent à relier les exigences, les états d’avancement et les contrôles. « Implémenté » décrit le code ; « vérifié » nécessite une preuve identifiée. Une capture historique ne prouve pas l’état de chaque écran après une modification ultérieure.
-
-## Documents complémentaires
-
-- [Architecture du backend](../backend/README.md) : packages, DTO, PATCH, exceptions et transactions.
-- [Architecture des frontends](frontend-architecture.md) : dossiers de pages, composants, hooks et styles.
-- [Lancement et recette des deux interfaces](how-to-run-frontends.md) : commandes détaillées et base E2E isolée.
-- [Parité Angular / React](frontend-feature-parity.md) et [comparaison](frontend-comparison.md) : différences observées pendant la refonte.
-- [Régression visuelle](frontend-visual-regression.md), [références graphiques](references/INDEX_DESIGN.md). Les captures historiques sont absentes de la copie locale et doivent être régénérées.
-- [Inventaire des preuves de cette révision](test-results/documentation-audit.json).
+Les identifiants `FWA-Fxxx`, `FWA-Nxxx` et `FWA-Txxx` relient les exigences, les états d'avancement et les contrôles. « Implémenté » décrit le code ; « vérifié » nécessite une preuve identifiée.
 
 ## Convention de maintenance
 
-1. Modifier le cahier des charges lorsqu’une exigence change ; conserver son identifiant.
-2. Mettre à jour l’avancement et la checklist au même moment que le code.
-3. Reporter toute modification visuelle dans `design.md`, avec les écarts entre frameworks.
-4. Modifier le guide si un parcours ou un libellé visible change ; modifier l’exploitation si une commande, un port ou un chemin change.
+1. Modifier le cahier des charges lorsqu'une exigence change ; conserver son identifiant.
+2. Mettre à jour l'avancement et la checklist **dans le même commit** que le code.
+3. Reporter toute modification visuelle dans `technique/design.md`.
+4. Modifier le guide si un parcours ou un libellé visible change ; modifier l'exploitation si une commande, un port ou un chemin change.
 5. Dater les validations, indiquer leur périmètre et conserver les limites connues.
-
-La structure s’inspire des dossiers `english-ielts`, `fitness`, `islam` et `menstrual-cycle` de `D:\Projet\docs\modules`. Leurs contenus métier ne sont pas repris dans FocusWithAkram.
+6. Un rapport ponctuel (audit, recette, comparaison) va dans `historique/<aaaa-mm-sujet>/` et n'est plus modifié ensuite ; les informations durables sont reportées dans les documents courants.
+7. Les sorties générées (`docs/test-results/`, `docs/screenshots/`, produites par la suite E2E) ne sont pas versionnées.

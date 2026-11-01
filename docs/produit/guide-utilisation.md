@@ -1,6 +1,6 @@
 # FocusWithAkram — guide d’utilisation
 
-Mis à jour le **1 novembre 2026** pour Angular et React. Installation : [exploitation](exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
+Mis à jour le **1 novembre 2026** pour Angular et React. Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
 
 ## 1. Ouvrir l’application
 
@@ -122,4 +122,4 @@ Les champs de saisie gardent leur usage normal. Les raccourcis simples peuvent �
 | Pas de son / notification               | Vérifier les options Focus, le volume et les permissions du site.                           |
 | API inaccessible                        | Faire vérifier le backend et son healthcheck ; voir le guide d’exploitation.                |
 
-Il n’y a actuellement ni comptes multiples, ni délégation réelle à une autre personne, ni synchronisation complète hors ligne. Les différences de présentation entre variantes sont décrites dans le [design](design.md).
+Il n’y a actuellement ni comptes multiples, ni délégation réelle à une autre personne, ni synchronisation complète hors ligne. Les différences de présentation entre variantes sont décrites dans le [design](../technique/design.md).

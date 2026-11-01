@@ -114,4 +114,4 @@ La séparation des fichiers n'élimine pas à elle seule tous les couplages : l'
 
 ## Vérification
 
-Depuis la racine : `npm run build:angular`, `npm run build:react`, `npm run test:angular`, `npm run test:react`, `npm run lint:angular` et `npm run lint:react`. La recette navigateur commune reste dans `frontend-react/e2e/` ; voir [le guide de lancement](how-to-run-frontends.md) pour le backend de test isolé.
+Depuis la racine : `npm run build:angular`, `npm run build:react`, `npm run test:angular`, `npm run test:react`, `npm run lint:angular` et `npm run lint:react`. La recette navigateur commune reste dans `frontend-react/e2e/` ; voir [le guide de lancement](exploitation.md) pour le backend de test isolé.

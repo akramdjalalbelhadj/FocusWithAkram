@@ -1,5 +1,5 @@
 {
-  "name": "focuswithakram-comparison",
+  "name": "focuswithakram",
   "private": true,
   "scripts": {
     "angular": "npm --prefix frontend-angular start -- --host 127.0.0.1",

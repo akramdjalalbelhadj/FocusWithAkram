@@ -1,9 +1,9 @@
-# FocusWithAkram — backend
+# FocusWithAkram — architecture du backend
 
 Java 25, Spring Boot, Spring MVC, Bean Validation, JPA et PostgreSQL. Le code est organise par domaine fonctionnel ; chaque domaine contient uniquement les couches dont il a besoin.
 
 ```text
-src/main/java/com/focusflow/
+backend/src/main/java/com/focusflow/
   FocusFlowApplication.java
   config/                         configuration Spring et infrastructure locale
   common/
@@ -66,7 +66,7 @@ Le gestionnaire produit des reponses `ProblemDetail` avec un code stable : resso
 
 ## Tests et lancement
 
-Depuis ce dossier :
+Depuis `backend/` :
 
 ```powershell
 mvn test
@@ -78,4 +78,4 @@ Les tests suivent les packages de production ; les tests transversaux sont dans 
 
 `ControllerArchitectureTest` verifie que les controleurs deleguent l'acces aux donnees, utilisent des corps de requete types et n'exposent pas d'entites JPA dans leurs reponses. `ApiContractIT` couvre notamment la distinction entre champ absent et null explicite, les erreurs et la recherche.
 
-Les routes `/api/v1`, les noms JSON, les tables et les migrations Flyway sont conserves. La structure des packages Java n'impose aucune migration des donnees. Voir [le guide de lancement des deux interfaces](../docs/how-to-run-frontends.md).
+Les routes `/api/v1`, les noms JSON, les tables et les migrations Flyway sont conserves. La structure des packages Java n'impose aucune migration des donnees. Voir [le guide de lancement des deux interfaces](exploitation.md).

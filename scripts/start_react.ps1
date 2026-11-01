@@ -1,10 +1,10 @@
-<#
+﻿<#
 .SYNOPSIS
-  Lance FocusWithAkram en local (backend Spring Boot + frontend Angular) sans Docker.
+  Lance FocusWithAkram en local (backend Spring Boot + frontend React) sans Docker.
 
 .DESCRIPTION
   - Backend : profil "local" avec PostgreSQL embarque (donnees conservees dans backend/data/postgres).
-  - Frontend : serveur de developpement Angular avec proxy /api vers le backend.
+  - Frontend : serveur de developpement React avec proxy /api vers le backend.
   - Ctrl+C arrete proprement les deux processus.
 
 .PARAMETER NodeHome
@@ -15,20 +15,20 @@
   Ne lance pas "npm install" meme si node_modules est absent.
 
 .EXAMPLE
-  .\start_angular.ps1
-  .\start_angular.ps1 -NodeHome C:\Users\moi\tools\node-v24.22.2-win-x64
+  .\scripts\start_react.ps1
+  .\scripts\start_react.ps1 -NodeHome C:\Users\moi\tools\node-v24.22.2-win-x64
 #>
 [CmdletBinding()]
 param(
-  [string]$NodeHome = $(if ($env:FOCUSFLOW_NODE_HOME) { $env:FOCUSFLOW_NODE_HOME } else { (Join-Path $PSScriptRoot '.tools/node_modules/node/bin') }),
+  [string]$NodeHome = $(if ($env:FOCUSFLOW_NODE_HOME) { $env:FOCUSFLOW_NODE_HOME } else { (Join-Path (Split-Path $PSScriptRoot -Parent) '.tools/node_modules/node/bin') }),
   [int]$BackendPort = 8080,
-  [int]$FrontendPort = 4200,
+  [int]$FrontendPort = 5173,
   [switch]$SkipInstall
 )
 
 $ErrorActionPreference = 'Stop'
-$Root = $PSScriptRoot
-$LogDir = Join-Path $Root 'logs/angular'
+$Root = Split-Path $PSScriptRoot -Parent
+$LogDir = Join-Path $Root 'logs/react'
 New-Item -ItemType Directory -Force $LogDir | Out-Null
 
 function Write-Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
@@ -66,7 +66,7 @@ foreach ($port in @($BackendPort, $FrontendPort)) {
 }
 
 # ---- Dependances frontend ---------------------------------------------------------------------
-$Frontend = Join-Path $Root 'frontend-angular'
+$Frontend = Join-Path $Root 'frontend-react'
 if (-not $SkipInstall -and -not (Test-Path (Join-Path $Frontend 'node_modules'))) {
   Write-Step 'Installation des dependances frontend (premier lancement)'
   Push-Location $Frontend
@@ -107,10 +107,8 @@ try {
   # PORT ne doit pas fuiter vers "ng serve", qui le lit aussi.
   Remove-Item Env:PORT -ErrorAction SilentlyContinue
   Write-Step "Demarrage du frontend (port $FrontendPort)"
-  $proxyPath = Join-Path $LogDir 'proxy.conf.json'
-  @{ '/api' = @{ target = "http://127.0.0.1:$BackendPort"; secure = $false; changeOrigin = $true } } |
-    ConvertTo-Json -Depth 3 | Set-Content -Encoding ASCII $proxyPath
-  $frontendArgs = @('node_modules/@angular/cli/bin/ng.js', 'serve', '--host', '127.0.0.1', '--port', $FrontendPort, '--proxy-config', ('"' + $proxyPath + '"'))
+  $env:FOCUS_API_URL = "http://127.0.0.1:$BackendPort"
+  $frontendArgs = @('node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', $FrontendPort)
   $node = (Get-Command node).Source
   $frontend = Start-Process -FilePath $node -WorkingDirectory $Frontend `
     -ArgumentList $frontendArgs `

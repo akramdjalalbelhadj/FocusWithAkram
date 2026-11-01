@@ -1,101 +1,84 @@
 # FocusWithAkram
 
-Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros.
+Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros. Un module de finances personnelles **« Mes achats »** est en cours de conception (voir le [suivi de la refonte v2](docs/suivi/refonte-v2.md)).
 
-- Documentation du projet : [index](docs/README.md) · [cahier des charges](docs/cahier-des-charges.md) · [guide d’utilisation](docs/guide-utilisation.md)
-- Suivi : [avancement fonctionnel](docs/avancement-fonctionnel.md) · [avancement technique backend/frontend](docs/avancement-technique.md) · [checklist](docs/checklist.md)
-- Références : [design détaillé](docs/design.md) · [exploitation](docs/exploitation.md)
-- Deux frontends Angular/React : [lancement et recette](docs/how-to-run-frontends.md) · [comparaison](docs/frontend-comparison.md) · [parité](docs/frontend-feature-parity.md) · [captures et écarts](docs/frontend-visual-regression.md)
-- API interactive (Swagger UI) : <http://localhost:8080/swagger-ui.html> une fois lancé
+Toute la documentation est indexée dans [docs/README.md](docs/README.md).
+
+| Besoin | Document |
+| --- | --- |
+| Utiliser l'application | [Guide d'utilisation](docs/produit/guide-utilisation.md) |
+| Comprendre le produit et ses règles | [Cahier des charges](docs/produit/cahier-des-charges.md) |
+| Installer, lancer, tester, sauvegarder | [Exploitation](docs/technique/exploitation.md) |
+| Architecture | [Backend](docs/technique/architecture-backend.md) · [Frontends](docs/technique/architecture-frontend.md) · [Design](docs/technique/design.md) |
+| État d'avancement | [Fonctionnel](docs/suivi/avancement-fonctionnel.md) · [Technique](docs/suivi/avancement-technique.md) · [Checklist](docs/suivi/checklist.md) · [Refonte v2](docs/suivi/refonte-v2.md) |
+
+API interactive (Swagger UI) : <http://localhost:8080/swagger-ui.html> une fois le backend lancé.
 
 ## Démarrage rapide (sans Docker)
 
 Pré-requis : **Java 25**, **Maven 3.9+**, **Node ≥ 22.22.3 ou ≥ 24.15** (exigence d'Angular 22).
 
 ```powershell
-# Windows
-.\start_angular.ps1
+# Windows, depuis la racine
+.\scripts\start_angular.ps1
 # Ou React :
-.\start_react.ps1
+.\scripts\start_react.ps1
 # Node trop ancien dans le PATH ? Indiquez un Node portable :
-.\start_react.ps1 -NodeHome C:\chemin\node-v24.22.2-win-x64
+.\scripts\start_angular.ps1 -NodeHome C:\chemin\node-v24.22.2-win-x64
 ```
 
 ```bash
-# Linux / macOS / Git Bash
-bash ./start_angular.sh
-# Ou React :
-bash ./start_react.sh
-NODE_HOME=/chemin/node bash ./start_react.sh        # si besoin
+# Linux / macOS / Git Bash, depuis la racine
+bash ./scripts/start_angular.sh
+bash ./scripts/start_react.sh
+NODE_HOME=/chemin/node bash ./scripts/start_angular.sh   # si besoin
 ```
 
-Les scripts vérifient les versions et les ports, installent les dépendances frontend au premier lancement, démarrent le backend (profil `local` : **PostgreSQL embarqué**, données conservées dans `backend/data/postgres`), attendent qu'il soit prêt, démarrent le frontend, ouvrent le navigateur, puis arrêtent tout au `Ctrl+C`. Journaux dans `logs/angular/` ou `logs/react/`. Choisir un seul lanceur à la fois : chacun démarre son backend sur le port 8080. Pour comparer les deux frontends simultanément, suivre le [guide à trois terminaux](docs/how-to-run-frontends.md). Les options `-BackendPort` / `-FrontendPort` (PowerShell) ou `BACKEND_PORT` / `FRONTEND_PORT` (Bash) personnalisent les ports et le proxy API.
+Les lanceurs vérifient les versions et les ports, installent les dépendances frontend au premier lancement, démarrent le backend (profil `local` : **PostgreSQL embarqué**, données conservées dans `backend/data/postgres`, jamais versionnées), attendent qu'il soit prêt, démarrent le frontend, ouvrent le navigateur, puis arrêtent tout au `Ctrl+C`. Journaux dans `logs/angular/` ou `logs/react/`. Un seul lanceur à la fois : chacun démarre son backend sur le port 8080. Options et lancement manuel : [exploitation](docs/technique/exploitation.md).
 
 - Angular : <http://127.0.0.1:4200> ; React : <http://127.0.0.1:5173>
 - Le premier lancement télécharge les binaires PostgreSQL embarqués (quelques minutes).
 
-## Avec Docker (PostgreSQL réel)
+## Avec Docker
 
-```bash
-cp .env.example .env        # changez FOCUSFLOW_DB_PASSWORD
-docker compose up -d --build
-# Application : http://localhost:8088  (publiée sur 127.0.0.1 uniquement)
-```
+`docker-compose.yml` (PostgreSQL + backend + Angular/nginx) et `docker-compose.dev.yml` (PostgreSQL seul) existent mais **ne sont pas validés** : le build Angular ne peut pas aboutir en l'état (dossier `shared/` hors du contexte de build). Voir [exploitation, section Docker](docs/technique/exploitation.md).
 
-`docker-compose.dev.yml` ne démarre que PostgreSQL pour développer avec `mvn spring-boot:run` sans le profil `local`. La composition principale cible Angular ; React n’a pas de service Docker dédié. Docker reste non validé : le contexte de build doit notamment inclure les sources `shared/` importées par Angular. Voir les prérequis et réserves dans l’[exploitation](docs/exploitation.md).
-
-## Architecture
-
-Organisation des deux interfaces : [architecture frontend](docs/frontend-architecture.md).
-Organisation du serveur : [architecture backend, DTO et exceptions](backend/README.md).
-
-Monolithe modulaire, découpé par domaine puis par responsabilité.
+## Organisation du dépôt
 
 ```
-backend/   Java 25 · Spring Boot 4.1 · JPA/Hibernate · PostgreSQL · Flyway · springdoc
-  com.focusflow.<domaine>   controller · dto · entity · enums · mapper · model · repository · service
-  com.focusflow.common      dto · exception · util
-  com.focusflow.pomodoro    PomodoroSession (machine à états), service, API
-  com.focusflow.eisenhower  matrice
-  com.focusflow.dashboard · statistics · project · settings · transfer · search · common · config
-frontend-react/    React · vues TSX · hooks · CSS par domaine
-frontend-angular/  Angular 22 · standalone · Signals · OnPush · Tailwind 4 · CDK (drag&drop, dialog, menu) · ECharts · Lucide
-  core/      api, interceptors, services (PomodoroEngine, SettingsStore…), util (dates)
-  shared/ui  design system (icônes, badges, états, sélecteur de date, graphiques, dialogues)
-  features/  dashboard · eisenhower · tasks · pomodoro · calendar · statistics · projects · archives · settings
-  layout/    shell, palette de commandes
+backend/            Java 25 · Spring Boot 4.1 · JPA/Hibernate 7 · PostgreSQL · Flyway
+frontend-angular/   Angular 22 · standalone · Signals · zoneless · Tailwind 4 · CDK · ECharts
+frontend-react/     React 19 · React Router · TanStack Query · Vite (hors périmètre de la phase v2 en cours)
+shared/             Contrats TypeScript, utilitaires de dates et tokens CSS communs aux deux frontends
+scripts/            Lanceurs locaux (PowerShell et Bash)
+docs/               Documentation : produit, technique, suivi, historique, maquettes
 ```
+
+Fichiers locaux jamais versionnés : `backend/data/` (base), `logs/`, `.tools/` (Node portable), `.env`.
 
 Choix structurants :
 
-- **Le quadrant n'est pas stocké** : il dérive de `important` × `urgent` (cohérence garantie).
+- **Le quadrant n'est pas stocké** : il dérive de `important` × `urgent`.
 - **Les règles du cycle de vie** (démarrer / terminer / restaurer) sont dans l'entité `Task` ; les invariants sont aussi imposés par des contraintes SQL.
 - **Le temps Pomodoro est calculé depuis des horodatages** ; le temps actif d'une tâche est la somme de ses sessions de travail, sans double comptage.
 - **Instants en UTC**, affichage et regroupements dans le fuseau de l'utilisateur.
 - Erreurs au format **ProblemDetail (RFC 9457)** avec un `code` stable.
-- Angular utilise les **Signals** et `RefreshService` ; React utilise des hooks, des contextes et **TanStack Query**.
-- Les réglages du minuteur sont dans **Focus / Pomodoro → Configurer** : enregistrement automatique Angular, bouton explicite React.
-
-### Principaux endpoints (`/api/v1`)
-
-`tasks` (CRUD, `status`, `quadrant`, `reorder`, `start`, `complete`, `restore`, `duplicate`, `timeline`, `executions`, `subtasks`, `priorities`, `archives`), `eisenhower/matrix`, `projects`, `tags`, `pomodoro/sessions` (+ `pause`, `resume`, `complete`, `cancel`, `active`), `pomodoro/history`, **`pomodoro/history/daily`**, `dashboard/summary`, `dashboard/top3`, `statistics/productivity`, `settings`, `export/tasks`, `export/backup`, `import`, `search`.
 
 ## Tests
 
 ```powershell
-# Depuis backend : 78 tests connus, unitaires, intégration, contrat et architecture
+# Depuis backend : tests unitaires, d'intégration (PostgreSQL embarqué jetable), contrat et architecture
 mvn test
 ```
 
 ```powershell
-# Depuis la racine : 12 tests unitaires par frontend
+# Depuis la racine
 npm run test:angular
-npm run test:react
 npm run lint:angular
-npm run lint:react
+npm run build:angular
 ```
 
-Backend : cycle de vie et archivage, comparaison prévu/réel, début rétroactif, restauration et cycles multiples, matrice et ordre, priorités, sous-tâches, machine à états Pomodoro (pause, reprise, idempotence, expiration, pas de double comptage), historique quotidien, statistiques par fuseau, **changements d'heure** (printemps et automne), import / export. Les tests d'intégration utilisent un vrai PostgreSQL embarqué (Testcontainers n'est pas utilisable sans Docker).
+Résultats et périmètre à jour : [avancement technique](docs/suivi/avancement-technique.md).
 
 ## Configuration
 
@@ -106,10 +89,6 @@ Backend : cycle de vie et archivage, comparaison prévu/réel, début rétroacti
 | `FOCUSFLOW_BIND_ADDRESS`                   | `127.0.0.1`                                       | Interface d'écoute (`0.0.0.0` dans Docker) |
 | `FOCUSFLOW_CORS_ORIGINS`                   | localhost et 127.0.0.1 sur les ports 4200 et 5173 | Origines CORS autorisées                   |
 
-## Sécurité
+## Sécurité et confidentialité
 
-Usage **personnel local** : pas d'authentification. Le backend n'écoute que sur `127.0.0.1`. N'exposez pas l'API sur Internet sans ajouter une authentification.
-
-## Limites connues
-
-Les E2E Playwright sont présents. Les validations disponibles et leurs limites sont détaillées dans l’[avancement fonctionnel](docs/avancement-fonctionnel.md). Docker, la recette humaine d’accessibilité et une restauration complète sur environnement vierge restent à valider. Pas d’authentification, de multi-utilisateur ni de synchronisation complète hors ligne. La conversion des utilitaires Tailwind Angular reste partielle.
+Usage **personnel local** : pas d'authentification. Le backend n'écoute que sur `127.0.0.1`. N'exposez pas l'API sur Internet sans ajouter une authentification. La base, les sauvegardes JSON et les journaux contiennent des données personnelles : ne les versionnez pas.
