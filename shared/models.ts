@@ -1,3 +1,5 @@
+import type { FinanceImportSummary } from "./finance";
+
 /** Types alignes sur les DTO de l'API REST (voir backend, /swagger-ui.html). Les instants sont des chaines ISO-8601 UTC. */
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE";
@@ -363,6 +365,8 @@ export interface ImportReport {
   /** Sauvegarde v2 : objectifs du Top 3 quotidien. */
   dailyGoalsCreated: number;
   dailyGoalsSkipped: number;
+  /** Sauvegarde v3 : section « Mes achats » (absente si le fichier n'en contient pas). */
+  finance: FinanceImportSummary | null;
 }
 
 /** Erreur API normalisee (ProblemDetail RFC 9457). */

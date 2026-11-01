@@ -1,0 +1,106 @@
+<div
+  class="flex items-center gap-3 py-2.5"
+  [class.opacity-60]="op().status === 'CANCELLED'"
+>
+  <span
+    class="grid place-items-center size-9 flex-none rounded-xl"
+    [style.background]="op().category?.color ? op().category!.color + '22' : 'var(--surface-2)'"
+    [style.color]="op().category?.color ?? 'var(--muted)'"
+    aria-hidden="true"
+  >
+    <ff-icon [name]="icon()" [size]="17" />
+  </span>
+  <div class="min-w-0 flex-1">
+    <p class="font-semibold truncate" [class.line-through]="op().status === 'CANCELLED'">
+      {{ op().label }}
+    </p>
+    <p class="text-xs text-muted truncate">
+      @if (showDate()) {
+        {{ longDate(op().date) }} ·
+      }
+      @if (op().category; as c) {
+        {{ c.rootId === c.id ? c.name : c.rootName + ' › ' + c.name }}
+      } @else {
+        {{ typeLabel() }}
+      }
+      ·
+      @if (op().type === 'TRANSFER') {
+        {{ op().account.name }} → {{ op().targetAccount?.name }}
+      } @else {
+        {{ op().account.name }}
+      }
+    </p>
+    @if (op().status !== 'COMPLETED' || op().essential || op().exceptional) {
+      <div class="flex flex-wrap gap-1 mt-1">
+        @if (op().status !== 'COMPLETED') {
+          <span
+            class="badge"
+            [class]="op().overdue ? 'badge-danger' : op().status === 'PLANNED' ? 'badge-brand' : ''"
+            >{{ status() }}</span
+          >
+        }
+        @if (op().essential) {
+          <span class="badge badge-progress">Indispensable</span>
+        }
+        @if (op().exceptional) {
+          <span class="badge badge-warning">Exceptionnelle</span>
+        }
+      </div>
+    }
+  </div>
+  <div class="text-right flex-none">
+    <p
+      class="font-bold tabular-nums"
+      [class.text-success]="sign() > 0"
+      [class.text-muted]="sign() === 0"
+    >
+      {{ amount() }}
+    </p>
+    @if (gap(); as g) {
+      <p class="text-xs text-muted tabular-nums" [title]="'Prévu : ' + money(op().plannedAmount)">
+        prévu {{ money(op().plannedAmount) }}
+      </p>
+    }
+  </div>
+  <button
+    type="button"
+    class="btn btn-ghost btn-sm btn-icon flex-none"
+    [attr.aria-label]="'Actions sur « ' + op().label + ' »'"
+    [cdkMenuTriggerFor]="menu"
+  >
+    <ff-icon name="more" />
+  </button>
+</div>
+
+<ng-template #menu>
+  <div cdkMenu class="menu anim-pop" aria-label="Actions">
+    @if (op().status === 'PLANNED') {
+      <button cdkMenuItem class="menu-item" (click)="actions.complete(op())">
+        <ff-icon name="circle-check" [size]="16" />{{
+          op().type === 'INCOME' ? 'Marquer comme reçu' : 'Marquer comme payé'
+        }}
+      </button>
+    }
+    @if (editable()) {
+      <button cdkMenuItem class="menu-item" (click)="actions.editOperation(op())">
+        <ff-icon name="pencil" [size]="16" />Modifier
+      </button>
+    }
+    @if (op().type === 'EXPENSE' && op().status === 'COMPLETED') {
+      <button cdkMenuItem class="menu-item" (click)="actions.refundOf(op())">
+        <ff-icon name="restore" [size]="16" />Saisir un remboursement
+      </button>
+    }
+    @if (editable() && op().status !== 'CANCELLED') {
+      <button cdkMenuItem class="menu-item" (click)="actions.cancel(op())">
+        <ff-icon name="x" [size]="16" />Annuler
+      </button>
+    }
+    @if (op().type !== 'OPENING_BALANCE') {
+      <div class="menu-sep" role="separator"></div>
+      <button cdkMenuItem class="menu-item danger" (click)="actions.delete(op())">
+        <ff-icon name="trash" [size]="16" />Supprimer
+      </button>
+    }
+  </div>
+</ng-template>

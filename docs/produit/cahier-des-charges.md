@@ -41,6 +41,11 @@ La cible est une personne gérant ses propres activités : études, projets pers
 | FWA-F016 | Paramètres généraux                 | Thème, fuseau, semaine, raccourcis et préférences de tâches ; conserver les réglages Pomodoro lors d’un enregistrement.        |
 | FWA-F017 | Recherche et commandes              | Rechercher tâches et projets ; ouvrir le détail ; accès clavier à la palette.                                                  |
 | FWA-F018 | Export et restauration              | Export CSV/JSON et sauvegarde complète ; aperçu d’import avant confirmation ; rapport des doublons et erreurs.                 |
+| FWA-F019 | Mes achats — socle financier        | Comptes, solde initial et corrections tracées ; opérations réalisées/prévues/annulées ; catégories sur deux niveaux ; historique filtré ; bilan du mois. Règles : [spécification](mes-achats/specification.md). |
+| FWA-F020 | Mes achats — budget et récurrences  | Revenus planifiés, abonnements, plafond variable et épargne mensuelle (spécification § 4.4 à § 5). |
+| FWA-F021 | Mes achats — achats prévus          | Objectifs d’achat, matrice dédiée, prévision de trésorerie et faisabilité (spécification § 6 à § 8). |
+| FWA-F022 | Mes achats — prêts                  | Prêts accordés et emprunts, remboursements partiels et régularisation (spécification § 4.8). |
+| FWA-F023 | Mes achats — analyses et alertes    | Tableau de bord financier, statistiques, alertes et simulations (spécification § 10 et § 12). |
 
 ## 4. Règles métier
 

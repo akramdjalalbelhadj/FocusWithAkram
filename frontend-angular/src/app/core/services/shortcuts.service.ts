@@ -1,6 +1,7 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { NAV } from '../../config/navigation';
+import { openQuickExpense } from '../../features/finance/quick-expense';
 import { TaskActions } from '../../features/tasks/services/task-actions.service';
 import { PomodoroEngine } from './pomodoro.engine';
 import { SettingsStore } from './settings.store';
@@ -8,6 +9,7 @@ import { SettingsStore } from './settings.store';
 export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['Ctrl/⌘', 'K'], label: 'Ouvrir la palette de commandes' },
   { keys: ['N'], label: 'Créer une nouvelle tâche' },
+  { keys: ['E'], label: 'Saisir une dépense' },
   { keys: ['/'], label: 'Rechercher' },
   { keys: ['Espace'], label: 'Démarrer / mettre en pause le Pomodoro' },
   ...NAV.flatMap((n) =>
@@ -26,6 +28,7 @@ const GO: Record<string, string> = Object.fromEntries(
 export class ShortcutsService {
   private readonly settings = inject(SettingsStore);
   private readonly actions = inject(TaskActions);
+  private readonly injector = inject(Injector);
   private readonly engine = inject(PomodoroEngine);
   private readonly router = inject(Router);
   private openPalette: (() => void) | null = null;
@@ -75,6 +78,9 @@ export class ShortcutsService {
     if (key === 'n') {
       e.preventDefault();
       void this.actions.create();
+    } else if (key === 'e') {
+      e.preventDefault();
+      void openQuickExpense(this.injector);
     } else if (key === '/') {
       e.preventDefault();
       this.openPalette?.();

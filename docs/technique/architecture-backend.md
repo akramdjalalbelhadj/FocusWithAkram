@@ -17,6 +17,8 @@ backend/src/main/java/com/focusflow/
   pomodoro/        PomodoroSession (machine a etats), SessionType, SessionStatus, PomodoroService, dto/
   settings/        UserSettings (singleton), SettingsService, SettingsMapper, dto/
   dashboard/       indicateurs et Top 3 ; eisenhower/ matrice ; statistics/ agregations ; search/ recherche
+  finance/         module « Mes achats » : Account, Category, Operation, Money, FinanceDates, services,
+                   FinanceOverviewService (bilan du mois), FinanceBackup (section de sauvegarde), dto/
   transfer/        export CSV/JSON, sauvegarde versionnee et import, dto/
 ```
 
@@ -37,7 +39,8 @@ Les tests suivent les memes packages ; `architecture/`, `contract/` et `support/
 - aucun cycle de dependances entre domaines. Seule exception documentee : `task` et `pomodoro` (une session reference sa tache ; la tache agrege le temps de ses sessions) ;
 - `common` ne depend d'aucun domaine ;
 - un `@RestController` se nomme `*Controller`, ne se trouve ni dans `dto`, ni dans `common`, ni dans `config`, et n'est injecte nulle part ;
-- un DTO ne depend ni de Spring Data ni de JPA.
+- un DTO ne depend ni de Spring Data ni de JPA ;
+- `finance` ne depend d'aucun domaine de productivite (task, pomodoro, project…) et ne contient aucun champ `double`/`float`.
 
 `ControllerArchitectureTest` : un controleur n'injecte pas de repository, n'accepte pas de `Map` comme corps et n'expose aucune entite JPA, meme imbriquee dans un record.
 
@@ -75,6 +78,19 @@ efface ces champs. Un record compose uniquement de champs nullables ne permettra
 
 Le gestionnaire produit des reponses `ProblemDetail` avec un code stable : ressource absente (404), conflit (409), regle metier (422), requete invalide (400) et erreur interne (500). Les erreurs de validation Bean Validation exposent aussi les erreurs par champ. Les details techniques des erreurs inattendues restent dans les journaux du serveur.
 
+## Module financier (`finance`)
+
+Regles metier : [specification de « Mes achats »](../produit/mes-achats/specification.md). Choix d'implementation :
+
+- **Montants** : `BigDecimal`, `NUMERIC(12,2)`, toujours positifs ; le sens est porte par `Direction` (CREDIT/DEBIT) et impose par le type (contraintes SQL `ck_fin_operation_*`). `Money` refuse plus de deux decimales au lieu d'arrondir.
+- **Rien de calcule n'est stocke** : le solde d'un compte est la somme de ses operations realisees (requete agregee), le bilan du mois est recalcule a chaque lecture (`FinanceOverviewService`).
+- **Dates** : `LocalDate` dans le fuseau des preferences (`FinanceDates.today()`) ; une operation realisee ne peut pas etre datee dans le futur.
+- **Saisie** : creation et modification en remplacement complet (`PUT`) par des records valides ; les booleens facultatifs sont des `Boolean` (Jackson 3 refuse un primitif absent).
+- **Invariants** : `Operation.apply` verifie tout le brouillon (`Operation.Draft`) avant de modifier l'entite ; les memes regles existent en SQL.
+- **Migrations** : `V2__finance_core.sql` (tables), `V3__finance_default_categories.sql` (categories initiales). Additives : aucune donnee existante n'est modifiee.
+
+API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`).
+
 ## Sauvegarde et import
 
 `BackupFile` est un format JSON versionne (`CURRENT_VERSION = 2`) :
@@ -83,6 +99,7 @@ Le gestionnaire produit des reponses `ProblemDetail` avec un code stable : resso
 | --- | --- |
 | 1 | projets, taches (etiquettes, sous-taches, cycles), sessions Pomodoro terminees |
 | 2 | v1 + preferences (`settings`) + Top 3 quotidien (`dailyGoals`) |
+| 3 | v2 + module « Mes achats » (`finance` : comptes, categories, operations) |
 
 L'import accepte toute version de 1 a `CURRENT_VERSION` (sections absentes ignorees) et refuse un fichier plus recent avec `IMPORT_UNSUPPORTED_VERSION`. Chaque element est valide avant ecriture (memes regles que les contraintes SQL) : un element invalide est signale dans `ImportReport.errors` sans interrompre les autres. Le mode apercu (`dryRun=true`) execute l'import puis annule la transaction : son rapport est exactement celui de l'import reel. Les doublons sont ignores (taches : meme identifiant, ou meme titre et date de creation ; projets : meme nom ; sessions et Top 3 : meme identifiant ou meme date et position). Une session n'est rattachee a une tache existante que si leurs identifiants concordent. Les preferences du fichier remplacent les preferences courantes, apres validation complete.
 

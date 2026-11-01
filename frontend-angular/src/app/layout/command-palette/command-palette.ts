@@ -1,5 +1,5 @@
 import { DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
@@ -8,6 +8,7 @@ import { SearchResult } from '../../core/api/models';
 import { TasksApi } from '../../core/api/tasks.api';
 import { PomodoroEngine } from '../../core/services/pomodoro.engine';
 import { SettingsStore } from '../../core/services/settings.store';
+import { openQuickExpense } from '../../features/finance/quick-expense';
 import { TaskActions } from '../../features/tasks/services/task-actions.service';
 import { IconComponent } from '../../shared/ui/icon/icon';
 
@@ -31,6 +32,7 @@ export class CommandPaletteComponent {
   private readonly router = inject(Router);
   private readonly api = inject(TasksApi);
   private readonly actions = inject(TaskActions);
+  private readonly injector = inject(Injector);
   private readonly engine = inject(PomodoroEngine);
   private readonly settings = inject(SettingsStore);
 
@@ -57,6 +59,13 @@ export class CommandPaletteComponent {
       icon: 'plus',
       hint: 'N',
       run: () => void this.actions.create(),
+    },
+    {
+      id: 'expense',
+      label: 'Saisir une dépense',
+      icon: 'receipt',
+      hint: 'E',
+      run: () => void openQuickExpense(this.injector),
     },
     {
       id: 'focus',

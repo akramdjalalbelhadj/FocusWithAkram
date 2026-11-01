@@ -23,7 +23,9 @@ Relevé du **1 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 | FWA-F015 Statistiques             | Livré                  | Livré                      | Livré, présentation différente | Angular emploie ECharts ; React emploie aussi tableaux, SVG et CSS.                          |
 | FWA-F016 Paramètres généraux      | Livré                  | Auto-enregistrement        | Formulaire Enregistrer         | E2E : ne réinitialisent pas les réglages Pomodoro.                                           |
 | FWA-F017 Recherche / raccourcis   | Livré                  | Livré                      | Livré                          | Recherche extraite dans un service backend ; nuances de raccourcis dans le guide.            |
-| FWA-F018 Import / export          | Livré                  | Livré                      | Livré                          | Sauvegarde versionnée, aperçu d’import, doublons et échappement CSV testés.                  |
+| FWA-F018 Import / export          | Livré                  | Livré                      | Livré                          | Sauvegarde v3 (préférences, Top 3, finances), import élément par élément, doublons et CSV testés.                  |
+| FWA-F019 Mes achats — socle       | Livré                  | Livré                      | Non commencé                   | 18 tests d’intégration et unitaires ; recette navigateur sur base jetable. |
+| FWA-F020 à F023 Mes achats        | À faire (lots 5 à 8)   | À faire                    | Non commencé                   | Voir le [suivi de la refonte v2](refonte-v2.md). |
 
 ## 2. Modifications fonctionnelles récentes
 

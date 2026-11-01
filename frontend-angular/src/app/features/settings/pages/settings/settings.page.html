@@ -136,6 +136,14 @@
                 {{ r.dailyGoalsSkipped }} ignorés
               </li>
             }
+            @if (r.finance; as f) {
+              <li>
+                Mes achats : {{ f.operationsCreated }} opération(s)
+                {{ r.dryRun ? 'à créer' : 'créée(s)' }}, {{ f.operationsSkipped }} ignorée(s) ;
+                {{ f.accountsCreated }} compte(s) et {{ f.categoriesCreated }} catégorie(s)
+                {{ r.dryRun ? 'à créer' : 'créé(e)s' }}
+              </li>
+            }
             @if (r.settingsRestored) {
               <li>
                 Préférences : {{ r.dryRun ? 'seront remplacées par' : 'remplacées par' }} celles du

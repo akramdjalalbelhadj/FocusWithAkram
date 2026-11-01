@@ -1,0 +1,220 @@
+<form
+  class="card w-[min(34rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="op-title"
+>
+  <h2 id="op-title" class="text-lg font-bold mb-4">
+    {{ editing ? 'Modifier l’opération' : 'Nouvelle opération' }}
+  </h2>
+
+  <div class="space-y-4">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5" role="radiogroup" aria-label="Type d’opération">
+      @for (t of types; track t.value) {
+        <button
+          type="button"
+          role="radio"
+          class="flex flex-col items-center gap-1 rounded-xl border px-2 py-2 text-xs font-semibold"
+          [attr.aria-checked]="type() === t.value"
+          [class]="
+            type() === t.value
+              ? 'border-brand bg-brand-soft text-brand'
+              : 'border-line text-muted hover:bg-surface-2'
+          "
+          (click)="setType(t.value)"
+        >
+          <ff-icon [name]="t.icon" />{{ t.label }}
+        </button>
+      }
+    </div>
+
+    <div class="grid grid-cols-[1fr_auto] gap-3 items-end">
+      <div>
+        <label class="field-label" for="op-amount">Montant</label>
+        <div class="relative">
+          <input
+            id="op-amount"
+            class="input pr-8 text-right text-lg font-bold tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="amount"
+            placeholder="0,00"
+            cdkFocusInitial
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true"
+            >€</span
+          >
+        </div>
+      </div>
+      <div class="flex rounded-xl border border-line p-1 gap-1" role="radiogroup" aria-label="Statut">
+        <label
+          class="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold has-[:focus-visible]:outline-2"
+          [class]="form.value.status === 'COMPLETED' ? 'bg-brand-soft text-brand' : 'text-muted'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="status" value="COMPLETED" />{{
+            type() === 'INCOME' ? 'Reçue' : type() === 'EXPENSE' ? 'Payée' : 'Réalisée'
+          }}
+        </label>
+        <label
+          class="cursor-pointer rounded-lg px-3 py-1.5 text-sm font-semibold has-[:focus-visible]:outline-2"
+          [class]="form.value.status === 'PLANNED' ? 'bg-brand-soft text-brand' : 'text-muted'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="status" value="PLANNED" />Prévue
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <label class="field-label" for="op-label">Libellé</label>
+      <input
+        id="op-label"
+        class="input"
+        formControlName="label"
+        maxlength="120"
+        [placeholder]="
+          type() === 'INCOME'
+            ? 'Salaire de novembre'
+            : type() === 'TRANSFER'
+              ? 'Épargne du mois'
+              : 'Courses, restaurant…'
+        "
+      />
+    </div>
+
+    @if (needsCategory()) {
+      <div>
+        <label class="field-label" for="op-cat">Catégorie</label>
+        <select id="op-cat" class="input" formControlName="categoryId">
+          <option value="" disabled>Choisir une catégorie…</option>
+          @for (c of categories(); track c.id) {
+            <optgroup [label]="c.name">
+              <option [value]="c.id">{{ c.name }} (général)</option>
+              @for (s of c.children; track s.id) {
+                <option [value]="s.id">{{ s.name }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+      </div>
+    }
+
+    @if (type() === 'INCOME') {
+      <div>
+        <label class="field-label" for="op-kind">Origine du revenu</label>
+        <select id="op-kind" class="input" formControlName="incomeKind">
+          @for (k of incomeKinds; track k.value) {
+            <option [value]="k.value">{{ k.label }}</option>
+          }
+        </select>
+        <p class="field-hint">
+          Un remboursement de prêt n’est pas un revenu ; un remboursement d’achat se saisit comme
+          « Remboursement d’achat ».
+        </p>
+      </div>
+    }
+
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" for="op-account">{{
+          type() === 'TRANSFER' ? 'Depuis le compte' : 'Compte'
+        }}</label>
+        <select id="op-account" class="input" formControlName="accountId">
+          @for (a of accounts(); track a.id) {
+            <option [value]="a.id">{{ a.name }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="op-date">Date</label>
+        <input
+          id="op-date"
+          type="date"
+          class="input"
+          formControlName="date"
+          [max]="form.value.status === 'COMPLETED' ? today : null"
+        />
+      </div>
+    </div>
+
+    @if (type() === 'TRANSFER') {
+      <div>
+        <label class="field-label" for="op-target">Vers le compte</label>
+        <select id="op-target" class="input" formControlName="targetAccountId">
+          <option value="" disabled>Choisir un compte…</option>
+          @for (a of targets(); track a.id) {
+            <option [value]="a.id">{{ a.name }}</option>
+          }
+        </select>
+        <p class="field-hint">Un virement vers l’épargne compte comme épargne mise de côté.</p>
+      </div>
+    }
+
+    @if (type() === 'EXPENSE') {
+      <div class="grid sm:grid-cols-2 gap-2">
+        <label
+          class="flex items-start gap-2 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+        >
+          <input type="checkbox" class="mt-0.5 size-4 accent-[var(--brand)]" formControlName="essential" />
+          <span class="text-sm"
+            ><span class="font-semibold">Indispensable</span
+            ><span class="block text-muted text-xs">Loyer, transport, téléphone…</span></span
+          >
+        </label>
+        <label
+          class="flex items-start gap-2 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+        >
+          <input
+            type="checkbox"
+            class="mt-0.5 size-4 accent-[var(--brand)]"
+            formControlName="exceptional"
+          />
+          <span class="text-sm"
+            ><span class="font-semibold">Exceptionnelle</span
+            ><span class="block text-muted text-xs">Imprévue, hors habitudes</span></span
+          >
+        </label>
+      </div>
+    }
+
+    @if (showDetails()) {
+      <div>
+        <label class="field-label" for="op-desc">Description</label>
+        <textarea id="op-desc" class="input" rows="2" formControlName="description"></textarea>
+      </div>
+    } @else {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="showDetails.set(true)">
+        <ff-icon name="plus" [size]="14" />Ajouter une description
+      </button>
+    }
+
+    @if (duplicates().length) {
+      <div class="rounded-xl border border-[var(--q3-line)] bg-warning-soft p-3 text-sm" role="alert">
+        <p class="font-semibold text-warning flex items-center gap-1.5">
+          <ff-icon name="alert" [size]="16" />Doublon probable
+        </p>
+        <p class="text-muted mt-1">Une opération semblable existe déjà :</p>
+        <ul class="mt-1 space-y-0.5">
+          @for (d of duplicates(); track d.id) {
+            <li>
+              <span class="font-semibold">{{ d.label }}</span> · {{ money(d.amount) }} ·
+              {{ longDate(d.date) }}
+            </li>
+          }
+        </ul>
+        <p class="text-muted mt-1">Enregistrez quand même si ce n’est pas la même opération.</p>
+      </div>
+    }
+
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ duplicates().length ? 'Enregistrer quand même' : editing ? 'Enregistrer' : 'Ajouter' }}
+    </button>
+  </div>
+</form>

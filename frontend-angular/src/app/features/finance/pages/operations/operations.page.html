@@ -1,0 +1,167 @@
+<section class="card p-4 mb-4" aria-label="Filtres">
+  <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    <input
+      class="input sm:col-span-2"
+      type="search"
+      aria-label="Rechercher une opération"
+      placeholder="Rechercher un libellé ou une description…"
+      [value]="q()"
+      (input)="q.set($any($event.target).value)"
+    />
+    <select
+      class="input"
+      aria-label="Période"
+      [value]="period()"
+      (change)="period.set($any($event.target).value)"
+    >
+      <option value="month">Ce mois-ci</option>
+      <option value="previous">Mois précédent</option>
+      <option value="quarter">90 derniers jours</option>
+      <option value="year">Cette année</option>
+      <option value="all">Toute la période</option>
+      <option value="custom">Période personnalisée</option>
+    </select>
+    <select
+      class="input"
+      aria-label="Type d’opération"
+      [value]="type()"
+      (change)="type.set($any($event.target).value)"
+    >
+      <option value="">Tous les types</option>
+      @for (t of typeOptions; track t[0]) {
+        <option [value]="t[0]">{{ t[1] }}</option>
+      }
+    </select>
+    @if (period() === 'custom') {
+      <label class="flex items-center gap-2 text-sm text-muted"
+        >Du<input
+          type="date"
+          class="input"
+          [value]="from()"
+          (change)="from.set($any($event.target).value)"
+      /></label>
+      <label class="flex items-center gap-2 text-sm text-muted"
+        >au<input type="date" class="input" [value]="to()" (change)="to.set($any($event.target).value)"
+      /></label>
+    }
+    <select
+      class="input"
+      aria-label="Statut"
+      [value]="status()"
+      (change)="status.set($any($event.target).value)"
+    >
+      <option value="">Tous les statuts</option>
+      <option value="COMPLETED">Réalisées</option>
+      <option value="PLANNED">Prévues</option>
+      <option value="CANCELLED">Annulées</option>
+    </select>
+    <select
+      class="input"
+      aria-label="Compte"
+      [value]="accountId()"
+      (change)="accountId.set($any($event.target).value)"
+    >
+      <option value="">Tous les comptes</option>
+      @for (a of store.accounts(); track a.id) {
+        <option [value]="a.id">{{ a.name }}{{ a.archived ? ' (archivé)' : '' }}</option>
+      }
+    </select>
+    <select
+      class="input"
+      aria-label="Catégorie"
+      [value]="categoryId()"
+      (change)="categoryId.set($any($event.target).value)"
+    >
+      <option value="">Toutes les catégories</option>
+      @for (c of store.categories(); track c.id) {
+        <optgroup [label]="c.name">
+          <option [value]="c.id">{{ c.name }} (tout)</option>
+          @for (s of c.children; track s.id) {
+            <option [value]="s.id">{{ s.name }}</option>
+          }
+        </optgroup>
+      }
+    </select>
+    <select
+      class="input"
+      aria-label="Nature de la dépense"
+      [value]="nature()"
+      (change)="nature.set($any($event.target).value)"
+    >
+      <option value="">Toutes natures</option>
+      <option value="essential">Dépenses indispensables</option>
+      <option value="variable">Dépenses variables</option>
+      <option value="exceptional">Dépenses exceptionnelles</option>
+    </select>
+    <div class="flex items-center gap-2">
+      <input
+        class="input text-right"
+        inputmode="decimal"
+        aria-label="Montant minimal"
+        placeholder="Min €"
+        [value]="minAmount()"
+        (input)="minAmount.set($any($event.target).value)"
+      />
+      <input
+        class="input text-right"
+        inputmode="decimal"
+        aria-label="Montant maximal"
+        placeholder="Max €"
+        [value]="maxAmount()"
+        (input)="maxAmount.set($any($event.target).value)"
+      />
+    </div>
+  </div>
+  @if (filtered()) {
+    <div class="flex justify-end mt-2">
+      <button type="button" class="btn btn-ghost btn-sm" (click)="reset()">
+        <ff-icon name="x" [size]="14" />Réinitialiser les filtres
+      </button>
+    </div>
+  }
+</section>
+
+@if (error()) {
+  <ff-error (retry)="retry()" />
+} @else if (loading()) {
+  <ff-skeleton [count]="5" [height]="56" />
+} @else if (!items().length) {
+  <div class="card">
+    <ff-empty
+      icon="receipt"
+      [title]="filtered() ? 'Aucune opération ne correspond' : 'Aucune opération ce mois-ci'"
+      [hint]="
+        filtered()
+          ? 'Élargissez la période ou retirez un filtre.'
+          : 'Ajoutez une dépense, un revenu ou un virement.'
+      "
+    >
+      <button type="button" class="btn btn-primary btn-sm mt-2" (click)="actions.newOperation()">
+        Ajouter une opération
+      </button>
+    </ff-empty>
+  </div>
+} @else {
+  <p class="text-sm text-muted mb-2" aria-live="polite">
+    {{ total() }} opération{{ total() > 1 ? 's' : '' }}
+  </p>
+  <div class="space-y-3">
+    @for (g of days(); track g.day) {
+      <section class="card px-4 py-1" [attr.aria-label]="longDate(g.day)">
+        <h3 class="text-xs font-bold text-muted uppercase tracking-wide pt-3 pb-1 capitalize">
+          {{ longDate(g.day) }}
+        </h3>
+        <div class="divide-y divide-[var(--line)]">
+          @for (op of g.ops; track op.id) {
+            <ff-operation-row [op]="op" />
+          }
+        </div>
+      </section>
+    }
+  </div>
+  @if (hasMore()) {
+    <div class="flex justify-center mt-4">
+      <button type="button" class="btn btn-secondary" (click)="loadMore()">Charger la suite</button>
+    </div>
+  }
+}

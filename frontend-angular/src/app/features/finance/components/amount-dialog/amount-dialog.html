@@ -1,0 +1,65 @@
+<form
+  class="card w-[min(26rem,calc(100vw-1.5rem))] p-6 anim-pop shadow-modal"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="amt-title"
+>
+  <h2 id="amt-title" class="text-lg font-bold mb-1">{{ data.title }}</h2>
+  @if (data.message) {
+    <p class="text-sm text-muted mb-4">{{ data.message }}</p>
+  }
+  <div class="space-y-4 mt-3">
+    <div>
+      <label class="field-label" for="amt-value">{{ data.amountLabel }}</label>
+      <div class="relative">
+        <input
+          id="amt-value"
+          class="input pr-8 text-right tabular-nums"
+          inputmode="decimal"
+          autocomplete="off"
+          name="amount"
+          [ngModel]="amount()"
+          (ngModelChange)="amount.set($event); error.set('')"
+          cdkFocusInitial
+        />
+        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm" aria-hidden="true"
+          >€</span
+        >
+      </div>
+    </div>
+    @if (data.date !== undefined) {
+      <div>
+        <label class="field-label" for="amt-date">Date</label>
+        <input
+          id="amt-date"
+          type="date"
+          class="input"
+          name="date"
+          [max]="data.maxDate ?? null"
+          [ngModel]="date()"
+          (ngModelChange)="date.set($event); error.set('')"
+        />
+      </div>
+    }
+    @if (data.withNote) {
+      <div>
+        <label class="field-label" for="amt-note">Note (facultative)</label>
+        <input
+          id="amt-note"
+          class="input"
+          name="note"
+          maxlength="500"
+          [ngModel]="note()"
+          (ngModelChange)="note.set($event)"
+        />
+      </div>
+    }
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary">{{ data.confirmLabel }}</button>
+  </div>
+</form>

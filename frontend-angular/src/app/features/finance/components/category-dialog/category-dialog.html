@@ -1,0 +1,76 @@
+<form
+  class="card w-[min(28rem,calc(100vw-1.5rem))] p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="cat-title"
+>
+  <h2 id="cat-title" class="text-lg font-bold mb-4">
+    {{ data.category ? 'Modifier la catégorie' : 'Nouvelle catégorie' }}
+  </h2>
+  <div class="space-y-4">
+    <div>
+      <label class="field-label" for="cat-name">Nom</label>
+      <input id="cat-name" class="input" formControlName="name" maxlength="60" cdkFocusInitial />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <p class="field-error">Le nom est obligatoire.</p>
+      }
+    </div>
+    @if (canHaveParent) {
+      <div>
+        <label class="field-label" for="cat-parent">Catégorie parente</label>
+        <select id="cat-parent" class="input" formControlName="parentId">
+          <option value="">Aucune (catégorie principale)</option>
+          @for (p of parents(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </div>
+    } @else {
+      <p class="field-hint">
+        Cette catégorie contient des sous-catégories : elle reste une catégorie principale.
+      </p>
+    }
+    @if (!form.value.parentId) {
+      <div>
+        <label class="field-label" for="cat-icon">Icône</label>
+        <select id="cat-icon" class="input" formControlName="icon">
+          @for (i of icons; track i.value) {
+            <option [value]="i.value">{{ i.label }}</option>
+          }
+        </select>
+      </div>
+      <fieldset>
+        <legend class="field-label">Couleur</legend>
+        <div class="flex flex-wrap gap-2" role="radiogroup">
+          @for (c of colors; track c) {
+            <label
+              class="cursor-pointer has-[:focus-visible]:outline-2 outline-offset-2 rounded-full"
+            >
+              <input type="radio" class="sr-only-text" formControlName="color" [value]="c" />
+              <span
+                class="grid place-items-center size-8 rounded-full border-2"
+                [style.background]="c"
+                [style.border-color]="form.value.color === c ? 'var(--fg)' : 'transparent'"
+              >
+                @if (form.value.color === c) {
+                  <ff-icon name="check" [size]="14" class="text-white" />
+                }
+              </span>
+              <span class="sr-only-text">{{ c }}</span>
+            </label>
+          }
+        </div>
+      </fieldset>
+    }
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ data.category ? 'Enregistrer' : 'Créer' }}
+    </button>
+  </div>
+</form>

@@ -97,20 +97,37 @@ Pour importer : sélectionner le JSON, lire l’aperçu des créations, réutili
 
 La sauvegarde actuelle ne contient pas les préférences utilisateur. Relever séparément thème, fuseau et réglages du minuteur lors d’un changement de poste. Un export contient des données personnelles en clair : le conserver à un endroit adapté.
 
-## 11. Recherche et raccourcis
+## 11. Mes achats : comptes, dépenses et revenus
+
+Le module **Mes achats** (menu, ou G puis B) suit votre argent réel. Ses règles complètes sont dans la [spécification](mes-achats/specification.md).
+
+1. **Premier accès** : créez votre compte principal avec le montant réellement disponible aujourd’hui. Ajoutez ensuite, dans **Réglages**, un compte d’épargne ou des espèces. L’épargne n’entre pas dans le solde disponible.
+2. **Saisie rapide** : touche **E** (ou bouton **Dépense**, ou la palette) depuis n’importe quel écran. Saisissez le montant (virgule acceptée), un libellé et une catégorie. Cochez « Indispensable » pour un loyer ou un abonnement de transport, « Exceptionnelle » pour une dépense imprévue.
+3. **Réalisée ou prévue** : seule une opération réalisée (payée, reçue) change le solde. Un salaire attendu se saisit comme revenu **prévu** ; le jour venu, menu **⋯ → Marquer comme reçu** avec le montant réel : l’écart avec le prévu reste affiché.
+4. **Virements** : d’un compte à un autre ; vers l’épargne, ils comptent comme épargne mise de côté.
+5. **Retour d’un produit** : menu **⋯ → Saisir un remboursement** sur la dépense ; il réduit les dépenses de la catégorie, il ne compte pas comme un revenu.
+6. **Doublons** : si une opération semblable existe (même compte et montant, à trois jours près), l’application le signale avant d’enregistrer ; confirmez si ce n’est pas la même.
+7. **Solde différent de la banque** : **Corriger le solde** sur le compte. L’écart devient une correction visible et datée dans l’historique.
+8. **Annuler ou supprimer** : « Annuler » garde l’opération dans l’historique sans effet ; « Supprimer » l’efface (erreur de saisie). Le solde initial ne se supprime pas : il se corrige.
+9. **Catégories** : dans **Réglages**, créez, renommez, déplacez ou archivez catégories et sous-catégories. Une catégorie déjà utilisée s’archive au lieu d’être supprimée, pour que l’historique reste lisible.
+
+La **Vue d’ensemble** montre le disponible, l’épargne, les revenus reçus et attendus, les dépenses du mois (indispensables et variables), le non dépensé, les opérations à venir ou en retard et la répartition par catégorie. **Opérations** filtre l’historique par période, type, statut, compte, catégorie, nature, montant et texte.
+
+## 12. Recherche et raccourcis
 
 | Action                             | Raccourci / accès                                              |
 | ---------------------------------- | -------------------------------------------------------------- |
 | Palette de recherche               | Ctrl + K, ou Cmd + K sur macOS                                 |
 | Nouvelle tâche                     | N, si les raccourcis simples sont activés                      |
-| Navigation                         | G puis D/M/T/F/C/S/A selon la destination disponible           |
+| Saisir une dépense                 | E, si les raccourcis simples sont activés                      |
+| Navigation                         | G puis D/M/T/F/C/S/B/A selon la destination (B : Mes achats)   |
 | Pause/reprise d’une session active | Espace, hors champ de saisie et selon l’élément qui a le focus |
 | Fermer une fenêtre                 | Échap lorsque le dialogue le permet                            |
 | Aide rapide Angular                | ? ; la palette accepte aussi /                                 |
 
 Les champs de saisie gardent leur usage normal. Les raccourcis simples peuvent être désactivés ; Ctrl/Cmd + K reste un accès privilégié. Consulter la liste affichée dans l’interface plutôt que de supposer que tous les raccourcis optionnels sont identiques dans les deux variantes.
 
-## 12. Messages et dépannage courant
+## 13. Messages et dépannage courant
 
 | Situation                               | Action                                                                                      |
 | --------------------------------------- | ------------------------------------------------------------------------------------------- |

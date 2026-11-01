@@ -66,6 +66,13 @@ export const NAV: readonly NavItem[] = [
     goKey: 's',
   },
   { path: '/projects', label: 'Projets', command: 'Aller aux projets', icon: 'folder' },
+  {
+    path: '/finance',
+    label: 'Mes achats',
+    command: 'Aller à Mes achats',
+    icon: 'wallet',
+    goKey: 'b',
+  },
   { path: '/archives', label: 'Archives', command: 'Aller aux archives', icon: 'archive', goKey: 'a' },
   { path: '/settings', label: 'Paramètres', command: 'Ouvrir les paramètres', icon: 'settings' },
 ];

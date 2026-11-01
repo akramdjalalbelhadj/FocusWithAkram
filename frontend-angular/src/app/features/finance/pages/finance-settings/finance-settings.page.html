@@ -1,0 +1,177 @@
+<div class="flex justify-end mb-3">
+  <label class="flex items-center gap-2 text-sm text-muted"
+    ><input
+      type="checkbox"
+      class="size-4 accent-[var(--brand)]"
+      [checked]="showArchived()"
+      (change)="showArchived.set($any($event.target).checked)"
+    />Afficher les éléments archivés</label
+  >
+</div>
+
+<div class="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-4 items-start">
+  <section class="card p-5" aria-labelledby="fs-accounts">
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <h2 id="fs-accounts" class="section-title !mb-0">Comptes</h2>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="actions.editAccount(null)">
+        <ff-icon name="plus" [size]="14" />Compte
+      </button>
+    </div>
+    <p class="text-sm text-muted mb-2">
+      Le solde disponible additionne les comptes courants et les espèces ; l’épargne est comptée à
+      part.
+    </p>
+    <ul class="divide-y divide-[var(--line)]">
+      @for (a of accounts(); track a.id) {
+        <li class="flex items-center gap-3 py-2.5" [class.opacity-60]="a.archived">
+          <span
+            class="grid place-items-center size-9 rounded-xl bg-surface-2 text-muted flex-none"
+            aria-hidden="true"
+            ><ff-icon [name]="typeIcon[a.type]" [size]="17"
+          /></span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold truncate">
+              {{ a.name }}
+              @if (a.archived) {
+                <span class="badge ml-1">Archivé</span>
+              }
+            </p>
+            <p class="text-xs text-muted">{{ typeLabel[a.type] }}</p>
+          </div>
+          <p class="font-bold tabular-nums" [class.text-danger]="a.balance < 0">
+            {{ money(a.balance) }}
+          </p>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-icon"
+            [attr.aria-label]="'Actions sur le compte ' + a.name"
+            [cdkMenuTriggerFor]="accountMenu"
+          >
+            <ff-icon name="more" />
+          </button>
+          <ng-template #accountMenu>
+            <div cdkMenu class="menu anim-pop" aria-label="Actions">
+              <button cdkMenuItem class="menu-item" (click)="actions.editAccount(a)">
+                <ff-icon name="pencil" [size]="16" />Renommer ou changer le type
+              </button>
+              @if (!a.archived) {
+                <button cdkMenuItem class="menu-item" (click)="actions.reconcile(a)">
+                  <ff-icon name="scale" [size]="16" />Corriger le solde
+                </button>
+              }
+              <button cdkMenuItem class="menu-item" (click)="actions.toggleArchiveAccount(a)">
+                <ff-icon name="archive" [size]="16" />{{ a.archived ? 'Réactiver' : 'Archiver' }}
+              </button>
+              @if (!a.hasOperations) {
+                <div class="menu-sep" role="separator"></div>
+                <button cdkMenuItem class="menu-item danger" (click)="actions.deleteAccount(a)">
+                  <ff-icon name="trash" [size]="16" />Supprimer
+                </button>
+              }
+            </div>
+          </ng-template>
+        </li>
+      }
+    </ul>
+    <p class="field-hint mt-2">
+      Un compte ne s’archive qu’avec un solde nul ; un compte qui a des opérations ne se supprime
+      pas.
+    </p>
+  </section>
+
+  <section class="card p-5" aria-labelledby="fs-categories">
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <h2 id="fs-categories" class="section-title !mb-0">Catégories de dépenses</h2>
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        (click)="actions.editCategory({ category: null })"
+      >
+        <ff-icon name="plus" [size]="14" />Catégorie
+      </button>
+    </div>
+    <p class="text-sm text-muted mb-2">
+      Deux niveaux : catégorie et sous-catégorie. Une catégorie déjà utilisée s’archive pour ne pas
+      altérer l’historique.
+    </p>
+    <ul class="space-y-2">
+      @for (c of categories(); track c.id) {
+        <li class="rounded-xl border border-line" [class.opacity-60]="c.archived">
+          <div class="flex items-center gap-3 p-2.5">
+            <span
+              class="grid place-items-center size-8 rounded-lg flex-none"
+              [style.background]="(c.color ?? '#7437f6') + '22'"
+              [style.color]="c.color ?? 'var(--brand)'"
+              aria-hidden="true"
+              ><ff-icon [name]="c.icon ?? 'tag'" [size]="16"
+            /></span>
+            <p class="flex-1 font-semibold truncate">
+              {{ c.name }}
+              @if (c.archived) {
+                <span class="badge ml-1">Archivée</span>
+              }
+            </p>
+            <span class="text-xs text-muted tabular-nums">{{ c.operationCount }} op.</span>
+            <ng-container
+              *ngTemplateOutlet="categoryActions; context: { $implicit: c, root: true }"
+            />
+          </div>
+          @if (c.children.length) {
+            <ul class="border-t border-line px-2.5 py-1">
+              @for (s of c.children; track s.id) {
+                <li class="flex items-center gap-3 py-1.5 pl-11" [class.opacity-60]="s.archived">
+                  <p class="flex-1 text-sm truncate">
+                    {{ s.name }}
+                    @if (s.archived) {
+                      <span class="badge ml-1">Archivée</span>
+                    }
+                  </p>
+                  <span class="text-xs text-muted tabular-nums">{{ s.operationCount }} op.</span>
+                  <ng-container
+                    *ngTemplateOutlet="categoryActions; context: { $implicit: s, root: false }"
+                  />
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+</div>
+
+<ng-template #categoryActions let-c let-root="root">
+  <button
+    type="button"
+    class="btn btn-ghost btn-sm btn-icon"
+    [attr.aria-label]="'Actions sur la catégorie ' + c.name"
+    [cdkMenuTriggerFor]="categoryMenu"
+  >
+    <ff-icon name="more" />
+  </button>
+  <ng-template #categoryMenu>
+    <div cdkMenu class="menu anim-pop" aria-label="Actions">
+      <button cdkMenuItem class="menu-item" (click)="actions.editCategory({ category: c })">
+        <ff-icon name="pencil" [size]="16" />Modifier
+      </button>
+      @if (root && !c.archived) {
+        <button
+          cdkMenuItem
+          class="menu-item"
+          (click)="actions.editCategory({ category: null, parentId: c.id })"
+        >
+          <ff-icon name="plus" [size]="16" />Ajouter une sous-catégorie
+        </button>
+      }
+      <button cdkMenuItem class="menu-item" (click)="actions.toggleArchiveCategory(c)">
+        <ff-icon name="archive" [size]="16" />{{ c.archived ? 'Réactiver' : 'Archiver' }}
+      </button>
+      @if (deletable(c)) {
+        <div class="menu-sep" role="separator"></div>
+        <button cdkMenuItem class="menu-item danger" (click)="actions.deleteCategory(c)">
+          <ff-icon name="trash" [size]="16" />Supprimer
+        </button>
+      }
+    </div>
+  </ng-template>
+</ng-template>

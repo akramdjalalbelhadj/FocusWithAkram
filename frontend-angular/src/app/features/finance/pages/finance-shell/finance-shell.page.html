@@ -1,0 +1,57 @@
+<header class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">
+      <span class="page-icon"><ff-icon name="wallet" [size]="24" /></span>Mes achats
+    </h1>
+    <p class="page-sub">Votre argent réel, vos dépenses et vos prévisions, au même endroit.</p>
+  </div>
+  @if (!needsSetup() && store.loaded()) {
+    <div class="flex gap-2">
+      <button type="button" class="btn btn-secondary" (click)="actions.newOperation()">
+        <ff-icon name="plus" />Opération
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        title="Saisie rapide (touche E)"
+        (click)="actions.quickExpense()"
+      >
+        <ff-icon name="receipt" />Dépense
+      </button>
+    </div>
+  }
+</header>
+
+@if (store.error()) {
+  <ff-error (retry)="store.load()" />
+} @else if (!store.loaded()) {
+  <ff-skeleton [count]="3" [height]="96" />
+} @else if (needsSetup()) {
+  <section class="card p-6 sm:p-8 max-w-2xl" aria-labelledby="fin-setup">
+    <span class="grid place-items-center size-12 rounded-2xl bg-brand-soft text-brand mb-4">
+      <ff-icon name="piggy-bank" [size]="26" />
+    </span>
+    <h2 id="fin-setup" class="text-xl font-bold">Commencez par votre solde actuel</h2>
+    <p class="text-muted mt-2">
+      Indiquez l’argent dont vous disposez réellement aujourd’hui sur votre compte principal : c’est
+      le point de départ de tous les calculs. Vous pourrez ajouter un compte d’épargne ou des espèces
+      ensuite, et corriger un écart à tout moment.
+    </p>
+    <button type="button" class="btn btn-primary mt-5" (click)="actions.editAccount(null)">
+      <ff-icon name="plus" />Créer mon premier compte
+    </button>
+  </section>
+} @else {
+  <nav class="fin-tabs" aria-label="Sections de Mes achats">
+    @for (t of tabs; track t.path) {
+      <a
+        [routerLink]="t.path"
+        routerLinkActive="fin-tab-active"
+        ariaCurrentWhenActive="page"
+        class="fin-tab"
+        ><ff-icon [name]="t.icon" [size]="16" />{{ t.label }}</a
+      >
+    }
+  </nav>
+  <router-outlet />
+}
