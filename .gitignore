@@ -1,11 +1,26 @@
-.tools/
+# Dépendances et builds
 node_modules/
 dist/
 target/
+.angular/
+
+# Outils locaux (Node portable)
+.tools/
+
+# Données et journaux locaux : ne jamais versionner (données personnelles)
+backend/data/
 logs/
+*.log
+
+# Secrets
+.env
+
+# IDE
+.idea/
+*.iml
+
+# Sorties de tests
 test-results/
 playwright-report/
-backend/data/
-
-!docs/test-results/
-!docs/test-results/**
+!docs/historique/**/test-results/
+!docs/historique/**/test-results/**
