@@ -23,8 +23,8 @@ type View = 'month' | 'week' | 'day';
   template: `
     <header class="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 class="page-title">Calendrier</h1>
-        <p class="page-sub">Les tâches selon leur échéance. Glissez une tâche vers un autre jour pour la replanifier.</p>
+        <h1 class="page-title"><span class="page-icon"><ff-icon name="calendar" [size]="24" /></span>Calendrier</h1>
+
       </div>
       <button type="button" class="btn btn-primary" (click)="actions.create({})"><ff-icon name="plus" />Nouvelle tâche</button>
     </header>
@@ -56,9 +56,9 @@ type View = 'month' | 'week' | 'day';
             <div class="grid grid-cols-7 border-b border-line bg-surface-2 text-center text-xs font-bold text-muted uppercase" aria-hidden="true">
               @for (d of weekHeader(); track $index) { <div class="py-2">{{ d }}</div> }
             </div>
-            <div class="grid grid-cols-7" role="grid" aria-label="Mois">
+            <div class="grid grid-cols-7" role="group" aria-label="Mois">
               @for (cell of days(); track cell) {
-                <div cdkDropList [cdkDropListData]="cell" (cdkDropListDropped)="drop($event)" role="gridcell"
+                <div cdkDropList [cdkDropListData]="cell" (cdkDropListDropped)="drop($event)" role="group" tabindex="0" (keydown.enter)="selected.set(cell)" (keydown.space)="$event.preventDefault(); selected.set(cell)"
                   class="min-h-24 sm:min-h-28 border-b border-r border-line p-1 flex flex-col gap-1 cursor-pointer hover:bg-surface-2/60"
                   [class.bg-surface-2]="!inMonth(cell)" [class.ring-2]="cell === selected()" [class.ring-inset]="true" [class.ring-brand]="cell === selected()"
                   (click)="selected.set(cell)" [attr.aria-label]="dayLabel(cell) + ', ' + (byDay().get(cell)?.length ?? 0) + ' tâches'">
@@ -66,7 +66,7 @@ type View = 'month' | 'week' | 'day';
                   @for (t of (byDay().get(cell) ?? []).slice(0, 3); track t.id) {
                     <button type="button" cdkDrag [cdkDragData]="t" class="chip !px-1.5 !py-0.5 w-full justify-start truncate hidden sm:flex" (click)="$event.stopPropagation(); actions.openDetail(t.id)"
                       [style.border-color]="t.overdue ? 'var(--danger)' : 'var(--' + t.quadrant.toLowerCase() + '-line)'" [style.background]="'var(--' + t.quadrant.toLowerCase() + '-soft)'" [style.color]="t.overdue ? 'var(--danger)' : 'var(--' + t.quadrant.toLowerCase() + ')'">
-                      <span class="truncate">{{ t.title }}</span>
+                      <span class="calendar-q">{{ t.quadrant }}</span><span class="calendar-title">{{ t.title }}</span><span class="calendar-time">{{ time(t.plannedEndAt) }}</span>
                     </button>
                   }
                   @if ((byDay().get(cell)?.length ?? 0) > 0) {
@@ -95,15 +95,15 @@ type View = 'month' | 'week' | 'day';
           </section>
         }
 
+      </div>
+      <div class="calendar-side">
         @if (view() === 'month') {
-          <section class="card p-4 mt-4" aria-live="polite" [attr.aria-label]="'Tâches du ' + dayLabel(selected())">
-            <h3 class="font-bold capitalize mb-3">{{ dayLabel(selected()) }}</h3>
+          <section class="card p-5" aria-live="polite" [attr.aria-label]="'Tâches du ' + dayLabel(selected())">
+            <h3 class="font-bold text-lg mb-1">Détails du jour</h3><p class="text-muted mb-4">{{ dayLabel(selected()) }}</p>
             @if (!(byDay().get(selected())?.length)) { <p class="text-muted text-sm">Aucune tâche prévue ce jour-là.</p> }
             <div class="space-y-2">@for (t of byDay().get(selected()) ?? []; track t.id) { <ng-container *ngTemplateOutlet="row; context: { t }" /> }</div>
           </section>
         }
-      </div>
-
       <aside class="card p-4 h-fit" aria-labelledby="unp-h">
         <h2 id="unp-h" class="font-bold mb-1">Non planifiées</h2>
         <p class="text-xs text-muted mb-3">Tâches sans échéance. Ouvrez-en une pour lui donner une date.</p>
@@ -114,6 +114,7 @@ type View = 'month' | 'week' | 'day';
           }
         </ul>
       </aside>
+      </div>
     </div>
 
     <ng-template #row let-t="t">

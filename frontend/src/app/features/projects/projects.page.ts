@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Project } from '../../core/api/models';
-import { ProjectsApi } from '../../core/api/tasks.api';
+import { ProjectsApi, TasksApi } from '../../core/api/tasks.api';
 import { AppError } from '../../core/interceptors/error.interceptor';
 import { RefreshService } from '../../core/services/refresh.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -12,6 +12,7 @@ import { ConfirmDialogComponent } from '../../shared/ui/dialogs';
 import { DateTimeFieldComponent } from '../../shared/ui/datetime-field';
 import { IconComponent } from '../../shared/ui/icon';
 import { EmptyComponent, ErrorComponent, SkeletonComponent } from '../../shared/ui/states';
+import { SettingsStore } from '../../core/services/settings.store';
 import { TaskActions } from '../tasks/task-actions.service';
 
 const COLORS = ['#4f46e5', '#0ea5e9', '#14b8a6', '#22c55e', '#eab308', '#f97316', '#ef4444', '#ec4899', '#8b5cf6', '#64748b'];
@@ -34,6 +35,7 @@ const COLORS = ['#4f46e5', '#0ea5e9', '#14b8a6', '#22c55e', '#eab308', '#f97316'
           <label class="field-label" for="pj-desc">Description</label>
           <textarea id="pj-desc" class="input" rows="2" formControlName="description"></textarea>
         </div>
+        <div><label class="field-label" for="pj-icon">Icône</label><select id="pj-icon" class="input" formControlName="icon"><option value="folder">Dossier</option><option value="target">Objectif</option><option value="coffee">Personnel</option><option value="layers">Apprentissage</option></select></div>
         <fieldset>
           <legend class="field-label">Couleur</legend>
           <div class="flex flex-wrap gap-2" role="radiogroup">
@@ -70,6 +72,7 @@ export class ProjectDialogComponent {
     name: [this.data?.name ?? '', [Validators.required, Validators.maxLength(120)]],
     description: [this.data?.description ?? ''],
     color: [this.data?.color ?? COLORS[0]],
+    icon: [this.data?.icon ?? 'folder'],
     dueAt: [this.data?.dueAt ?? (null as string | null)],
   });
 
@@ -78,7 +81,7 @@ export class ProjectDialogComponent {
     if (this.form.invalid || !this.form.value.name?.trim()) return;
     this.saving.set(true);
     const v = this.form.getRawValue();
-    const body = { name: v.name.trim(), description: v.description, color: v.color, dueAt: v.dueAt };
+    const body = { name: v.name.trim(), description: v.description, color: v.color, icon: v.icon, dueAt: v.dueAt };
     try {
       await firstValueFrom(this.data ? this.api.update(this.data.id, body) : this.api.create(body));
       this.ref.close(true);
@@ -97,7 +100,7 @@ export class ProjectDialogComponent {
   template: `
     <header class="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 class="page-title">Projets</h1>
+        <h1 class="page-title"><span class="page-icon"><ff-icon name="folder" [size]="24" /></span>Projets</h1>
         <p class="page-sub">Regroupez vos tâches par projet et suivez leur avancement.</p>
       </div>
       <div class="flex gap-2">
@@ -106,6 +109,8 @@ export class ProjectDialogComponent {
       </div>
     </header>
 
+    <div class="flex flex-wrap gap-2 mb-4"><input class="input flex-1" type="search" aria-label="Rechercher un projet" placeholder="Rechercher un projet…" [value]="query()" (input)="query.set($any($event.target).value)" /><select class="input w-auto" aria-label="Trier les projets" [value]="sort()" (change)="sort.set($any($event.target).value)"><option value="name">Nom</option><option value="due">Échéance</option></select></div>
+    @if (taskPreview.error()) { <ff-error (retry)="taskPreview.load()" /> }
     @if (loader.error()) { <ff-error (retry)="loader.load()" /> }
     @else if (loader.loading()) { <ff-skeleton [count]="3" [height]="120" /> }
     @else if (!visible().length) {
@@ -113,9 +118,9 @@ export class ProjectDialogComponent {
     } @else {
       <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
         @for (p of visible(); track p.id) {
-          <article class="card p-5 flex flex-col gap-3" [class.opacity-70]="p.archived">
+          <article class="card p-5 flex flex-col gap-3" [class.opacity-70]="p.archived" [style.border-top-color]="p.color">
             <div class="flex items-start gap-3">
-              <span class="size-10 rounded-xl grid place-items-center text-white flex-none" [style.background]="p.color"><ff-icon name="folder" /></span>
+              <span class="size-10 rounded-xl grid place-items-center text-white flex-none" [style.background]="p.color"><ff-icon [name]="p.icon || 'folder'" /></span>
               <div class="min-w-0 flex-1">
                 <h2 class="font-bold truncate">{{ p.name }}</h2>
                 @if (p.description) { <p class="text-sm text-muted line-clamp-2">{{ p.description }}</p> }
@@ -128,6 +133,8 @@ export class ProjectDialogComponent {
                 <div class="h-full transition-all" [style.width.%]="pct(p)" [style.background]="p.color"></div>
               </div>
             </div>
+            <div class="project-preview">@for (t of previewTasks(p.id); track t.id) { <button type="button" (click)="actions.openDetail(t.id)">□ {{ t.title }}</button> }</div>
+            <p class="text-sm text-muted">{{ settings.fmt(p.dueAt) || 'Sans échéance' }}</p>
             <div class="flex flex-wrap gap-1 mt-auto">
               <button type="button" class="btn btn-secondary btn-sm" (click)="actions.create({ projectId: p.id })"><ff-icon name="plus" [size]="14" />Tâche</button>
               <button type="button" class="btn btn-ghost btn-sm" (click)="edit(p)"><ff-icon name="pencil" [size]="14" />Modifier</button>
@@ -136,11 +143,15 @@ export class ProjectDialogComponent {
             </div>
           </article>
         }
+        <button type="button" class="card p-6 flex flex-col items-center justify-center gap-3 border-dashed min-h-64" (click)="edit(null)"><ff-icon name="plus" [size]="32" /><strong>Un nouveau projet ?</strong><span class="text-sm text-muted">Donne une place à ta prochaine idée.</span></button>
       </div>
     }
   `,
 })
 export class ProjectsPage {
+  protected readonly settings = inject(SettingsStore);
+  protected readonly query = signal('');
+  protected readonly sort = signal('name');
   protected readonly actions = inject(TaskActions);
   private readonly api = inject(ProjectsApi);
   private readonly dialog = inject(Dialog);
@@ -149,9 +160,12 @@ export class ProjectsPage {
 
   protected readonly showArchived = signal(false);
   protected readonly loader = new Loader(() => this.api.list());
+  private readonly tasksApi = inject(TasksApi);
+  protected readonly taskPreview = new Loader(() => this.tasksApi.priorities('PRIORITIES'));
+  protected previewTasks(projectId: string) {return (this.taskPreview.data() ?? []).filter(t => t.project?.id === projectId).slice(0,2); }
 
   protected visible(): Project[] {
-    return (this.loader.data() ?? []).filter((p) => this.showArchived() || !p.archived);
+    return (this.loader.data() ?? []).filter((p) => (this.showArchived() || !p.archived) && p.name.toLowerCase().includes(this.query().toLowerCase())).sort((a,b) => this.sort() === 'due' ? (a.dueAt || 'z').localeCompare(b.dueAt || 'z') : a.name.localeCompare(b.name));
   }
 
   protected pct(p: Project): number {

@@ -2,7 +2,8 @@
 
 Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros.
 
-- Documentation fonctionnelle détaillée : [`docs/DOCUMENTATION_FONCTIONNELLE.md`](docs/DOCUMENTATION_FONCTIONNELLE.md)
+- Documentation fonctionnelle détaillée : [`docs/docs/DOCUMENTATION_FONCTIONNELLE.md`](docs/docs/DOCUMENTATION_FONCTIONNELLE.md)
+- Deux frontends Angular/React : [lancement et recette](docs/how-to-run-frontends.md) · [comparaison](docs/frontend-comparison.md) · [parité](docs/frontend-feature-parity.md) · [captures et écarts](docs/frontend-visual-regression.md)
 - API interactive (Swagger UI) : <http://localhost:8080/swagger-ui.html> une fois lancé
 
 ## Démarrage rapide (sans Docker)
@@ -11,20 +12,24 @@ Pré-requis : **Java 25**, **Maven 3.9+**, **Node ≥ 22.22.3 ou ≥ 24.15** (ex
 
 ```powershell
 # Windows
-.\start.ps1
+.\start_angular.ps1
+# Ou React :
+.\start_react.ps1
 # Node trop ancien dans le PATH ? Indiquez un Node portable :
-.\start.ps1 -NodeHome C:\chemin\node-v24.22.2-win-x64
+.\start_react.ps1 -NodeHome C:\chemin\node-v24.22.2-win-x64
 ```
 
 ```bash
 # Linux / macOS / Git Bash
-./start.sh
-NODE_HOME=/chemin/node ./start.sh        # si besoin
+bash ./start_angular.sh
+# Ou React :
+bash ./start_react.sh
+NODE_HOME=/chemin/node bash ./start_react.sh        # si besoin
 ```
 
-Les scripts vérifient les versions et les ports, installent les dépendances frontend au premier lancement, démarrent le backend (profil `local` : **PostgreSQL embarqué**, données conservées dans `backend/data/postgres`), attendent qu'il soit prêt, démarrent le frontend, ouvrent le navigateur, puis arrêtent tout au `Ctrl+C`. Journaux dans `logs/`.
+Les scripts vérifient les versions et les ports, installent les dépendances frontend au premier lancement, démarrent le backend (profil `local` : **PostgreSQL embarqué**, données conservées dans `backend/data/postgres`), attendent qu'il soit prêt, démarrent le frontend, ouvrent le navigateur, puis arrêtent tout au `Ctrl+C`. Journaux dans `logs/angular/` ou `logs/react/`. Choisir un seul lanceur à la fois : chacun démarre son backend sur le port 8080. Pour comparer les deux frontends simultanément, suivre le [guide à trois terminaux](docs/how-to-run-frontends.md). Les options `-BackendPort` / `-FrontendPort` (PowerShell) ou `BACKEND_PORT` / `FRONTEND_PORT` (Bash) personnalisent les ports et le proxy API.
 
-- Application : <http://localhost:4200>
+- Angular : <http://127.0.0.1:4200> ; React : <http://127.0.0.1:5173>
 - Le premier lancement télécharge les binaires PostgreSQL embarqués (quelques minutes).
 
 ## Avec Docker (PostgreSQL réel)

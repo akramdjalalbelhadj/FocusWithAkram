@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-01",
+  "backend": {
+    "tests": 70,
+    "failures": 0
+  },
+  "angular": {
+    "tests": 12,
+    "failures": 0,
+    "build": "passed",
+    "lint": "passed"
+  },
+  "react": {
+    "tests": 12,
+    "failures": 0,
+    "build": "passed",
+    "typecheck": "passed",
+    "lint": "passed"
+  },
+  "e2eBusiness": {
+    "tests": 12,
+    "failures": 0
+  },
+  "e2eNavigation": {
+    "tests": 2,
+    "failures": 0
+  },
+  "axe": {
+    "pagesAndThemes": 28,
+    "violations": 0
+  },
+  "screenshots": 74,
+  "volume": {
+    "additionalTasks": 120,
+    "horizontalOverflow": false
+  }
+}
