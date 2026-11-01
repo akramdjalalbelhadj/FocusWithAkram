@@ -40,6 +40,16 @@ public class SettingsService {
     @Transactional
     public UserSettings update(Patch p) {
         UserSettings s = get();
+        apply(s, p);
+        return s;
+    }
+
+    /** Verifie toutes les valeurs sans rien modifier ; leve la meme erreur que {@link #update}. */
+    public void validate(Patch p) {
+        apply(new UserSettings(), p);
+    }
+
+    private static void apply(UserSettings s, Patch p) {
         if (p.has("timeZone")) {
             String tz = p.string("timeZone");
             try {
@@ -92,7 +102,6 @@ public class SettingsService {
         if (p.has("subtasksCompleteParent")) s.setSubtasksCompleteParent(Boolean.TRUE.equals(p.bool("subtasksCompleteParent")));
         if (p.has("shortcutsEnabled")) s.setShortcutsEnabled(Boolean.TRUE.equals(p.bool("shortcutsEnabled")));
         if (p.has("compactMode")) s.setCompactMode(Boolean.TRUE.equals(p.bool("compactMode")));
-        return s;
     }
 
     private static int range(String field, Integer value, int min, int max) {

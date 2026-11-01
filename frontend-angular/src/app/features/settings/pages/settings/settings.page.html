@@ -119,12 +119,29 @@
           <p class="font-semibold mb-1">{{ r.dryRun ? 'Aperçu de l’import' : 'Import terminé' }}</p>
           <ul class="text-muted space-y-0.5">
             <li>
-              Tâches : {{ r.tasksCreated }} à créer, {{ r.tasksSkipped }} ignorées (déjà présentes)
+              Tâches : {{ r.tasksCreated }} {{ r.dryRun ? 'à créer' : 'créées' }},
+              {{ r.tasksSkipped }} ignorées (déjà présentes)
             </li>
-            <li>Projets : {{ r.projectsCreated }} à créer, {{ r.projectsReused }} réutilisés</li>
             <li>
-              Sessions Pomodoro : {{ r.sessionsCreated }} à créer, {{ r.sessionsSkipped }} ignorées
+              Projets : {{ r.projectsCreated }} {{ r.dryRun ? 'à créer' : 'créés' }},
+              {{ r.projectsReused }} réutilisés
             </li>
+            <li>
+              Sessions Pomodoro : {{ r.sessionsCreated }} {{ r.dryRun ? 'à créer' : 'créées' }},
+              {{ r.sessionsSkipped }} ignorées
+            </li>
+            @if (r.dailyGoalsCreated || r.dailyGoalsSkipped) {
+              <li>
+                Top 3 : {{ r.dailyGoalsCreated }} {{ r.dryRun ? 'à créer' : 'créés' }},
+                {{ r.dailyGoalsSkipped }} ignorés
+              </li>
+            }
+            @if (r.settingsRestored) {
+              <li>
+                Préférences : {{ r.dryRun ? 'seront remplacées par' : 'remplacées par' }} celles du
+                fichier
+              </li>
+            }
           </ul>
           @if (r.errors.length) {
             <ul class="mt-2 text-danger list-disc pl-5">

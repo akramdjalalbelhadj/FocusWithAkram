@@ -50,8 +50,12 @@ public abstract class IntegrationTest {
     @BeforeEach
     protected void resetState() {
         jdbc.execute("TRUNCATE pomodoro_session, daily_goal, task_execution, subtask, task_tag, task, tag, project RESTART IDENTITY CASCADE");
-        jdbc.update("UPDATE user_settings SET time_zone = 'Europe/Paris', week_starts_on = 'MONDAY', work_minutes = 25, "
-                + "short_break_minutes = 5, long_break_minutes = 15, sessions_before_long = 4, subtasks_complete_parent = FALSE");
+        jdbc.update("UPDATE user_settings SET time_zone = DEFAULT, week_starts_on = DEFAULT, theme = DEFAULT, "
+                + "work_minutes = DEFAULT, short_break_minutes = DEFAULT, long_break_minutes = DEFAULT, "
+                + "sessions_before_long = DEFAULT, auto_start_breaks = DEFAULT, auto_start_work = DEFAULT, "
+                + "notifications_enabled = DEFAULT, sound_enabled = DEFAULT, sound_name = DEFAULT, "
+                + "daily_focus_goal_minutes = DEFAULT, subtasks_complete_parent = DEFAULT, shortcuts_enabled = DEFAULT, "
+                + "compact_mode = DEFAULT");
         clock.set(START);
     }
 

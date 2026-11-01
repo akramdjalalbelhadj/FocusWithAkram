@@ -16,7 +16,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | Lot | Contenu | État |
 | --- | --- | --- |
 | 0 | Hygiène du dépôt, réorganisation `docs/` et racine | Livré |
-| 1 | Backend : aplatissement des packages, ArchUnit, import robuste, sauvegarde v2 extensible (compatible v1) | À faire |
+| 1 | Backend : aplatissement des packages, ArchUnit, import robuste, sauvegarde v2 extensible (compatible v1) | Livré |
 | 2 | Angular : corrections (archives, double toast, recherche, lint autonome, Docker), navigation à source unique | À faire |
 | 3 | Spécification fonctionnelle et règles financières de « Mes achats » — validation par le propriétaire | À faire |
 | 4 | Socle finance : comptes, catégories, opérations, solde, corrections | À faire |
@@ -36,7 +36,7 @@ Problèmes **observés** (et non préférences), à corriger dans les lots 1 et 
 | Backend / sauvegarde | Réglages et Top 3 absents ; sessions d'une tâche ignorée comme doublon perdues | 1 |
 | Backend / sauvegarde | Version vérifiée par égalité stricte : l'ajout d'un domaine rendrait les sauvegardes v1 illisibles | 1 |
 | Backend / structure | 30 sous-packages à un seul fichier ; cycle `task` ↔ `pomodoro` ; `ProjectRepository` interroge `Task` | 1 |
-| Backend / exploitation | PostgreSQL 14 embarqué contre 17 dans Docker ; journalisation DEBUG en profil local | 1 |
+| Backend / exploitation | PostgreSQL 14 embarqué contre 17 dans Docker ; PostgreSQL 14 atteint sa fin de support en novembre 2026 | Décision à prendre (migration des données réelles) |
 | Angular / archives | « Charger plus » figé : `hasMore` est un `computed` sans signal | 2 |
 | Angular / erreurs | Message d'erreur affiché deux fois (intercepteur + `TaskActions` / `PomodoroEngine`) | 2 |
 | Angular / recherche | Une requête par frappe, sans délai ni annulation | 2 |
@@ -44,9 +44,23 @@ Problèmes **observés** (et non préférences), à corriger dans les lots 1 et 
 | Angular / Docker | Build impossible : `shared/` hors du contexte, pas de `.dockerignore` | 2 |
 | Angular / navigation | Une entrée de menu est déclarée à cinq endroits | 2 |
 
+### Réalisé au lot 1
+
+| Constat | Correction | Vérification |
+| --- | --- | --- |
+| Import interrompu par une donnée invalide | Validation de chaque élément avant écriture (fabriques d'entités et service) ; aperçu par annulation de transaction | Test de régression : échouait en 500 sur l'ancien code, passe désormais |
+| Sauvegarde sans préférences ni Top 3 | Format v2 ; v1 toujours importable ; fichier plus récent refusé avec un message explicite | Aller-retour complet, aperçu sans écriture, préférences invalides non appliquées |
+| Sessions perdues pour une tâche déjà présente | Rattachement si l'identifiant concorde ; jamais sur une simple ressemblance | Test dédié (une session rattachée, une ignorée) |
+| 30 sous-packages à un fichier | Domaines à plat, `task.archive`, `common` simplifié | 88 tests backend sans échec, dont 5 règles ArchUnit (règle de cycle vérifiée par mutation) ; build Angular et typage React vérifiés |
+| Requêtes N+1 à l'export ; requête en double dans les statistiques | Cycles chargés en une requête ; résultat réutilisé | Tests existants |
+| Base vide créée silencieusement si le backend est lancé depuis un autre dossier | Chemin absolu de la base journalisé au démarrage, avertissement si elle est absente | Revue de code |
+
+Correction de l'audit : la journalisation DEBUG du profil local ne concerne que le code applicatif, qui ne journalise aucune donnée ; ce n'est pas un risque de fuite.
+
 ## 4. Adaptations React à prévoir (phase 2)
 
 | Origine | Adaptation |
 | --- | --- |
 | Lot 0 | `frontend-react/README.md` pointe vers `docs/frontend-architecture.md` et `docs/how-to-run-frontends.md`, devenus `docs/technique/architecture-frontend.md` et `docs/technique/exploitation.md` |
+| Lot 1 | `ImportReport` contient `settingsRestored`, `dailyGoalsCreated`, `dailyGoalsSkipped` (sauvegarde v2) : les afficher dans l'aperçu d'import React. Champs ajoutés, aucun champ retiré : React compile sans changement |
 | Lot 0 | La suite E2E (`frontend-react/e2e`, `playwright.config.ts`) écrit dans `docs/test-results/` et `docs/screenshots/`, désormais ignorés par Git ; envisager de la déplacer hors du dossier React puisqu'elle teste aussi Angular |

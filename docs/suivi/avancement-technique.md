@@ -34,24 +34,20 @@ Ces valeurs décrivent les manifests ; les lockfiles déterminent les installati
 
 ### 3.1 Organisation
 
-Racine : `backend/src/main/java/com/focusflow`.
+Racine : `backend/src/main/java/com/focusflow`. Depuis la refonte v2 (novembre 2026), chaque domaine est **à plat** : entités, enums, repositories, services, mappers et contrôleurs dans `com.focusflow.<domaine>`, seuls les DTO dans `<domaine>.dto`. Les archives forment le sous-domaine `task.archive`.
 
-| Dossier                     | Responsabilité                            | Exemples                                                           |
-| --------------------------- | ----------------------------------------- | ------------------------------------------------------------------ |
-| `<domaine>/controller`      | Contrat HTTP et délégation                | TaskController, PomodoroController, SearchController               |
-| `<domaine>/dto`             | Entrées/sorties JSON, un type par fichier | CreateTaskRequest, UpdateSettingsRequest, TaskResponse, BackupFile |
-| `<domaine>/entity`          | Entités JPA et invariants                 | Task, Project, PomodoroSession, UserSettings                       |
-| `<domaine>/repository`      | Accès JPA et requêtes                     | TaskRepository, PomodoroSessionRepository                          |
-| `<domaine>/service`         | Cas d’usage, transactions, agrégations    | TaskService, PriorityService, StatisticsService, SearchService     |
-| `<domaine>/mapper`          | Construction des réponses                 | TaskMapper, ProjectMapper, SettingsMapper                          |
-| `<domaine>/model`           | Filtres, projections et valeurs calculées | TaskFilter, TaskTiming, ProjectView                                |
-| `<domaine>/enums`           | États et classifications                  | Quadrant, TaskStatus, PriorityMode, ExportScope                    |
-| `task/specification`        | Filtrage JPA composable                   | TaskSpecifications                                                 |
-| `common/exception`          | Exceptions et traduction HTTP             | ApiException et ses spécialisations, GlobalExceptionHandler        |
-| `common/dto`, `common/util` | Pagination et modifications partielles    | PageResponse, PatchRequest, Patch                                  |
-| `config`                    | Horloge, CORS, PostgreSQL embarqué        | ClockConfig, CorsConfig, EmbeddedPostgresConfig                    |
+| Package | Responsabilité | Exemples |
+| --- | --- | --- |
+| `task` (+ `task.archive`) | Tâches, sous-tâches, étiquettes, cycles, Top 3, priorités, archives | Task, TaskService, PriorityService, ArchiveService |
+| `project` | Projets et leurs indicateurs | Project, ProjectService, ProjectView |
+| `pomodoro` | Sessions et historique | PomodoroSession, PomodoroService |
+| `settings` | Préférences (singleton) | UserSettings, SettingsService |
+| `dashboard`, `eisenhower`, `statistics`, `search` | Vues en lecture et agrégations | DashboardService, MatrixService, StatisticsService |
+| `transfer` | Export CSV/JSON, sauvegarde versionnée, import | TransferService, BackupFile |
+| `common`, `common.exception` | Pagination, PATCH partiels, erreurs HTTP | PageResponse, Patch, GlobalExceptionHandler |
+| `config` | Horloge, CORS, PostgreSQL embarqué | ClockConfig, EmbeddedPostgresConfig |
 
-Domaines : tâches, projets, Pomodoro, préférences, matrice, dashboard, statistiques, recherche et transferts. Ne pas créer un repository ou une entité artificiels pour un domaine qui ne fait qu’agréger des données. Voir [le README backend](../technique/architecture-backend.md).
+Les règles d'organisation sont vérifiées par ArchUnit (`ModuleArchitectureTest`) ; voir l'[architecture backend](../technique/architecture-backend.md). Ne pas créer un repository ou une entité artificiels pour un domaine qui ne fait qu’agréger des données.
 
 ### 3.2 DTO et mises à jour partielles
 
@@ -104,7 +100,7 @@ Préfixe commun `/api/v1` ; documentation interactive `/swagger-ui.html`, docume
 
 ### 3.5 État de validation backend
 
-70 tests existants ont réussi après la réorganisation, puis 8 tests de contrat/architecture supplémentaires. Le JAR `backend/target/focusflow.jar` a été construit avec succès. Le détail actualisé des classes vérifiées est dans [l’inventaire de preuves](../historique/2026-11-refonte-frontends/test-results/documentation-audit.json).
+Relevé du 1 novembre 2026 (refonte v2, lot 1) : **88 tests, 0 échec** (`mvn test`) : unitaires, intégration sur PostgreSQL embarqué jetable, contrat (`ApiContractIT`), architecture (`ControllerArchitectureTest`, `ModuleArchitectureTest` ArchUnit) et import/export (11 scénarios, dont la régression de l'import interrompu). Les preuves antérieures à la refonte sont dans [l’inventaire historique](../historique/2026-11-refonte-frontends/test-results/documentation-audit.json).
 
 Les sorties Maven autrefois suivies ont été retirées du suivi Git ; `target/` est ignoré. Les fichiers de données ne doivent pas être placés dans un dossier que `mvn clean` peut supprimer, sauf base jetable de test assumée.
 

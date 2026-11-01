@@ -46,5 +46,6 @@ public class DailyGoal {
     public LocalDate getGoalDate() { return goalDate; }
     public Task getTask() { return task; }
     public int getPosition() { return position; }
+    public Instant getCreatedAt() { return createdAt; }
     public void setPosition(int position) { this.position = position; }
 }

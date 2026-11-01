@@ -1,5 +1,6 @@
 package com.focusflow.task;
 
+import com.focusflow.common.exception.ApiException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -58,6 +59,13 @@ public class TaskExecution {
 
     public static TaskExecution imported(Task task, int executionNumber, Instant plannedStartAt, Instant plannedEndAt,
                                          Instant actualStartAt, Instant actualEndAt, Instant archivedAt) {
+        if (executionNumber < 1 || actualStartAt == null || actualEndAt == null || archivedAt == null) {
+            throw ApiException.rule("IMPORT_INVALID_EXECUTION",
+                    "Cycle " + executionNumber + " incomplet : numero, debut, fin et archivage sont obligatoires.");
+        }
+        if (actualStartAt.isAfter(actualEndAt)) {
+            throw ApiException.rule("IMPORT_INVALID_EXECUTION", "Cycle " + executionNumber + " : le debut suit la fin.");
+        }
         TaskExecution e = new TaskExecution();
         e.task = task;
         e.executionNumber = executionNumber;

@@ -179,7 +179,10 @@ public class Task {
     }
 
     public void addImportedSubtask(String title, boolean done, int position, Instant createdAt) {
-        Subtask s = new Subtask(this, title, position, createdAt);
+        if (title == null || title.isBlank() || title.strip().length() > 200) {
+            throw ApiException.rule("IMPORT_INVALID_SUBTASK", "Sous-tache sans titre ou titre de plus de 200 caracteres.");
+        }
+        Subtask s = new Subtask(this, title.strip(), position, createdAt);
         s.setDone(done);
         subtasks.add(s);
     }

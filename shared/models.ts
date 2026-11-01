@@ -358,6 +358,11 @@ export interface ImportReport {
   sessionsCreated: number;
   sessionsSkipped: number;
   errors: string[];
+  /** Sauvegarde v2 : préférences restaurées depuis le fichier. */
+  settingsRestored: boolean;
+  /** Sauvegarde v2 : objectifs du Top 3 quotidien. */
+  dailyGoalsCreated: number;
+  dailyGoalsSkipped: number;
 }
 
 /** Erreur API normalisee (ProblemDetail RFC 9457). */

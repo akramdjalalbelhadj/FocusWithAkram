@@ -3,10 +3,18 @@ package com.focusflow.transfer.dto;
 import java.time.Instant;
 import java.util.List;
 
-/** Format de sauvegarde JSON versionne : tout ce qui est necessaire pour restaurer l'historique. */
+/**
+ * Format de sauvegarde JSON versionne : tout ce qui est necessaire pour restaurer l'historique.
+ * <ul>
+ *   <li>v1 : projets, taches (etiquettes, sous-taches, cycles) et sessions Pomodoro terminees ;</li>
+ *   <li>v2 : ajoute les preferences et le Top 3 quotidien.</li>
+ * </ul>
+ * Une sauvegarde d'une version anterieure reste importable : les sections absentes sont ignorees.
+ */
 public record BackupFile(int version, Instant exportedAt, List<ProjectData> projects, List<TaskData> tasks,
-                         List<SessionData> sessions) {
+                         List<SessionData> sessions, SettingsData settings, List<DailyGoalData> dailyGoals) {
 
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
+    public static final int OLDEST_SUPPORTED_VERSION = 1;
 
 }

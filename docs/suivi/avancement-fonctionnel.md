@@ -58,7 +58,6 @@ Les preuves ne correspondent pas toutes à une unique exécution de la version f
 | Fonctionnement navigateur fermé              | Non garanti                                    | Son, notifications et enchaînements automatiques nécessitent le navigateur.              |
 | Mode hors ligne complet                      | Non livré                                      | Un affichage de session mémorisé n’est pas une base locale synchronisable.               |
 | Authentification et multi-utilisateur        | Non livrés                                     | Usage local uniquement.                                                                  |
-| Export des préférences utilisateur           | Non inclus dans le format de sauvegarde actuel | Relever les réglages séparément lors d’une migration.                                    |
 
 ## 5. Prochaines étapes
 

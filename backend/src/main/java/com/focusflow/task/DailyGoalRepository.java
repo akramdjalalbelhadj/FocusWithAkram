@@ -12,4 +12,8 @@ public interface DailyGoalRepository extends JpaRepository<DailyGoal, UUID> {
     List<DailyGoal> findByGoalDateOrderByPositionAsc(LocalDate goalDate);
 
     void deleteByGoalDate(LocalDate goalDate);
+
+    boolean existsByGoalDateAndTaskId(LocalDate goalDate, UUID taskId);
+
+    boolean existsByGoalDateAndPosition(LocalDate goalDate, int position);
 }

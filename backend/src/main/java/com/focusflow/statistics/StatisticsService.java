@@ -82,11 +82,11 @@ public class StatisticsService {
         List<TaskExecution> done = executions.findCompletedBetween(lo, hi);
         List<PomodoroSession> work = sessions.findFinishedWorkBetween(lo, hi);
 
-        return new Productivity(start, end, zone.getId(), taskStats(lo, hi, now), focusStats(work, zone, start, end),
+        return new Productivity(start, end, zone.getId(), taskStats(lo, hi, now, done.size()), focusStats(work, zone, start, end),
                 planningStats(done, work, zone, today), daily(done, work, zone, start, end));
     }
 
-    private TaskStats taskStats(Instant lo, Instant hi, Instant now) {
+    private TaskStats taskStats(Instant lo, Instant hi, Instant now, long completed) {
         List<Task> created = tasks.findCreatedBetween(lo, hi);
         long createdAndDone = created.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
         List<Task> active = tasks.findAllActive();
@@ -102,7 +102,6 @@ public class StatisticsService {
         for (Object[] row : tasks.countByStatus()) {
             byStatus.put((TaskStatus) row[0], ((Number) row[1]).longValue());
         }
-        long completed = executions.findCompletedBetween(lo, hi).size();
         double rate = created.isEmpty() ? 0 : (double) createdAndDone / created.size();
         return new TaskStats(created.size(), completed, active.stream().filter(t -> t.isOverdue(now)).count(), createdAndDone,
                 rate, byQuadrant, byStatus);
