@@ -5,6 +5,7 @@
 .DESCRIPTION
   - Backend : profil "local" avec PostgreSQL embarque (donnees conservees dans backend/data/postgres).
   - Frontend : serveur de developpement Angular avec proxy /api vers le backend.
+  - Un port deja occupe (lancement precedent, autre application) est libere : son processus est arrete.
   - Ctrl+C arrete proprement les deux processus.
 
 .PARAMETER NodeHome
@@ -33,6 +34,7 @@ New-Item -ItemType Directory -Force $LogDir | Out-Null
 
 function Write-Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
 function Fail($msg) { Write-Host "ERREUR : $msg" -ForegroundColor Red; exit 1 }
+. (Join-Path $PSScriptRoot 'lib/free-port.ps1')
 
 # ---- Pre-requis -------------------------------------------------------------------------------
 Write-Step 'Verification des pre-requis'
@@ -59,11 +61,17 @@ $nodeOk = ($nodeVersion.Major -ge 26) -or ($nodeVersion.Major -eq 24 -and $nodeV
           ($nodeVersion.Major -gt 24 -and $nodeVersion.Major -lt 26)
 if (-not $nodeOk) { Fail "Node $nodeVersion est trop ancien pour les frontends. Utilisez -NodeHome vers un Node >= 22.22.3 / 24.15." }
 
-foreach ($port in @($BackendPort, $FrontendPort)) {
-  if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
-    Fail "Le port $port est deja utilise. Arretez l'application qui l'occupe ou changez -BackendPort / -FrontendPort."
-  }
-}
+# Ports occupes : l'application qui les tient (souvent un lancement precedent) est arretee, y compris le
+# PostgreSQL embarque du profil local (port lu dans application-local.yml), qui verrouille le dossier de donnees.
+$PostgresPort = 54329
+$localYml = Join-Path $Root 'backend/src/main/resources/application-local.yml'
+if ((Test-Path $localYml) -and ((Get-Content $localYml -Raw) -match 'port:\s*(\d+)')) { $PostgresPort = [int]$Matches[1] }
+Write-Step 'Liberation des ports (une application deja lancee sur ces ports est arretee)'
+try {
+  Clear-Port -Number $FrontendPort -Label 'frontend'
+  Clear-Port -Number $BackendPort -Label 'backend'
+  Clear-Port -Number $PostgresPort -Label 'PostgreSQL embarque'
+} catch { Fail $_.Exception.Message }
 
 # ---- Dependances frontend ---------------------------------------------------------------------
 $Frontend = Join-Path $Root 'frontend-angular'
@@ -79,7 +87,11 @@ $previousApiUrl = $env:FOCUS_API_URL
 $procs = @()
 function Stop-All {
   foreach ($p in $script:procs) {
-    if ($p -and -not $p.HasExited) { & taskkill /PID $p.Id /T /F 2>&1 | Out-Null }
+    if ($p -and -not $p.HasExited) { cmd /c "taskkill /PID $($p.Id) /T /F >nul 2>&1" | Out-Null }
+  }
+  # Le PostgreSQL embarque est detache de la JVM : on l'arrete proprement pour ne pas laisser le port occupe.
+  if ($script:procs.Count -gt 0) {
+    try { Clear-Port -Number $PostgresPort -Label 'PostgreSQL embarque' } catch { Write-Host $_.Exception.Message -ForegroundColor Yellow }
   }
 }
 
