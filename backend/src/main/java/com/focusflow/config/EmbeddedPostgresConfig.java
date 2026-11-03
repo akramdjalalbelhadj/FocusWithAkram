@@ -2,6 +2,8 @@ package com.focusflow.config;
 
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -53,7 +55,14 @@ public class EmbeddedPostgresConfig {
     @Bean(destroyMethod = "close")
     public EmbeddedPostgres embeddedPostgres(@Value("${focusflow.embedded-postgres.port:0}") int port,
                                              @Value("${focusflow.embedded-postgres.data-dir:}") String dataDir) throws IOException {
-        EmbeddedPostgres.Builder builder = EmbeddedPostgres.builder().setPort(port);
+        int effectivePort = port;
+        if (port > 0 && !isPortBindable(port)) {
+            // Windows reserve des plages de ports (Hyper-V, WSL, Docker) : "Permission denied" meme si rien n'ecoute.
+            log.warn("PostgreSQL embarque : le port {} est indisponible (occupe ou reserve par le systeme) ; "
+                    + "un port libre est utilise temporairement.", port);
+            effectivePort = 0;
+        }
+        EmbeddedPostgres.Builder builder = EmbeddedPostgres.builder().setPort(effectivePort);
         if (!dataDir.isBlank()) {
             // Donnees persistantes entre deux lancements ; sans repertoire, base jetable (tests).
             // Chemin relatif au repertoire de lancement : on l'affiche pour qu'un lancement depuis un autre dossier,
@@ -75,6 +84,13 @@ public class EmbeddedPostgresConfig {
         return builder.start();
     }
 
+    static boolean isPortBindable(int port) {
+        try (ServerSocket socket = new ServerSocket(port, 1, InetAddress.getLoopbackAddress())) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
     @Bean
     @Primary
     public DataSource dataSource(EmbeddedPostgres postgres) {
