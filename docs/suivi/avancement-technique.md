@@ -1,6 +1,6 @@
 # FocusWithAkram — avancement technique
 
-Relevé des sources du **3 novembre 2026**, branche `main`. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends**.
+Relevé des sources du **5 novembre 2026**, branche `main`. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends** ; jusqu’à la version stable, seul Angular évolue (React et mobile déprioritisés, voir [refonte v2](refonte-v2.md)).
 
 ## 1. Architecture d’ensemble
 
@@ -22,7 +22,7 @@ Le backend est un monolithe modulaire. Les deux interfaces partagent les contrat
 
 | Partie    | Manifest / sources                               | Versions déclarées                                                                              |
 | --------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Backend   | [pom.xml](../../backend/pom.xml)                    | Java 25, Spring Boot 4.1.2, springdoc 3.2.0, PostgreSQL, Flyway, JPA, Bean Validation           |
+| Backend   | [pom.xml](../../backend/pom.xml)                    | Java 25, Spring Boot 4.1.2, springdoc 3.2.0, PostgreSQL 18 (embarqué : zonky 2.2.2, binaires 18.6.0 ; Docker : `postgres:18-alpine`), Flyway, JPA, Bean Validation |
 | Angular   | [package.json](../../frontend-angular/package.json) | Angular 22.2.x, TypeScript 6.0.2, RxJS 7.8, Tailwind 4.3, ECharts 6.1, Lucide, Tiptap 3.32.0 (éditeur des notes, chargé à la demande) |
 | React     | [package.json](../../frontend-react/package.json)   | React 19.3.1, React Router 7.18, TanStack Query 5.105, Vite 8.3, TypeScript 6.0.2, Tailwind 4.3 |
 | Tests web | Manifest React                                   | Playwright 1.64, axe 4.14, Vitest 5, ESLint 10                                                  |
@@ -99,6 +99,8 @@ Préfixe commun `/api/v1` ; documentation interactive `/swagger-ui.html`, docume
 `GlobalExceptionHandler` traduit les exceptions en `ProblemDetail`. Les familles sont 400, 404, 409, 422 et 500 ; les codes métier restent exploitables par les clients. Une erreur inattendue est journalisée côté serveur, avec un message générique côté API.
 
 ### 3.5 État de validation backend
+
+Relevé du 5 novembre 2026 (lot 12, lanceurs et PostgreSQL 18) : **170 tests, 0 échec** sur **PostgreSQL 18.6** (`mvn test`), dont 3 tests unitaires du PostgreSQL embarqué (port de repli, refus d’une base d’une autre version majeure avec la commande de migration, PID d’un `postmaster.pid` qui n’est pas PostgreSQL ignoré) et `EmbeddedPostgresVersionIT` (le serveur embarqué a la version déclarée dans le `pom.xml`). La migration 14 → 18 (`scripts/migrate_postgres.ps1`, `scripts/lib/PgCopy.java`) a été essayée sur une copie de la base personnelle : voir [refonte v2, lot 12](refonte-v2.md).
 
 Relevé du 3 novembre 2026 (lot 11, Notes & idées) : **166 tests, 0 échec** (`mvn test`), dont `NoteIT` (10 scénarios : saisie et organisation, modification partielle, plusieurs tâches dans leurs quadrants, doublon, règles des tâches, suppression bloquée puis forcée, catégories, préférence d’éditeur, aller-retour de sauvegarde v4, import v3), `NoteMapperTest` (2) et la règle ArchUnit « les tâches ne dépendent pas des notes ».
 
@@ -178,8 +180,11 @@ Ne pas importer un composant Angular dans React ni réciproquement. Ne pas dupli
 | Services concrets                   | Pas d’interfaces sans besoin réel de substitution.                                                                              |
 | Cache de session dans le navigateur | Continuité d’affichage ; ne pas le confondre avec un mode hors ligne.                                                           |
 | CSS encore mixte en Angular         | Conversion des utilitaires à poursuivre ; styles globaux hérités à déplacer progressivement sans casser les composants enfants. |
-| État applicatif React central       | Coordination de plusieurs responsabilités ; extraire progressivement avec tests de comportement.                                |
-| Docker non validé                   | Contexte de build corrigé (racine du dépôt, `.dockerignore`) ; construction réelle et healthchecks restent à essayer.           |
+| Angular d’abord (5 novembre 2026)   | Seul le frontend Angular évolue jusqu’à la version stable ; React n’est pas modifié mais doit continuer à compiler (contrats `shared/` étendus en champs facultatifs). |
+| État applicatif React central       | Coordination de plusieurs responsabilités ; à extraire progressivement, après la version stable Angular.                        |
+| Lanceurs : ne jamais arrêter une autre application | Un lancement précédent de FocusWithAkram est reconnu à sa ligne de commande et arrêté ; pour toute autre application ou un port réservé par Windows, le port libre suivant est pris. |
+| PostgreSQL 18 embarqué              | 14 en fin de support ; les binaires embarqués ne contiennent ni `pg_dump` ni `pg_upgrade` : la migration recrée le schéma par Flyway et copie les tables par `COPY`, avec vérification par empreintes. |
+| Docker non validé                   | Contexte de build corrigé (racine du dépôt, `.dockerignore`), image PostgreSQL 18 ; construction réelle et healthchecks restent à essayer. |
 | Notes : Markdown comme format unique | Les deux modes d’éditeur, la recherche, la sauvegarde et un futur portage lisent le même texte ; le mode visuel (Tiptap) peut normaliser la syntaxe. Le rendu passe par le schéma ProseMirror : aucun HTML saisi n’est injecté tel quel. |
 | Notes : lien tâche → idée par identifiant | Pas de dépendance Java de `task` vers `note` (ArchUnit) ; la base détache les tâches si l’idée est supprimée. |
 | Avertissements de bibliothèques     | Dépréciations Spring/JDK et configuration de tests à examiner lors d’une mise à niveau dédiée.                                  |
@@ -188,4 +193,4 @@ Ne pas importer un composant Angular dans React ni réciproquement. Ne pas dupli
 
 Créer une fonctionnalité dans son domaine, définir les DTO, placer l’état et le rendu dans les dossiers prévus, tester ses règles puis documenter son exigence. Ajouter une table exige une nouvelle migration ; déplacer un package Java n’en exige pas.
 
-Les tests backend emploient PostgreSQL temporaire et une horloge contrôlée. Les E2E utilisent le backend isolé `18080` ; les lancer sur la base personnelle est exclu de la procédure. Les builds et lints des deux variantes ont été validés pendant les lots frontend ; la présente révision ne les relance pas.
+Les tests backend emploient un PostgreSQL 18 temporaire et une horloge contrôlée. Les E2E utilisent le backend isolé `18080` ; les lancer sur la base personnelle est exclu de la procédure. Les builds et lints des deux variantes ont été validés pendant les lots frontend ; la présente révision ne les relance pas.

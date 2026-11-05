@@ -1,6 +1,8 @@
 # Refonte v2 et module « Mes achats » — suivi
 
-Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2026). Périmètre : **backend et frontend Angular uniquement** ; le frontend React n'est pas modifié pendant cette phase, les adaptations à prévoir sont listées en fin de document.
+Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2026). Périmètre : **backend et frontend Angular uniquement**.
+
+> **Priorité (décision du 5 novembre 2026)** : on reste sur **FocusWithAkram web avec Angular** jusqu'à une **version stable** du produit. Le frontend React et l'application mobile (Krimou) sont **déprioritisés** : ils ne reprennent qu'après cette version stable, à partir de la liste d'adaptations en fin de document. D'ici là, React n'est pas modifié (il doit seulement continuer à compiler) et aucune nouvelle règle n'est portée dans Krimou.
 
 ## 1. Décisions validées
 
@@ -12,6 +14,9 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-01 | Portage Kotlin : toute FocusWithAkram dans Krimou ; données hors ligne sur le téléphone (stockage local chiffré, import/export de la sauvegarde v3) ; réalisé après les lots 7 et 8 | Lot 10 ; moteurs de calcul dans `:engines` (Kotlin pur), testés avec les mêmes scénarios que le backend |
 | 2026-11-01 | Règles financières D3 à D6 : épargne mobilisable par objectif au-dessus d'un plancher ; achats d'objectifs hors plafond variable ; faisabilité sur salaires prévus, sans remboursements attendus ; une entrée « Mes achats » à onglets | [Spécification § 14](../produit/mes-achats/specification.md) |
 | 2026-11-01 | Finances : **plusieurs comptes simples** (courant, épargne, espèces…) ; mettre de côté = virement vers un compte d'épargne ; réservations pour achats = affectations virtuelles | Modèle de données du lot 4 |
+| 2026-11-05 | **Angular d'abord** : seul FocusWithAkram web avec Angular évolue jusqu'à une version stable ; React et le mobile (Krimou) reprennent ensuite | Lot 9 recentré sur Angular ; dossier de migration React et portage Krimou des lots 11 et suivants reportés après la version stable ; § 4 = backlog React |
+| 2026-11-05 | Lanceurs : un lancement précédent de FocusWithAkram est arrêté ; **une autre application n'est jamais arrêtée**, le port libre suivant est pris (CORS adapté) ; PostgreSQL embarqué sur 15432, hors de la plage que Windows réserve | Lot 12 ; [exploitation § 3](../technique/exploitation.md) |
+| 2026-11-05 | **PostgreSQL 18** partout (embarqué et Docker), en remplacement de 14 (fin de support en novembre 2026) et 17 ; base locale migrée par `scripts/migrate_postgres.ps1`, ancienne base conservée | Lot 12 ; [exploitation § 11.1](../technique/exploitation.md) |
 | 2026-11-03 | Notes & Brainstorming : une idée **n'a pas de statut** (seules ses tâches en ont) ; catégories gérées dans un écran dédié ; deux modes d'éditeur (Markdown avec aperçu, visuel) sur un contenu Markdown unique, mode par défaut dans les Paramètres ; suppression d'une idée refusée tant que des tâches en sont issues, avec suppression forcée qui conserve les tâches | Lot 11 ; [cahier des charges § 4.5](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
@@ -27,9 +32,10 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 6 | Objectifs d'achat, matrice d'achats, moteur de prévision, faisabilité | Livré |
 | 7 | Prêts et emprunts | Livré |
 | 8 | Tableau de bord, statistiques, alertes, simulations, calendrier financier | Livré |
-| 9 | Documentation finale et dossier de migration React | À faire |
-| 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Livré dans Krimou le 1 novembre 2026, non essayé sur téléphone |
+| 9 | Stabilisation et documentation finale de la version web Angular ; le dossier de migration React est reporté après la version stable | À faire |
+| 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Livré dans Krimou le 1 novembre 2026, non essayé sur téléphone ; suite reportée après la version stable |
 | 11 | Notes & Brainstorming : idées, catégories, éditeur à deux modes, transformation en tâches de la matrice (API et Angular) | Livré le 3 novembre 2026 |
+| 12 | Exploitation : lanceurs sans conflit de ports, PostgreSQL 18 (embarqué, tests, Docker) et migration de la base locale | Livré le 5 novembre 2026 ; migration de la base personnelle à lancer |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -41,7 +47,7 @@ Problèmes **observés** (et non préférences), à corriger dans les lots 1 et 
 | Backend / sauvegarde | Réglages et Top 3 absents ; sessions d'une tâche ignorée comme doublon perdues | 1 |
 | Backend / sauvegarde | Version vérifiée par égalité stricte : l'ajout d'un domaine rendrait les sauvegardes v1 illisibles | 1 |
 | Backend / structure | 30 sous-packages à un seul fichier ; cycle `task` ↔ `pomodoro` ; `ProjectRepository` interroge `Task` | 1 |
-| Backend / exploitation | PostgreSQL 14 embarqué contre 17 dans Docker ; PostgreSQL 14 atteint sa fin de support en novembre 2026 | Décision à prendre (migration des données réelles) |
+| Backend / exploitation | PostgreSQL 14 embarqué contre 17 dans Docker ; PostgreSQL 14 atteint sa fin de support en novembre 2026 | Décidé le 5 novembre 2026 : PostgreSQL 18 partout (lot 12) |
 | Angular / archives | « Charger plus » figé : `hasMore` est un `computed` sans signal | 2 |
 | Angular / erreurs | Message d'erreur affiché deux fois (intercepteur + `TaskActions` / `PomodoroEngine`) | 2 |
 | Angular / recherche | Une requête par frappe, sans délai ni annulation | 2 |
@@ -179,7 +185,22 @@ Vérifications : 166 tests backend, 43 tests Angular, lint et build sans erreur 
 
 Hors périmètre de ce lot : interface React, import du format v4 dans Krimou, recherche des idées dans la palette globale.
 
-## 4. Adaptations React à prévoir (phase 2)
+### Réalisé au lot 12 — lanceurs et PostgreSQL 18
+
+Constat du 5 novembre 2026 : un lancement échouait après le précédent. Windows réservait les ports 54327-54626 (Hyper-V, WSL) : le PostgreSQL embarqué basculait sur un port aléatoire, que les lanceurs, ne libérant que 54329, ne voyaient pas ; resté actif, il gardait le verrou de `backend/data/postgres` (`postmaster.pid existe déjà`). Les lanceurs arrêtaient aussi toute application qui occupait 8080 ou 4200 (ici le relais réseau de WSL).
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Lanceurs | `scripts/lib/launch.ps1` et `launch.sh` remplacent `free-port.*` : lancement précédent reconnu à sa ligne de commande et arrêté (backend, frontend, PostgreSQL de la base par `postmaster.pid`) ; port d'une autre application ou réservé : port libre suivant, à défaut attribué par le système ; CORS adapté au port du frontend ; en fin de lancement, seul le PostgreSQL de ce lancement est arrêté ; `-NoBrowser` / `NO_BROWSER=1` | Recette Windows (PowerShell et Git Bash) : relance sur une instance active ; ports 18080 et 14200 tenus par un autre processus → 18081 et 14201, processus étranger intact ; POST via le proxy accepté depuis 14201 (400 de validation), refusé depuis une origine inconnue (403) ; l'ancien lanceur, en s'arrêtant, n'a pas touché le PostgreSQL du nouveau ; nettoyage Bash : backend, frontend et PostgreSQL arrêtés en 8 s |
+| Backend | PostgreSQL embarqué sur 15432 (hors plage dynamique de Windows), repli sur les 100 ports suivants puis sur un port du système ; refus explicite d'un dossier tenu par un PostgreSQL vivant ou créé par une autre version majeure (commande de migration indiquée) | 3 tests unitaires (`EmbeddedPostgresConfigTest`) |
+| PostgreSQL 18 | Binaires 18.6.0 (BOM zonky, propriété `embedded-postgres-binaries.version` du `pom.xml`, filtrée dans `application-local.yml`) ; Docker `postgres:18-alpine`, volume sur `/var/lib/postgresql` | **170 tests backend sans échec sur PostgreSQL 18.6**, dont `EmbeddedPostgresVersionIT` ; Docker non construit |
+| Migration | `scripts/migrate_postgres.ps1` + `scripts/lib/PgCopy.java` : schéma par les migrations Flyway, copie par `COPY`, comparaison lignes + empreintes + séquences, ancienne base conservée ; lanceurs et backend refusent une base 14 avec la commande à lancer | Copie de la base personnelle : 21 tables, 65 lignes identiques ; backend démarré sur la base migrée (Flyway : 7 migrations validées), données lues par l'API ; lanceur refusant la base 14 |
+
+Reste : lancer la migration sur la base personnelle ; procédure hors Windows ; construction Docker.
+
+## 4. Adaptations React à prévoir (après la version stable Angular)
+
+Backlog **gelé** jusqu'à la version stable d'Angular (décision du 5 novembre 2026). Toute évolution des contrats `shared/` doit rester compatible : React doit continuer à compiler sans modification.
 
 | Origine | Adaptation |
 | --- | --- |

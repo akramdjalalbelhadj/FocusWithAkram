@@ -1,6 +1,8 @@
 # FocusWithAkram
 
-Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros. Le module **Notes & idées** recueille les idées (éditeur Markdown ou visuel, catégories) et les transforme en tâches de la matrice, sans les perdre (Angular). Le module de finances personnelles **« Mes achats »** est en cours de livraison : comptes, opérations, catégories, bilan mensuel, échéancier (salaire, abonnements, charges), budget, achats prévus avec matrice, prévision de trésorerie et calcul de faisabilité sont disponibles ; prêts, statistiques, alertes et simulations suivent (voir le [suivi de la refonte v2](docs/suivi/refonte-v2.md)).
+Application web de productivité personnelle : **matrice d'Eisenhower** + **minuteur Pomodoro**, avec dashboard, calendrier, statistiques, archives et historique des Pomodoros. Le module **Notes & idées** recueille les idées (éditeur Markdown ou visuel, catégories) et les transforme en tâches de la matrice, sans les perdre (Angular). Le module de finances personnelles **« Mes achats »** couvre comptes, opérations, catégories, bilan mensuel, échéancier (salaire, abonnements, charges), budget, achats prévus avec matrice, prévision de trésorerie, faisabilité, prêts, alertes, statistiques, simulations et calendrier financier (Angular).
+
+> **Priorité** : le développement se concentre sur **FocusWithAkram web avec Angular** jusqu'à une version stable. Le frontend React et l'application mobile sont déprioritisés et reprendront ensuite (voir le [suivi de la refonte v2](docs/suivi/refonte-v2.md)).
 
 Toute la documentation est indexée dans [docs/README.md](docs/README.md).
 
@@ -34,23 +36,25 @@ bash ./scripts/start_react.sh
 NODE_HOME=/chemin/node bash ./scripts/start_angular.sh   # si besoin
 ```
 
-Les lanceurs vérifient les versions et les ports, installent les dépendances frontend au premier lancement, démarrent le backend (profil `local` : **PostgreSQL embarqué**, données conservées dans `backend/data/postgres`, jamais versionnées), attendent qu'il soit prêt, démarrent le frontend, ouvrent le navigateur, puis arrêtent tout au `Ctrl+C`. Journaux dans `logs/angular/` ou `logs/react/`. Un seul lanceur à la fois : chacun démarre son backend sur le port 8080. Options et lancement manuel : [exploitation](docs/technique/exploitation.md).
+Les lanceurs vérifient les versions, arrêtent un lancement précédent, choisissent les ports, installent les dépendances frontend au premier lancement, démarrent le backend (profil `local` : **PostgreSQL 18 embarqué**, données conservées dans `backend/data/postgres`, jamais versionnées), attendent qu'il soit prêt, démarrent le frontend, ouvrent le navigateur, puis arrêtent tout au `Ctrl+C`. Journaux dans `logs/angular/` ou `logs/react/`. Options et lancement manuel : [exploitation](docs/technique/exploitation.md).
 
 - Angular : <http://127.0.0.1:4200> ; React : <http://127.0.0.1:5173>
+- Relancer remplace le lancement précédent. Une **autre application** qui occupe un port n'est jamais arrêtée : le lanceur prend le port libre suivant et affiche les adresses réelles.
 - Le premier lancement télécharge les binaires PostgreSQL embarqués (quelques minutes).
+- Base créée avant le 5 novembre 2026 (PostgreSQL 14) : la migrer une fois avec `.\scripts\migrate_postgres.ps1` ; les lanceurs le demandent, et l'ancienne base est conservée ([exploitation § 11.1](docs/technique/exploitation.md)).
 
 ## Avec Docker
 
-`docker-compose.yml` (PostgreSQL + backend + Angular/nginx) et `docker-compose.dev.yml` (PostgreSQL seul) existent mais **ne sont pas validés** : le contexte de build a été corrigé (racine du dépôt, `.dockerignore`), sans construction réelle à ce jour. Voir [exploitation, section Docker](docs/technique/exploitation.md).
+`docker-compose.yml` (PostgreSQL 18 + backend + Angular/nginx) et `docker-compose.dev.yml` (PostgreSQL 18 seul) existent mais **ne sont pas validés** : le contexte de build a été corrigé (racine du dépôt, `.dockerignore`), sans construction réelle à ce jour. Voir [exploitation, section Docker](docs/technique/exploitation.md).
 
 ## Organisation du dépôt
 
 ```
-backend/            Java 25 · Spring Boot 4.1 · JPA/Hibernate 7 · PostgreSQL · Flyway
-frontend-angular/   Angular 22 · standalone · Signals · zoneless · Tailwind 4 · CDK · ECharts
-frontend-react/     React 19 · React Router · TanStack Query · Vite (hors périmètre de la phase v2 en cours)
+backend/            Java 25 · Spring Boot 4.1 · JPA/Hibernate 7 · PostgreSQL 18 · Flyway
+frontend-angular/   Angular 22 · standalone · Signals · zoneless · Tailwind 4 · CDK · ECharts (frontend prioritaire)
+frontend-react/     React 19 · React Router · TanStack Query · Vite (déprioritisé jusqu'à la version stable Angular)
 shared/             Contrats TypeScript, utilitaires de dates et tokens CSS communs aux deux frontends
-scripts/            Lanceurs locaux (PowerShell et Bash)
+scripts/            Lanceurs locaux (PowerShell et Bash), migration de la base PostgreSQL embarquée
 docs/               Documentation : produit, technique, suivi, historique, maquettes
 ```
 
@@ -87,7 +91,7 @@ Résultats et périmètre à jour : [avancement technique](docs/suivi/avancement
 | `FOCUSFLOW_DB_URL` / `_USER` / `_PASSWORD` | `jdbc:postgresql://localhost:5432/focusflow`      | Base PostgreSQL (hors profil `local`)      |
 | `PORT`                                     | `8080`                                            | Port du backend                            |
 | `FOCUSFLOW_BIND_ADDRESS`                   | `127.0.0.1`                                       | Interface d'écoute (`0.0.0.0` dans Docker) |
-| `FOCUSFLOW_CORS_ORIGINS`                   | localhost et 127.0.0.1 sur les ports 4200 et 5173 | Origines CORS autorisées                   |
+| `FOCUSFLOW_CORS_ORIGINS`                   | localhost et 127.0.0.1 sur les ports 4200 et 5173 | Origines CORS autorisées (les lanceurs y ajoutent le port réel du frontend) |
 
 ## Sécurité et confidentialité
 

@@ -6,14 +6,16 @@ name: focusflow
 
 services:
   db:
-    image: postgres:17-alpine
+    # PostgreSQL 18, comme le profil local. Depuis l'image 18, les donnees vont dans /var/lib/postgresql/18/docker :
+    # le volume se monte sur /var/lib/postgresql (un montage sur .../data est refuse par l'image).
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: focusflow
       POSTGRES_USER: focusflow
       POSTGRES_PASSWORD: ${FOCUSFLOW_DB_PASSWORD:?Definissez FOCUSFLOW_DB_PASSWORD dans .env}
     volumes:
-      - focusflow-db:/var/lib/postgresql/data
+      - focusflow-db:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U focusflow -d focusflow"]
       interval: 5s

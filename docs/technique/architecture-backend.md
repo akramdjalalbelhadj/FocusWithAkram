@@ -1,11 +1,11 @@
 # FocusWithAkram — architecture du backend
 
-Java 25, Spring Boot 4.1, Spring MVC, Bean Validation, JPA/Hibernate 7, PostgreSQL et Flyway. Monolithe modulaire **organise par domaine fonctionnel** ; dans un domaine, les classes sont **a plat** et seul le contrat HTTP (`dto/`) forme un sous-package. Le role d'une classe se lit dans son suffixe (`*Controller`, `*Service`, `*Repository`, `*Mapper`) ; les entites et enums portent le nom du concept.
+Java 25, Spring Boot 4.1, Spring MVC, Bean Validation, JPA/Hibernate 7, PostgreSQL 18 et Flyway. Monolithe modulaire **organise par domaine fonctionnel** ; dans un domaine, les classes sont **a plat** et seul le contrat HTTP (`dto/`) forme un sous-package. Le role d'une classe se lit dans son suffixe (`*Controller`, `*Service`, `*Repository`, `*Mapper`) ; les entites et enums portent le nom du concept.
 
 ```text
 backend/src/main/java/com/focusflow/
   FocusFlowApplication.java
-  config/          horloge UTC injectable, CORS, PostgreSQL embarque (profil local)
+  config/          horloge UTC injectable, CORS, PostgreSQL embarque (profil local : port de repli, controle de version de la base)
   common/          PageResponse, PatchRequest/Patch (PATCH partiels)
     exception/     ApiException, GlobalExceptionHandler (ProblemDetail + code stable)
   task/            Task, Subtask, Tag, TaskExecution, DailyGoal (Top 3), statuts, quadrants,

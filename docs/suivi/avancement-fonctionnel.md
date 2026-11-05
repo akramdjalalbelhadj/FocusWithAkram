@@ -1,6 +1,8 @@
 # FocusWithAkram — avancement fonctionnel
 
-Relevé du **3 novembre 2026**. Cible : [cahier des charges](../produit/cahier-des-charges.md). Contrôles : [checklist](checklist.md). « Livré » signifie présent dans le code et relié à l’API ; cela ne couvre pas automatiquement tous les appareils et tous les scénarios.
+Relevé du **5 novembre 2026**. Cible : [cahier des charges](../produit/cahier-des-charges.md). Contrôles : [checklist](checklist.md). « Livré » signifie présent dans le code et relié à l’API ; cela ne couvre pas automatiquement tous les appareils et tous les scénarios.
+
+**Priorité** : FocusWithAkram web avec **Angular** jusqu’à une version stable. React et l’application mobile (Krimou) sont déprioritisés et reprennent ensuite (décision du 5 novembre 2026, [refonte v2](refonte-v2.md)) ; « Reporté » dans la colonne React signifie qu’aucun travail n’est prévu avant cette version stable.
 
 ## 1. État des fonctionnalités
 
@@ -24,18 +26,19 @@ Relevé du **3 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 | FWA-F016 Paramètres généraux      | Livré                  | Auto-enregistrement        | Formulaire Enregistrer         | E2E : ne réinitialisent pas les réglages Pomodoro.                                           |
 | FWA-F017 Recherche / raccourcis   | Livré                  | Livré                      | Livré                          | Recherche extraite dans un service backend ; nuances de raccourcis dans le guide.            |
 | FWA-F018 Import / export          | Livré                  | Livré                      | Livré                          | Sauvegarde v3 (préférences, Top 3, finances), import élément par élément, doublons et CSV testés.                  |
-| FWA-F019 Mes achats — socle       | Livré                  | Livré                      | Non commencé                   | 18 tests d’intégration et unitaires ; recette navigateur sur base jetable. |
-| FWA-F020 Mes achats — budget      | Livré                  | Livré                      | Non commencé                   | Échéancier, budget, préférences : 14 tests dédiés ; recette navigateur. |
-| FWA-F021 Mes achats — achats prévus | Livré                | Livré                      | Non commencé                   | Moteur testé sur 12 scénarios chiffrés ; 6 tests d'intégration ; recette navigateur. |
-| FWA-F022 Mes achats — prêts       | Livré                  | Livré                      | Non commencé                   | 7 tests d'intégration ; recette navigateur. |
-| FWA-F023 Mes achats — analyses    | Livré                  | Livré                      | Non commencé                   | Alertes, statistiques, simulations, calendrier : 5 tests d'intégration, 4 tests unitaires ; recette navigateur. |
-| FWA-F024 Notes & idées — espace   | Livré                  | Livré                      | Non commencé                   | Saisie rapide (champ, touche I, palette), enregistrement automatique, recherche titre/contenu, filtres, tris, favoris ; `NoteIT` ; recette navigateur clair/sombre et 390 px. |
-| FWA-F025 Notes & idées — catégories | Livré                | Livré                      | Non commencé                   | Écran dédié, nom unique sans casse, suppression qui conserve les idées ; tests d'intégration et recette. |
-| FWA-F026 Notes & idées — éditeur  | Préférence livrée      | Livré (Markdown + visuel)  | Non commencé                   | Contenu Markdown unique ; barre d'outils, Ctrl+B/I/Z, aperçu avec cases cochables ; mode visuel Tiptap ; préférence enregistrée. 8 tests unitaires ; recette navigateur. |
-| FWA-F027 Idée → tâches            | Livré                  | Livré                      | Non commencé                   | Formulaire de tâche réutilisé, quadrant et échéance, plusieurs tâches, lien conservé (restauration, duplication), doublon confirmé, suppression bloquée ou forcée ; `NoteIT` (10 scénarios) ; recette navigateur. |
+| FWA-F019 Mes achats — socle       | Livré                  | Livré                      | Reporté (après version stable) | 18 tests d’intégration et unitaires ; recette navigateur sur base jetable. |
+| FWA-F020 Mes achats — budget      | Livré                  | Livré                      | Reporté (après version stable) | Échéancier, budget, préférences : 14 tests dédiés ; recette navigateur. |
+| FWA-F021 Mes achats — achats prévus | Livré                | Livré                      | Reporté (après version stable) | Moteur testé sur 12 scénarios chiffrés ; 6 tests d'intégration ; recette navigateur. |
+| FWA-F022 Mes achats — prêts       | Livré                  | Livré                      | Reporté (après version stable) | 7 tests d'intégration ; recette navigateur. |
+| FWA-F023 Mes achats — analyses    | Livré                  | Livré                      | Reporté (après version stable) | Alertes, statistiques, simulations, calendrier : 5 tests d'intégration, 4 tests unitaires ; recette navigateur. |
+| FWA-F024 Notes & idées — espace   | Livré                  | Livré                      | Reporté (après version stable) | Saisie rapide (champ, touche I, palette), enregistrement automatique, recherche titre/contenu, filtres, tris, favoris ; `NoteIT` ; recette navigateur clair/sombre et 390 px. |
+| FWA-F025 Notes & idées — catégories | Livré                | Livré                      | Reporté (après version stable) | Écran dédié, nom unique sans casse, suppression qui conserve les idées ; tests d'intégration et recette. |
+| FWA-F026 Notes & idées — éditeur  | Préférence livrée      | Livré (Markdown + visuel)  | Reporté (après version stable) | Contenu Markdown unique ; barre d'outils, Ctrl+B/I/Z, aperçu avec cases cochables ; mode visuel Tiptap ; préférence enregistrée. 8 tests unitaires ; recette navigateur. |
+| FWA-F027 Idée → tâches            | Livré                  | Livré                      | Reporté (après version stable) | Formulaire de tâche réutilisé, quadrant et échéance, plusieurs tâches, lien conservé (restauration, duplication), doublon confirmé, suppression bloquée ou forcée ; `NoteIT` (10 scénarios) ; recette navigateur. |
 
 ## 2. Modifications fonctionnelles récentes
 
+- **Lancement et base locale** (5 novembre 2026) : relancer l’application remplace proprement le lancement précédent ; une autre application qui occupe un port n’est plus arrêtée, le lanceur prend le port libre suivant et l’affiche. La base locale passe à PostgreSQL 18 : une base créée avant est migrée une fois par `scripts/migrate_postgres.ps1` (les lanceurs l’indiquent), l’ancienne étant conservée.
 - **Notes & idées** (3 novembre 2026) : idées sans statut, catégories gérées, éditeur Markdown ou visuel, transformation en une ou plusieurs tâches de la matrice avec lien conservé ; sauvegarde v4. Angular seulement.
 - Le minuteur se configure dans **Focus / Pomodoro → Configurer** : travail, pauses, fréquence de pause longue, objectif quotidien, options automatiques, son et notifications.
 - Les paramètres généraux conservent l’apparence, la région, les préférences de tâches, les raccourcis et les transferts de données.
@@ -47,9 +50,9 @@ Relevé du **3 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 
 | Preuve                          | Résultat connu                                                    | Périmètre / limite                                                           |
 | ------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Backend existant                | 70 tests sans échec                                               | Tâches, matrice, Pomodoro, dates, archives, statistiques, import/export.     |
-| Contrat et architecture backend | 8 tests supplémentaires sans échec                                | PATCH, DTO, recherche, erreurs HTTP et séparation contrôleur/repository.     |
-| Unitaires frontend              | 22 Angular (1 nov. 2026, refonte v2) + 12 React (validation antérieure) sans échec | Tests ciblés ; pas une couverture complète des pages.            |
+| Backend                         | 170 tests sans échec (5 nov. 2026, PostgreSQL 18.6)               | Unitaires, intégration, contrat et architecture : productivité, Mes achats, Notes, import/export, PostgreSQL embarqué. |
+| Unitaires frontend              | 43 Angular (3 nov. 2026, lot 11) + 12 React (validation antérieure) sans échec | Tests ciblés ; pas une couverture complète des pages.               |
+| Lanceurs et migration PostgreSQL | Recette Windows du 5 nov. 2026 (PowerShell et Git Bash)          | Relance sur instance active, ports pris par une autre application, CORS, arrêt ; migration 14 → 18 sur une copie de la base personnelle. |
 | Recette métier historique       | 12 scénarios réussis, 6 par frontend                              | Manipulation des tâches, Pomodoro, réseau, calendrier, sous-tâche et projet. |
 | Réglages déplacés               | 1 scénario par frontend réussi                                    | Enregistrement, recharge et conservation après paramètres généraux.          |
 | Navigation responsive           | 36 contrôles réussis                                              | 9 routes × 2 tailles × 2 frontends ; pas un essai tactile réel.              |
@@ -64,15 +67,18 @@ Les preuves ne correspondent pas toutes à une unique exécution de la version f
 | Équivalence visuelle exacte                  | Partiel                                        | Tailles d’anneau, graphiques, actions et densité diffèrent encore.                       |
 | Retrait de Tailwind du HTML Angular          | Partiel                                        | La matrice emploie des classes sémantiques ; d’autres templates gardent des utilitaires. |
 | Tests lecteurs d’écran et appareils tactiles | Non consignés de manière complète              | Recette humaine encore nécessaire.                                                       |
-| Docker de bout en bout                       | Non validé                                     | Contexte de build corrigé ; construction réelle à essayer.                               |
+| Docker de bout en bout                       | Non validé                                     | Contexte de build corrigé, image PostgreSQL 18 ; construction réelle à essayer.          |
+| Base personnelle en PostgreSQL 18            | Migration prête et essayée sur une copie       | À lancer une fois (`scripts/migrate_postgres.ps1`) ; d’ici là, les lanceurs refusent de démarrer sur la base 14. |
+| Interface React à jour, application mobile   | Reportés après la version stable Angular       | React n’a ni Mes achats ni Notes ; Krimou n’importe pas la sauvegarde v4.                |
 | Fonctionnement navigateur fermé              | Non garanti                                    | Son, notifications et enchaînements automatiques nécessitent le navigateur.              |
 | Mode hors ligne complet                      | Non livré                                      | Un affichage de session mémorisé n’est pas une base locale synchronisable.               |
 | Authentification et multi-utilisateur        | Non livrés                                     | Usage local uniquement.                                                                  |
 
-## 5. Prochaines étapes
+## 5. Prochaines étapes (vers la version stable Angular)
 
-1. Valider visuellement le nouveau panneau Focus en clair/sombre sur ordinateur et téléphone.
-2. Poursuivre la conversion des classes utilitaires Angular en styles de composants si la séparation stricte est maintenue comme cible.
-3. Vérifier les parcours rares : conflits simultanés entre interfaces, permissions refusées, import volumineux et interruption réseau pendant un enregistrement.
+1. Migrer la base personnelle vers PostgreSQL 18 (`scripts/migrate_postgres.ps1`) puis relancer l’application.
+2. Lot 9 : stabiliser la version web Angular (recette complète de tous les modules, parcours rares : conflits simultanés, permissions refusées, import volumineux, interruption réseau pendant un enregistrement) et finaliser la documentation.
+3. Valider visuellement le panneau Focus en clair/sombre sur ordinateur et téléphone ; recette humaine (clavier complet, lecteur d’écran, zoom 200 %, toucher).
 4. Valider Docker et une restauration sur environnement vierge.
-5. Rafraîchir les captures et les mesures après toute nouvelle modification visuelle.
+5. Décider si la conversion des classes utilitaires Angular en styles de composants reste une cible.
+6. Après la version stable : React (backlog du [§ 4 de la refonte v2](refonte-v2.md)), puis l’application mobile Krimou.

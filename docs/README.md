@@ -2,6 +2,8 @@
 
 Index de la documentation. Le code source reste la source de vérité : un document qui le contredit est à corriger.
 
+**Priorité en cours** (décision du 5 novembre 2026) : FocusWithAkram web avec **Angular**, jusqu'à une version stable. React et l'application mobile (Krimou) sont déprioritisés et reprendront ensuite ; leur backlog est tenu dans la [refonte v2](suivi/refonte-v2.md).
+
 ## Organisation
 
 ```
@@ -27,7 +29,7 @@ docs/
 | [Avancement fonctionnel](suivi/avancement-fonctionnel.md) | Quelles fonctions sont livrées, partielles ou absentes ? | Produit, recette |
 | [Avancement technique](suivi/avancement-technique.md) | Quel est l'état technique, la dette et les décisions ? | Développement |
 | [Checklist](suivi/checklist.md) | Que faut-il vérifier avant de valider une livraison ? | Développement, recette |
-| [Refonte v2](suivi/refonte-v2.md) | Quelles décisions, quels lots et quelles adaptations React pour la phase en cours ? | Produit, développement |
+| [Refonte v2](suivi/refonte-v2.md) | Quelles décisions et quels lots pour la phase en cours ? Quel backlog React pour après la version stable ? | Produit, développement |
 | [Historique](historique/README.md) | Que s'est-il passé lors des lots précédents ? | Référence |
 | [Maquettes](maquettes/README.md) | À quoi les écrans doivent-ils ressembler ? | Design, frontend |
 

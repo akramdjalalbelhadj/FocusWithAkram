@@ -6,8 +6,10 @@
 #   BACKEND_PORT=8081 FRONTEND_PORT=4300 ./scripts/start_react.sh
 #
 # Backend : profil "local" avec PostgreSQL embarque (donnees dans backend/data/postgres).
-# Un port deja occupe (lancement precedent, autre application) est libere : son processus est arrete.
-# Ctrl+C arrete proprement les deux processus.
+# Un lancement precedent de FocusWithAkram (backend, frontend, PostgreSQL embarque) est arrete. Un port tenu par une
+# autre application n'est jamais libere de force : le premier port libre qui suit est utilise.
+# Ctrl+C arrete proprement les deux processus et le PostgreSQL embarque demarre par ce lancement.
+#   NO_BROWSER=1 ./scripts/start_react.sh       # sans ouvrir le navigateur
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,7 +20,7 @@ mkdir -p "$LOG_DIR"
 
 step() { printf '\033[36m==> %s\033[0m\n' "$*"; }
 fail() { printf '\033[31mERREUR : %s\033[0m\n' "$*" >&2; exit 1; }
-. "$ROOT/scripts/lib/free-port.sh"
+. "$ROOT/scripts/lib/launch.sh"
 
 # ---- Pre-requis ---------------------------------------------------------------------------------
 step "Verification des pre-requis"
@@ -50,14 +52,21 @@ elif [ "$n_major" -eq 22 ] && { [ "$n_minor" -gt 22 ] || { [ "$n_minor" -eq 22 ]
 fi
 [ "$node_ok" -eq 1 ] || fail "Node $node_version est trop ancien pour les frontends. Definissez NODE_HOME vers un Node >= 22.22.3 / 24.15."
 
-# Ports occupes : l'application qui les tient (souvent un lancement precedent) est arretee, y compris le
-# PostgreSQL embarque du profil local (port lu dans application-local.yml), qui verrouille le dossier de donnees.
-PG_PORT="$(sed -nE 's/^[[:space:]]*port:[[:space:]]*([0-9]+).*/\1/p' "$ROOT/backend/src/main/resources/application-local.yml" 2>/dev/null | head -1)"
-PG_PORT="${PG_PORT:-54329}"
-step "Liberation des ports (une application deja lancee sur ces ports est arretee)"
-free_port "$FRONTEND_PORT" "frontend"
-free_port "$BACKEND_PORT" "backend"
-free_port "$PG_PORT" "PostgreSQL embarque"
+check_data_version
+
+# Un lancement precedent (backend, frontend, PostgreSQL embarque qui verrouille le dossier de donnees) est arrete ;
+# un port tenu par une autre application est remplace par le premier port libre qui suit. Le PostgreSQL embarque
+# choisit lui-meme un autre port si le sien est indisponible (voir EmbeddedPostgresConfig).
+step "Arret d'un lancement precedent et choix des ports"
+stop_previous_instance
+BACKEND_PORT="$(select_port "$BACKEND_PORT" backend)"
+FRONTEND_PORT="$(select_port "$FRONTEND_PORT" frontend "$BACKEND_PORT")"
+# Le frontend appelle l'API par son proxy : les requetes portent l'origine du frontend, a autoriser cote backend.
+CORS_ORIGINS=""
+for p in "$FRONTEND_PORT" 4200 5173; do
+  case ",$CORS_ORIGINS," in *"//127.0.0.1:$p,"*) continue ;; esac
+  CORS_ORIGINS="${CORS_ORIGINS:+$CORS_ORIGINS,}http://127.0.0.1:$p,http://localhost:$p"
+done
 
 # ---- Dependances frontend -----------------------------------------------------------------------
 if [ ! -d "$ROOT/frontend-react/node_modules" ]; then
@@ -68,6 +77,7 @@ fi
 # ---- Demarrage ----------------------------------------------------------------------------------
 pids=()
 started=0
+postmaster=""
 cleanup() {
   trap - EXIT INT TERM
   step "Arret de FocusWithAkram"
@@ -77,10 +87,11 @@ cleanup() {
     pkill -P "$pid" 2>/dev/null || true
     kill "$pid" 2>/dev/null || true
   done
-  # Sous Windows, tuer les processus Bash ne tue pas la JVM ni node : on libere aussi les ports par leur numero,
-  # et le PostgreSQL embarque (detache de la JVM) est arrete proprement.
+  # Sous Windows, tuer les processus Bash ne tue pas la JVM ni node : le backend et le frontend de FocusWithAkram
+  # sont aussi arretes par leurs ports, puis le PostgreSQL embarque (detache de la JVM) demarre par ce lancement.
+  # Un PostgreSQL inconnu (arret pendant le demarrage) est laisse au lancement suivant, qui l'arretera.
   if [ "$started" -eq 1 ]; then
-    for p in "$FRONTEND_PORT" "$BACKEND_PORT" "$PG_PORT"; do (free_port "$p" "arret") >/dev/null 2>&1 || true; done
+    stop_own_instance "$postmaster" "$FRONTEND_PORT" "$BACKEND_PORT" || true
   fi
   wait 2>/dev/null || true
 }
@@ -90,8 +101,8 @@ trap 'exit 143' TERM
 
 started=1
 step "Demarrage du backend (port $BACKEND_PORT) - le premier lancement telecharge PostgreSQL embarque"
-(cd "$ROOT/backend" && PORT="$BACKEND_PORT" mvn -q spring-boot:run -Dspring-boot.run.profiles=local) \
-  >"$LOG_DIR/backend.log" 2>&1 &
+(cd "$ROOT/backend" && PORT="$BACKEND_PORT" FOCUSFLOW_CORS_ORIGINS="$CORS_ORIGINS" \
+  mvn -q spring-boot:run -Dspring-boot.run.profiles=local) >"$LOG_DIR/backend.log" 2>&1 &
 backend_pid=$!
 pids+=("$backend_pid")
 
@@ -102,10 +113,11 @@ for _ in $(seq 1 150); do
   sleep 2
 done
 [ "$up" -eq 1 ] || fail "Le backend n'a pas demarre en 5 minutes. Consultez $LOG_DIR/backend.log"
+postmaster="$(postmaster_pid)"
 printf '    \033[32mBackend pret.\033[0m\n'
 
 step "Demarrage du frontend (port $FRONTEND_PORT)"
-(cd "$ROOT/frontend-react" && FOCUS_API_URL="http://127.0.0.1:$BACKEND_PORT" exec "$NODE_BIN" node_modules/vite/bin/vite.js --host 127.0.0.1 --port "$FRONTEND_PORT") >"$LOG_DIR/frontend.log" 2>&1 &
+(cd "$ROOT/frontend-react" && FOCUS_API_URL="http://127.0.0.1:$BACKEND_PORT" exec "$NODE_BIN" node_modules/vite/bin/vite.js --config "$ROOT/frontend-react/vite.config.ts" --host 127.0.0.1 --port "$FRONTEND_PORT") >"$LOG_DIR/frontend.log" 2>&1 &
 frontend_pid=$!
 pids+=("$frontend_pid")
 
@@ -123,10 +135,12 @@ echo "    API / Swagger : http://localhost:$BACKEND_PORT/swagger-ui.html"
 echo "    Journaux : $LOG_DIR"
 echo "    Ctrl+C pour arreter."
 
-# Ouvre le navigateur quand c'est possible (sans echec si absent).
-(command -v xdg-open >/dev/null && xdg-open "http://127.0.0.1:$FRONTEND_PORT") \
-  || (command -v open >/dev/null && open "http://127.0.0.1:$FRONTEND_PORT") \
-  || (command -v start >/dev/null && start "http://127.0.0.1:$FRONTEND_PORT") || true >/dev/null 2>&1
+# Ouvre le navigateur quand c'est possible (sans echec si absent), sauf avec NO_BROWSER=1.
+if [ -z "${NO_BROWSER:-}" ]; then
+  (command -v xdg-open >/dev/null && xdg-open "http://127.0.0.1:$FRONTEND_PORT") \
+    || (command -v open >/dev/null && open "http://127.0.0.1:$FRONTEND_PORT") \
+    || (command -v start >/dev/null && start "http://127.0.0.1:$FRONTEND_PORT") || true >/dev/null 2>&1
+fi
 
 # Surveille les deux processus : si l'un s'arrete, on arrete tout.
 while kill -0 "$backend_pid" 2>/dev/null && kill -0 "$frontend_pid" 2>/dev/null; do sleep 2; done

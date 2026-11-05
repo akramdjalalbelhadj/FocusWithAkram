@@ -1,6 +1,8 @@
 # FocusWithAkram — checklist
 
-Relevé du **3 novembre 2026**. Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
+Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
+
+**Priorité** : version stable de FocusWithAkram web avec **Angular** d’abord. Les cases marquées *(après la version stable)* concernent React ou le mobile, déprioritisés (décision du 5 novembre 2026, [refonte v2](refonte-v2.md)).
 
 ## FWA-F001 — Navigation
 
@@ -63,7 +65,7 @@ Relevé du **3 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Export CSV/JSON, sauvegarde versionnée et aperçu d’import.
 - [x] Doublons et échappement CSV testés.
 - [ ] Exécuter une restauration complète sur base vierge et comparer les volumes.
-- [ ] Décider d’un format versionné incluant les préférences utilisateur.
+- [x] Format versionné incluant les préférences utilisateur : sauvegarde v2 et suivantes (réglages, Top 3), v4 actuelle.
 
 ## FWA-F024 à F027 — Notes & idées (Angular)
 
@@ -79,7 +81,7 @@ Relevé du **3 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Sauvegarde v4 (idées, catégories, lien, mode d’éditeur) ; v3 importable.
 - [x] Recette navigateur sur base jetable : clair, sombre, 390 px sans défilement horizontal.
 - [ ] Recette humaine au lecteur d’écran et au toucher de l’éditeur visuel.
-- [ ] Interface React et import du format v4 dans Krimou.
+- [ ] Interface React et import du format v4 dans Krimou *(après la version stable)*.
 
 ## FWA-T001 — Backend
 
@@ -87,9 +89,9 @@ Relevé du **3 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Entités dans `entity`, DTO dédiés, mappers et repositories séparés.
 - [x] Exceptions regroupées ; statuts et codes HTTP conservés sur les cas testés.
 - [x] Contrôleurs sans corps `Map` et sans repository directement injecté.
-- [x] 70 tests existants et 8 tests de contrat/architecture réussis.
+- [x] 170 tests sans échec sur PostgreSQL 18.6 (unitaires, intégration, contrat, architecture), relevé du 5 novembre 2026.
 - [x] JAR généré ; sorties `target/` retirées du suivi Git.
-- [ ] Vérifier les avertissements de dépréciation lors de la prochaine mise à niveau de dépendances.
+- [ ] Vérifier les avertissements de dépréciation lors de la prochaine mise à niveau de dépendances (par exemple la configuration de test que Spring Framework 7.1 ne tolérera plus).
 
 ## FWA-T002 / FWA-T003 — Frontends
 
@@ -97,9 +99,9 @@ Relevé du **3 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Templates HTML Angular externalisés et vues JSX React séparées de la logique des pages.
 - [x] Feuilles CSS dédiées et tokens partagés.
 - [x] Builds, typage et lints vérifiés pendant les lots correspondants.
-- [x] Tests unitaires disponibles : 22 Angular, 12 React.
+- [x] Tests unitaires disponibles : 43 Angular, 12 React.
 - [ ] Retirer les utilitaires Tailwind de tous les templates Angular si cette cible est confirmée pour la suite.
-- [ ] Décomposer davantage la coordination de l’état applicatif React quand son évolution le justifie.
+- [ ] Décomposer davantage la coordination de l’état applicatif React quand son évolution le justifie *(après la version stable)*.
 
 ## FWA-T004 / FWA-N001 à N008 — Exploitation et qualité
 
@@ -108,6 +110,12 @@ Relevé du **3 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Procédure pour lancer les deux interfaces avec un seul backend.
 - [x] Documentation des sauvegardes et du diagnostic.
 - [x] Contexte de build Docker incluant `shared/` et excluant les données locales.
+- [x] Relance sans échec : un lancement précédent (backend, frontend, PostgreSQL embarqué) est arrêté proprement ; recette PowerShell et Git Bash.
+- [x] Une autre application qui occupe un port n’est jamais arrêtée : port libre suivant, CORS adapté ; PostgreSQL embarqué sur 15432, hors de la plage réservée par Windows.
+- [x] PostgreSQL 18 embarqué (tests compris) et dans Docker ; version vérifiée par test.
+- [x] Migration de la base locale 14 → 18 (`scripts/migrate_postgres.ps1`) essayée sur une copie : lignes, empreintes et séquences identiques, backend démarré dessus.
+- [ ] Migrer la base personnelle vers PostgreSQL 18.
+- [ ] Procédure de migration hors Windows (binaires Linux / macOS).
 - [ ] Construction Docker puis démarrage réellement vérifiés.
 - [ ] Accessibilité humaine : clavier complet, lecteur d’écran, zoom et toucher.
 - [ ] Aucune ouverture Internet sans travail d’authentification et d’exposition réseau dédié.

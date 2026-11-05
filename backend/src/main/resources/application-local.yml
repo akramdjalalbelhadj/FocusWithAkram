@@ -2,8 +2,13 @@
 # Les donnees sont conservees dans ./data/postgres entre deux lancements.
 focusflow:
   embedded-postgres:
-    port: 54329
+    # Hors de la plage dynamique de Windows (49152-65535), ou Hyper-V, WSL et Docker reservent des blocs de ports.
+    # S'il est pris, un des ports suivants est utilise, a defaut un port attribue par le systeme.
+    port: 15432
     data-dir: ./data/postgres
+    # Version des binaires embarques (pom.xml, filtrage Maven) : une base d'une autre version majeure est refusee
+    # avec la commande de migration a lancer.
+    binaries-version: "@embedded-postgres-binaries.version@"
 
 logging:
   level:

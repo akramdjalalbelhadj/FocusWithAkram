@@ -5,8 +5,10 @@
 .DESCRIPTION
   - Backend : profil "local" avec PostgreSQL embarque (donnees conservees dans backend/data/postgres).
   - Frontend : serveur de developpement React avec proxy /api vers le backend.
-  - Un port deja occupe (lancement precedent, autre application) est libere : son processus est arrete.
-  - Ctrl+C arrete proprement les deux processus.
+  - Un lancement precedent de FocusWithAkram (backend, frontend, PostgreSQL embarque) est arrete.
+  - Un port tenu par une autre application ou reserve par Windows n'est jamais libere de force : le premier port
+    libre qui suit est utilise (les origines CORS du backend suivent le port du frontend).
+  - Ctrl+C arrete proprement les deux processus et le PostgreSQL embarque demarre par ce lancement.
 
 .PARAMETER NodeHome
   Dossier d'un Node.js portable (>= 22.22.3 ou >= 24.15) si le Node du PATH est trop ancien.
@@ -14,6 +16,9 @@
 
 .PARAMETER SkipInstall
   Ne lance pas "npm install" meme si node_modules est absent.
+
+.PARAMETER NoBrowser
+  N'ouvre pas le navigateur une fois l'application prete.
 
 .EXAMPLE
   .\scripts\start_react.ps1
@@ -24,7 +29,8 @@ param(
   [string]$NodeHome = $(if ($env:FOCUSFLOW_NODE_HOME) { $env:FOCUSFLOW_NODE_HOME } else { (Join-Path (Split-Path $PSScriptRoot -Parent) '.tools/node_modules/node/bin') }),
   [int]$BackendPort = 8080,
   [int]$FrontendPort = 5173,
-  [switch]$SkipInstall
+  [switch]$SkipInstall,
+  [switch]$NoBrowser
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,7 +40,7 @@ New-Item -ItemType Directory -Force $LogDir | Out-Null
 
 function Write-Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
 function Fail($msg) { Write-Host "ERREUR : $msg" -ForegroundColor Red; exit 1 }
-. (Join-Path $PSScriptRoot 'lib/free-port.ps1')
+. (Join-Path $PSScriptRoot 'lib/launch.ps1')
 
 # ---- Pre-requis -------------------------------------------------------------------------------
 Write-Step 'Verification des pre-requis'
@@ -61,16 +67,17 @@ $nodeOk = ($nodeVersion.Major -ge 26) -or ($nodeVersion.Major -eq 24 -and $nodeV
           ($nodeVersion.Major -gt 24 -and $nodeVersion.Major -lt 26)
 if (-not $nodeOk) { Fail "Node $nodeVersion est trop ancien pour les frontends. Utilisez -NodeHome vers un Node >= 22.22.3 / 24.15." }
 
-# Ports occupes : l'application qui les tient (souvent un lancement precedent) est arretee, y compris le
-# PostgreSQL embarque du profil local (port lu dans application-local.yml), qui verrouille le dossier de donnees.
-$PostgresPort = 54329
-$localYml = Join-Path $Root 'backend/src/main/resources/application-local.yml'
-if ((Test-Path $localYml) -and ((Get-Content $localYml -Raw) -match 'port:\s*(\d+)')) { $PostgresPort = [int]$Matches[1] }
-Write-Step 'Liberation des ports (une application deja lancee sur ces ports est arretee)'
+try { Assert-FfDataVersion } catch { Fail $_.Exception.Message }
+
+# Un lancement precedent (backend, frontend, PostgreSQL embarque qui verrouille le dossier de donnees) est arrete ;
+# un port tenu par une autre application ou reserve par Windows est remplace par le premier port libre qui suit.
+# Le PostgreSQL embarque choisit lui-meme un autre port si le sien est indisponible (voir EmbeddedPostgresConfig).
+Write-Step 'Arret d''un lancement precedent et choix des ports'
+$launchStart = Get-Date
 try {
-  Clear-Port -Number $FrontendPort -Label 'frontend'
-  Clear-Port -Number $BackendPort -Label 'backend'
-  Clear-Port -Number $PostgresPort -Label 'PostgreSQL embarque'
+  Stop-FfPreviousInstance
+  $BackendPort = Select-FfPort -Preferred $BackendPort -Label 'backend'
+  $FrontendPort = Select-FfPort -Preferred $FrontendPort -Label 'frontend' -Exclude @($BackendPort)
 } catch { Fail $_.Exception.Message }
 
 # ---- Dependances frontend ---------------------------------------------------------------------
@@ -84,14 +91,18 @@ if (-not $SkipInstall -and -not (Test-Path (Join-Path $Frontend 'node_modules'))
 # ---- Demarrage --------------------------------------------------------------------------------
 $previousPort = $env:PORT
 $previousApiUrl = $env:FOCUS_API_URL
+$previousCors = $env:FOCUSFLOW_CORS_ORIGINS
 $procs = @()
+$postmasterPid = 0
 function Stop-All {
   foreach ($p in $script:procs) {
     if ($p -and -not $p.HasExited) { cmd /c "taskkill /PID $($p.Id) /T /F >nul 2>&1" | Out-Null }
   }
-  # Le PostgreSQL embarque est detache de la JVM : on l'arrete proprement pour ne pas laisser le port occupe.
+  # Le PostgreSQL embarque est detache de la JVM : on arrete celui de ce lancement (jamais celui d'un lancement plus
+  # recent qui aurait pris la main sur le dossier de donnees).
   if ($script:procs.Count -gt 0) {
-    try { Clear-Port -Number $PostgresPort -Label 'PostgreSQL embarque' } catch { Write-Host $_.Exception.Message -ForegroundColor Yellow }
+    try { Stop-FfOwnPostgres -PostmasterPid $script:postmasterPid -StartedAfter $script:launchStart }
+    catch { Write-Host $_.Exception.Message -ForegroundColor Yellow }
   }
 }
 
@@ -99,6 +110,9 @@ try {
   Write-Step "Demarrage du backend (port $BackendPort) - le premier lancement telecharge PostgreSQL embarque"
   $backendLog = Join-Path $LogDir 'backend.log'
   $env:PORT = $BackendPort
+  # Le frontend appelle l'API par son proxy : les requetes portent l'origine du frontend, a autoriser cote backend.
+  $env:FOCUSFLOW_CORS_ORIGINS = (@($FrontendPort, 4200, 5173) | Select-Object -Unique | ForEach-Object {
+      "http://127.0.0.1:$_,http://localhost:$_" }) -join ','
   $backend = Start-Process -FilePath 'mvn.cmd' -WorkingDirectory (Join-Path $Root 'backend') `
     -ArgumentList '-q', 'spring-boot:run', '-Dspring-boot.run.profiles=local' `
     -RedirectStandardOutput $backendLog -RedirectStandardError (Join-Path $LogDir 'backend.err.log') -PassThru -WindowStyle Hidden
@@ -114,13 +128,15 @@ try {
     Start-Sleep -Seconds 2
   }
   if (-not $up) { Fail "Le backend n'a pas demarre en 5 minutes. Consultez $backendLog" }
+  $postmasterPid = Get-FfPostmasterPid
   Write-Host '    Backend pret.' -ForegroundColor Green
 
   # PORT ne doit pas fuiter vers "ng serve", qui le lit aussi.
   Remove-Item Env:PORT -ErrorAction SilentlyContinue
   Write-Step "Demarrage du frontend (port $FrontendPort)"
   $env:FOCUS_API_URL = "http://127.0.0.1:$BackendPort"
-  $frontendArgs = @('node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', $FrontendPort)
+  # Chemin absolu de la configuration : le lancement suivant reconnait ainsi ce serveur comme le sien.
+  $frontendArgs = @('node_modules/vite/bin/vite.js', '--config', ('"' + (Join-Path $Frontend 'vite.config.ts') + '"'), '--host', '127.0.0.1', '--port', $FrontendPort)
   $node = (Get-Command node).Source
   $frontend = Start-Process -FilePath $node -WorkingDirectory $Frontend `
     -ArgumentList $frontendArgs `
@@ -142,7 +158,7 @@ try {
   Write-Host "    API / Swagger : http://localhost:$BackendPort/swagger-ui.html"
   Write-Host "    Journaux : $LogDir"
   Write-Host '    Ctrl+C pour arreter.'
-  Start-Process "http://127.0.0.1:$FrontendPort" | Out-Null
+  if (-not $NoBrowser) { Start-Process "http://127.0.0.1:$FrontendPort" | Out-Null }
 
   while (-not $backend.HasExited -and -not $frontend.HasExited) { Start-Sleep -Seconds 2 }
   Write-Host "Un des processus s'est arrete : consultez les journaux dans $LogDir" -ForegroundColor Yellow
@@ -152,4 +168,5 @@ finally {
   Stop-All
   $env:PORT = $previousPort
   $env:FOCUS_API_URL = $previousApiUrl
+  $env:FOCUSFLOW_CORS_ORIGINS = $previousCors
 }
