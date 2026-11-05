@@ -1,5 +1,6 @@
 package com.focusflow.note;
 
+import com.focusflow.common.ExistingIds;
 import com.focusflow.note.dto.NotesBackupData;
 import com.focusflow.note.dto.NotesImportSummary;
 import java.time.Instant;
@@ -76,12 +77,15 @@ public class NoteBackup {
         }
         Map<UUID, UUID> noteIds = new HashMap<>();
         Set<UUID> seen = new HashSet<>();
+        // Identifiants deja en base, lus d'avance par lots (voir ExistingIds).
+        Set<UUID> existing = ExistingIds.among(nullToEmpty(data.notes()).stream().map(NotesBackupData.Note::id).toList(),
+                notes::findExistingIds);
         for (NotesBackupData.Note nd : nullToEmpty(data.notes())) {
             try {
                 if (nd.id() != null && !seen.add(nd.id())) {
                     throw new IllegalArgumentException("identifiant en double dans le fichier : " + nd.id());
                 }
-                if (nd.id() != null && notes.existsById(nd.id())) {
+                if (nd.id() != null && existing.contains(nd.id())) {
                     noteIds.put(nd.id(), nd.id());
                     notesSkipped++;
                     continue;

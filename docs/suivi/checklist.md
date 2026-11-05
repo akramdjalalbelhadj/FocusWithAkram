@@ -1,6 +1,6 @@
 # FocusWithAkram — checklist
 
-Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
+Relevé du **5 novembre 2026** (après le lot 9). Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
 
 **Priorité** : version stable de FocusWithAkram web avec **Angular** d’abord. Les cases marquées *(après la version stable)* concernent React ou le mobile, déprioritisés (décision du 5 novembre 2026, [refonte v2](refonte-v2.md)).
 
@@ -55,7 +55,7 @@ Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Indicateurs, Top 3 et aperçus issus des données réelles.
 - [x] Statistiques prévues/réelles/actives et regroupements par fuseau.
 - [ ] Revalider les dates fixes des scénarios de calendrier avant une recette future.
-- [ ] Mesurer une base volumineuse et des historiques longs ; ne pas extrapoler la recette à 120 tâches.
+- [x] Base volumineuse mesurée (5 novembre 2026) : 4 010 tâches, 10 006 opérations sur 24 mois, 1 000 idées ; chaque page en 0,7 à 1,4 s, sans erreur ni débordement.
 
 ## FWA-F016 / F017 / F018 — Préférences, recherche, transferts
 
@@ -66,6 +66,18 @@ Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Doublons et échappement CSV testés.
 - [ ] Exécuter une restauration complète sur base vierge et comparer les volumes.
 - [x] Format versionné incluant les préférences utilisateur : sauvegarde v2 et suivantes (réglages, Top 3), v4 actuelle.
+
+## FWA-F019 à F023 — Mes achats (Angular)
+
+- [x] Comptes (courant, épargne, espèces), solde initial daté, correction tracée, archivage, suppression sans opération.
+- [x] Opérations : dépenses, revenus, virements, remboursements d’achat ; prévue / réalisée / annulée ; saisie au format français ; doublon probable confirmé explicitement.
+- [x] Échéancier (salaire, abonnements, charges, paiement en plusieurs fois) ; échéances jamais payées d’office.
+- [x] Budget : plafond variable signalé (jamais bloquant), objectif d’épargne, épargne théorique.
+- [x] Achats prévus : verdict de faisabilité avant enregistrement, matrice, achat réel, report, simulations « Et si… ? ».
+- [x] Prêts et emprunts : reste dû, remboursements, régularisation, annulation ; ni dépense ni revenu.
+- [x] Alertes, calendrier financier, statistiques sur 3 à 24 mois.
+- [x] Scénario E2E `finance.spec.ts` (lot 9) : parcours complet, coupure réseau pendant un enregistrement, dialogues accessibles, 390 px sans débordement.
+- [ ] Matrice d’achats au glisser-déposer vérifiée par l’automatisation (le déplacement est testé par l’API et par le menu clavier).
 
 ## FWA-F024 à F027 — Notes & idées (Angular)
 
@@ -79,7 +91,7 @@ Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Doublon confirmé explicitement ; idée jamais modifiée par la création d’une tâche.
 - [x] Suppression bloquée avec avertissement explicatif ; suppression forcée qui conserve les tâches.
 - [x] Sauvegarde v4 (idées, catégories, lien, mode d’éditeur) ; v3 importable.
-- [x] Recette navigateur sur base jetable : clair, sombre, 390 px sans défilement horizontal.
+- [x] Recette navigateur sur base jetable : clair, sombre, 390 px sans défilement horizontal ; scénario E2E `notes.spec.ts` (lot 9).
 - [ ] Recette humaine au lecteur d’écran et au toucher de l’éditeur visuel.
 - [ ] Interface React et import du format v4 dans Krimou *(après la version stable)*.
 
@@ -89,7 +101,7 @@ Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Entités dans `entity`, DTO dédiés, mappers et repositories séparés.
 - [x] Exceptions regroupées ; statuts et codes HTTP conservés sur les cas testés.
 - [x] Contrôleurs sans corps `Map` et sans repository directement injecté.
-- [x] 170 tests sans échec sur PostgreSQL 18.6 (unitaires, intégration, contrat, architecture), relevé du 5 novembre 2026.
+- [x] 172 tests sans échec sur PostgreSQL 18.6 (unitaires, intégration, contrat, architecture), relevé du 5 novembre 2026 (lot 9).
 - [x] JAR généré ; sorties `target/` retirées du suivi Git.
 - [ ] Vérifier les avertissements de dépréciation lors de la prochaine mise à niveau de dépendances (par exemple la configuration de test que Spring Framework 7.1 ne tolérera plus).
 
@@ -114,9 +126,10 @@ Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Une autre application qui occupe un port n’est jamais arrêtée : port libre suivant, CORS adapté ; PostgreSQL embarqué sur 15432, hors de la plage réservée par Windows.
 - [x] PostgreSQL 18 embarqué (tests compris) et dans Docker ; version vérifiée par test.
 - [x] Migration de la base locale 14 → 18 (`scripts/migrate_postgres.ps1`) essayée sur une copie : lignes, empreintes et séquences identiques, backend démarré dessus.
-- [ ] Migrer la base personnelle vers PostgreSQL 18.
-- [ ] Procédure de migration hors Windows (binaires Linux / macOS).
-- [ ] Construction Docker puis démarrage réellement vérifiés.
+- [x] Base personnelle migrée vers PostgreSQL 18 (5 novembre 2026), ancienne base conservée. Migration hors Windows : hors périmètre.
+- [x] Construction Docker puis démarrage réellement vérifiés (WSL, 5 novembre 2026) : services sains, PostgreSQL 18.6, écritures depuis `localhost` et `127.0.0.1`, en-têtes de sécurité, données conservées après redémarrage.
+- [x] Import volumineux : 7 500 éléments en 6 s, réimport sans doublon ; temps linéaire (identifiants lus par lots).
+- [x] Dialogues accessibles : un seul dialogue nommé et modal par ouverture (rôle `alertdialog` des confirmations), aucun identifiant en double.
 - [ ] Accessibilité humaine : clavier complet, lecteur d’écran, zoom et toucher.
 - [ ] Aucune ouverture Internet sans travail d’authentification et d’exposition réseau dédié.
 
@@ -127,4 +140,5 @@ Relevé du **5 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Guide utilisateur et exploitation.
 - [x] Design détaillé, écarts réels et règles de contribution.
 - [x] Index et liens vers les preuves disponibles.
-- [ ] Actualiser cette checklist à chaque livraison et enregistrer les résultats d’une prochaine recette complète.
+- [x] Recette complète de la version web Angular enregistrée (lot 9, 5 novembre 2026) : [refonte v2](refonte-v2.md).
+- [ ] Actualiser cette checklist à chaque livraison.

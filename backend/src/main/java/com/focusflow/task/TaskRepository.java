@@ -12,6 +12,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificationExecutor<Task> {
 
+    /** Parmi ces identifiants, ceux deja en base (import par lots, voir ExistingIds). */
+    @Query("select t.id from Task t where t.id in :ids")
+    List<UUID> findExistingIds(@Param("ids") Collection<UUID> ids);
+
     /** Taches actives (ni terminees ni archivees) : base de la matrice, des priorites et du calendrier. */
     @Query("select t from Task t left join fetch t.project where t.archivedAt is null")
     List<Task> findAllActive();

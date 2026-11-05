@@ -38,6 +38,7 @@ Relevé du **5 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 
 ## 2. Modifications fonctionnelles récentes
 
+- **Stabilisation Angular, lot 9** (5 novembre 2026) : dialogues annoncés correctement par les lecteurs d’écran (un seul dialogue nommé et modal), « Mes achats » sans débordement sur téléphone une fois des données présentes, import de grosses sauvegardes environ quinze fois plus rapide, message clair quand une idée ouverte a été supprimée dans un autre onglet ; Docker validé.
 - **Lancement et base locale** (5 novembre 2026) : relancer l’application remplace proprement le lancement précédent ; une autre application qui occupe un port n’est plus arrêtée, le lanceur prend le port libre suivant et l’affiche. La base locale passe à PostgreSQL 18 : une base créée avant est migrée une fois par `scripts/migrate_postgres.ps1` (les lanceurs l’indiquent), l’ancienne étant conservée.
 - **Notes & idées** (3 novembre 2026) : idées sans statut, catégories gérées, éditeur Markdown ou visuel, transformation en une ou plusieurs tâches de la matrice avec lien conservé ; sauvegarde v4. Angular seulement.
 - Le minuteur se configure dans **Focus / Pomodoro → Configurer** : travail, pauses, fréquence de pause longue, objectif quotidien, options automatiques, son et notifications.
@@ -50,8 +51,11 @@ Relevé du **5 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 
 | Preuve                          | Résultat connu                                                    | Périmètre / limite                                                           |
 | ------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Backend                         | 170 tests sans échec (5 nov. 2026, PostgreSQL 18.6)               | Unitaires, intégration, contrat et architecture : productivité, Mes achats, Notes, import/export, PostgreSQL embarqué. |
-| Unitaires frontend              | 43 Angular (3 nov. 2026, lot 11) + 12 React (validation antérieure) sans échec | Tests ciblés ; pas une couverture complète des pages.               |
+| Backend                         | 172 tests sans échec (5 nov. 2026, PostgreSQL 18.6, lot 9)      | Unitaires, intégration, contrat et architecture : productivité, Mes achats, Notes, import/export, PostgreSQL embarqué. |
+| Unitaires frontend              | 47 Angular (5 nov. 2026, lot 9) + 12 React (validation antérieure) sans échec | Tests ciblés ; pas une couverture complète des pages.               |
+| E2E Angular                     | 10 scénarios sans échec (5 nov. 2026, lot 9)                      | Tâches, matrice, Pomodoro, calendrier, projets, navigation et audits axe, **Mes achats** et **Notes** de bout en bout, coupure réseau. |
+| Relevé des pages et volume      | 20 pages × 3 variantes, base vide puis volumineuse, sans erreur   | 4 010 tâches, 10 006 opérations, 1 000 idées : 0,7 à 1,4 s par page ; import de 7 500 éléments en 6 s. |
+| Docker                          | Validé dans WSL (5 nov. 2026)                                     | Services sains, PostgreSQL 18.6, écritures, en-têtes de sécurité, données conservées après redémarrage. |
 | Lanceurs et migration PostgreSQL | Recette Windows du 5 nov. 2026 (PowerShell et Git Bash)          | Relance sur instance active, ports pris par une autre application, CORS, arrêt ; migration 14 → 18 sur une copie de la base personnelle. |
 | Recette métier historique       | 12 scénarios réussis, 6 par frontend                              | Manipulation des tâches, Pomodoro, réseau, calendrier, sous-tâche et projet. |
 | Réglages déplacés               | 1 scénario par frontend réussi                                    | Enregistrement, recharge et conservation après paramètres généraux.          |
@@ -67,18 +71,18 @@ Les preuves ne correspondent pas toutes à une unique exécution de la version f
 | Équivalence visuelle exacte                  | Partiel                                        | Tailles d’anneau, graphiques, actions et densité diffèrent encore.                       |
 | Retrait de Tailwind du HTML Angular          | Partiel                                        | La matrice emploie des classes sémantiques ; d’autres templates gardent des utilitaires. |
 | Tests lecteurs d’écran et appareils tactiles | Non consignés de manière complète              | Recette humaine encore nécessaire.                                                       |
-| Docker de bout en bout                       | Non validé                                     | Contexte de build corrigé, image PostgreSQL 18 ; construction réelle à essayer.          |
-| Base personnelle en PostgreSQL 18            | Migration prête et essayée sur une copie       | À lancer une fois (`scripts/migrate_postgres.ps1`) ; d’ici là, les lanceurs refusent de démarrer sur la base 14. |
 | Interface React à jour, application mobile   | Reportés après la version stable Angular       | React n’a ni Mes achats ni Notes ; Krimou n’importe pas la sauvegarde v4.                |
 | Fonctionnement navigateur fermé              | Non garanti                                    | Son, notifications et enchaînements automatiques nécessitent le navigateur.              |
 | Mode hors ligne complet                      | Non livré                                      | Un affichage de session mémorisé n’est pas une base locale synchronisable.               |
 | Authentification et multi-utilisateur        | Non livrés                                     | Usage local uniquement.                                                                  |
 
-## 5. Prochaines étapes (vers la version stable Angular)
+## 5. Prochaines étapes
 
-1. Migrer la base personnelle vers PostgreSQL 18 (`scripts/migrate_postgres.ps1`) puis relancer l’application.
-2. Lot 9 : stabiliser la version web Angular (recette complète de tous les modules, parcours rares : conflits simultanés, permissions refusées, import volumineux, interruption réseau pendant un enregistrement) et finaliser la documentation.
-3. Valider visuellement le panneau Focus en clair/sombre sur ordinateur et téléphone ; recette humaine (clavier complet, lecteur d’écran, zoom 200 %, toucher).
-4. Valider Docker et une restauration sur environnement vierge.
+La version web Angular est stabilisée (lot 9, 5 novembre 2026). Suite prévue :
+
+1. Enrichir le module **« Mes achats »** (prochaine phase), en gardant `finance.spec.ts` et les tests du module verts.
+2. Recette humaine : lecteur d’écran réel, toucher sur téléphone, zoom 200 %, son et notifications avec onglet suspendu ; panneau Focus en clair/sombre sur téléphone.
+3. Messages d’erreur du serveur : accents et suppression des identifiants techniques.
+4. Restauration complète sur environnement vierge (sauvegarde applicative vers une base Docker neuve).
 5. Décider si la conversion des classes utilitaires Angular en styles de composants reste une cible.
 6. Après la version stable : React (backlog du [§ 4 de la refonte v2](refonte-v2.md)), puis l’application mobile Krimou.

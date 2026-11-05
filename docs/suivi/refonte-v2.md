@@ -17,6 +17,8 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-05 | **Angular d'abord** : seul FocusWithAkram web avec Angular évolue jusqu'à une version stable ; React et le mobile (Krimou) reprennent ensuite | Lot 9 recentré sur Angular ; dossier de migration React et portage Krimou des lots 11 et suivants reportés après la version stable ; § 4 = backlog React |
 | 2026-11-05 | Lanceurs : un lancement précédent de FocusWithAkram est arrêté ; **une autre application n'est jamais arrêtée**, le port libre suivant est pris (CORS adapté) ; PostgreSQL embarqué sur 15432, hors de la plage que Windows réserve | Lot 12 ; [exploitation § 3](../technique/exploitation.md) |
 | 2026-11-05 | **PostgreSQL 18** partout (embarqué et Docker), en remplacement de 14 (fin de support en novembre 2026) et 17 ; base locale migrée par `scripts/migrate_postgres.ps1`, ancienne base conservée | Lot 12 ; [exploitation § 11.1](../technique/exploitation.md) |
+| 2026-11-05 | Migration PostgreSQL hors Windows (Linux, macOS) : **hors périmètre**, l'application n'est utilisée que sous Windows | `scripts/migrate_postgres.ps1` seul ; plus de case ouverte |
+| 2026-11-05 | Docker : validé dans **WSL** (Ubuntu, Docker 29), seul environnement Docker du poste | [exploitation § 8](../technique/exploitation.md) |
 | 2026-11-03 | Notes & Brainstorming : une idée **n'a pas de statut** (seules ses tâches en ont) ; catégories gérées dans un écran dédié ; deux modes d'éditeur (Markdown avec aperçu, visuel) sur un contenu Markdown unique, mode par défaut dans les Paramètres ; suppression d'une idée refusée tant que des tâches en sont issues, avec suppression forcée qui conserve les tâches | Lot 11 ; [cahier des charges § 4.5](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
@@ -25,17 +27,17 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | --- | --- | --- |
 | 0 | Hygiène du dépôt, réorganisation `docs/` et racine | Livré |
 | 1 | Backend : aplatissement des packages, ArchUnit, import robuste, sauvegarde v2 extensible (compatible v1) | Livré |
-| 2 | Angular : corrections (archives, double toast, recherche, lint autonome, Docker), navigation à source unique | Livré (Docker non construit) |
+| 2 | Angular : corrections (archives, double toast, recherche, lint autonome, Docker), navigation à source unique | Livré (Docker construit et validé au lot 9) |
 | 3 | Spécification fonctionnelle et règles financières de « Mes achats » — validation par le propriétaire | Livré : [spécification validée](../produit/mes-achats/specification.md) |
 | 4 | Socle finance : comptes, catégories, opérations, solde, corrections | Livré |
 | 5 | Revenus prévus/reçus, budget mensuel, épargne, abonnements | Livré |
 | 6 | Objectifs d'achat, matrice d'achats, moteur de prévision, faisabilité | Livré |
 | 7 | Prêts et emprunts | Livré |
 | 8 | Tableau de bord, statistiques, alertes, simulations, calendrier financier | Livré |
-| 9 | Stabilisation et documentation finale de la version web Angular ; le dossier de migration React est reporté après la version stable | À faire |
+| 9 | Stabilisation et documentation finale de la version web Angular ; le dossier de migration React est reporté après la version stable | Livré le 5 novembre 2026 |
 | 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Livré dans Krimou le 1 novembre 2026, non essayé sur téléphone ; suite reportée après la version stable |
 | 11 | Notes & Brainstorming : idées, catégories, éditeur à deux modes, transformation en tâches de la matrice (API et Angular) | Livré le 3 novembre 2026 |
-| 12 | Exploitation : lanceurs sans conflit de ports, PostgreSQL 18 (embarqué, tests, Docker) et migration de la base locale | Livré le 5 novembre 2026 ; migration de la base personnelle à lancer |
+| 12 | Exploitation : lanceurs sans conflit de ports, PostgreSQL 18 (embarqué, tests, Docker) et migration de la base locale | Livré le 5 novembre 2026 ; base personnelle migrée le même jour |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -193,10 +195,42 @@ Constat du 5 novembre 2026 : un lancement échouait après le précédent. Windo
 | --- | --- | --- |
 | Lanceurs | `scripts/lib/launch.ps1` et `launch.sh` remplacent `free-port.*` : lancement précédent reconnu à sa ligne de commande et arrêté (backend, frontend, PostgreSQL de la base par `postmaster.pid`) ; port d'une autre application ou réservé : port libre suivant, à défaut attribué par le système ; CORS adapté au port du frontend ; en fin de lancement, seul le PostgreSQL de ce lancement est arrêté ; `-NoBrowser` / `NO_BROWSER=1` | Recette Windows (PowerShell et Git Bash) : relance sur une instance active ; ports 18080 et 14200 tenus par un autre processus → 18081 et 14201, processus étranger intact ; POST via le proxy accepté depuis 14201 (400 de validation), refusé depuis une origine inconnue (403) ; l'ancien lanceur, en s'arrêtant, n'a pas touché le PostgreSQL du nouveau ; nettoyage Bash : backend, frontend et PostgreSQL arrêtés en 8 s |
 | Backend | PostgreSQL embarqué sur 15432 (hors plage dynamique de Windows), repli sur les 100 ports suivants puis sur un port du système ; refus explicite d'un dossier tenu par un PostgreSQL vivant ou créé par une autre version majeure (commande de migration indiquée) | 3 tests unitaires (`EmbeddedPostgresConfigTest`) |
-| PostgreSQL 18 | Binaires 18.6.0 (BOM zonky, propriété `embedded-postgres-binaries.version` du `pom.xml`, filtrée dans `application-local.yml`) ; Docker `postgres:18-alpine`, volume sur `/var/lib/postgresql` | **170 tests backend sans échec sur PostgreSQL 18.6**, dont `EmbeddedPostgresVersionIT` ; Docker non construit |
+| PostgreSQL 18 | Binaires 18.6.0 (BOM zonky, propriété `embedded-postgres-binaries.version` du `pom.xml`, filtrée dans `application-local.yml`) ; Docker `postgres:18-alpine`, volume sur `/var/lib/postgresql` | **170 tests backend sans échec sur PostgreSQL 18.6**, dont `EmbeddedPostgresVersionIT` ; Docker validé au lot 9 |
 | Migration | `scripts/migrate_postgres.ps1` + `scripts/lib/PgCopy.java` : schéma par les migrations Flyway, copie par `COPY`, comparaison lignes + empreintes + séquences, ancienne base conservée ; lanceurs et backend refusent une base 14 avec la commande à lancer | Copie de la base personnelle : 21 tables, 65 lignes identiques ; backend démarré sur la base migrée (Flyway : 7 migrations validées), données lues par l'API ; lanceur refusant la base 14 |
 
-Reste : lancer la migration sur la base personnelle ; procédure hors Windows ; construction Docker.
+Suite : base personnelle migrée le 5 novembre 2026 (21 tables, 65 lignes identiques ; sauvegarde `backend/data/postgres-14-sauvegarde-20261105-192114`) ; Docker validé au lot 9 ; procédure hors Windows hors périmètre (décision du 5 novembre 2026).
+
+### Réalisé au lot 9 — stabilisation de la version web Angular
+
+Recette du 5 novembre 2026 sur backend et base **jetables** (18080, base sous `backend/target/`), Angular sur 4300 ; l'application personnelle (4200/8080) n'a pas été utilisée.
+
+| Contrôle | Résultat |
+| --- | --- |
+| Qualité | Backend : 172 tests sans échec sur PostgreSQL 18.6 ; Angular : 47 tests unitaires, lint et build de production sans avertissement ; React compile toujours |
+| E2E Angular | **10 scénarios sans échec** : les 8 existants (navigation et audits axe, tâches, matrice, Pomodoro, erreur réseau, calendrier, sous-tâches, projets) et deux nouveaux, `finance.spec.ts` et `notes.spec.ts` |
+| Relevé des pages | 20 pages × 3 variantes (clair et sombre 1440 px, 390 px), base vide puis base de 4 010 tâches, 10 006 opérations et 1 000 idées : aucune erreur JavaScript, aucun appel d'API en échec, chaque page en 0,7 à 1,4 s |
+| Parcours rares | Coupure réseau pendant un enregistrement (message, saisie conservée, nouvel essai) ; import volumineux ; onglet périmé (idée supprimée ailleurs) ; doublon d'opération ; suppression d'idée bloquée puis forcée |
+| Docker (WSL) | Construction, trois services sains, PostgreSQL 18.6, API et frontend sur 8088, écritures depuis `localhost` et `127.0.0.1`, données conservées après `down`/`up` |
+
+Défauts trouvés et corrigés :
+
+| Défaut | Correction | Vérification |
+| --- | --- | --- |
+| Import volumineux quadratique : 7 500 éléments en 88 s (au-delà des 60 s du proxy nginx de Docker) ; une requête par élément synchronisait tout le contexte de persistance | `common/ExistingIds` : identifiants existants lus par lots de 1 000 avant la boucle (tâches, sessions, opérations, idées) | Même volume en 6 s à chaud ; 5 000 opérations en 1,4 s (5,6 s pour 2 000 avant) ; réimport sans doublon en 0,4 s ; `ExistingIdsTest`, tests d'import inchangés |
+| Dialogues : un `dialog` sans nom (conteneur CDK, `aria-modal="false"`) contenant le dialogue nommé, pour les 21 dialogues | `provideAccessibleDialogs()` : `aria-modal` par défaut, nom, description et rôle (`alertdialog` des confirmations) du contenu reportés sur le conteneur | 4 tests unitaires ; E2E : un seul dialogue nommé par ouverture |
+| Champ « Plafond des dépenses variables » annoncé « Aucun » : identifiant `bud-cap` en double (titre de la page Budget) | Titre renommé `bud-cap-title` | E2E : champ trouvé par son libellé ; aucun identifiant en double à l'ouverture de chaque dialogue |
+| Débordement horizontal à 390 px de quatre onglets de « Mes achats » une fois des données présentes (cartes en grille élargies par leur contenu) | `.card { min-width: 0 }` | Relevé : 0 débordement ; contrôle à 390 px de tous les onglets dans `finance.spec.ts` |
+| Docker : backend toujours « unhealthy » (`wget` absent de `eclipse-temurin:25-jre`) | Contrôle de santé par `/dev/tcp` de bash | Trois services « healthy » |
+| Docker : POST refusés (403 CORS) depuis `http://127.0.0.1:8088` (nginx transmettait `Host` sans le port) | `proxy_set_header Host $http_host` ; origines `localhost` et `127.0.0.1` | 201 depuis les deux origines |
+| Docker : en-têtes de sécurité jamais envoyés (un `add_header` de `location` annule ceux du serveur) | En-têtes répétés dans les blocs concernés | `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` présents sur la page, les routes et les fichiers |
+| Idée supprimée dans un autre onglet : « Non enregistré : Idee introuvable : <identifiant> » | Message explicite, texte conservé à l'écran | Relevé de l'onglet périmé |
+
+Constats sans correction (comportements assumés ou hors lot) :
+
+- **Modifications concurrentes** : les mises à jour n'envoient pas de version ; entre deux onglets, la dernière écriture l'emporte (`@Version` ne protège que les écritures simultanées). Un élément supprimé ailleurs donne une erreur 404 explicite.
+- Pendant un dialogue modal, le reste de la page (notifications comprises) est masqué aux lecteurs d'écran : une erreur d'enregistrement s'affiche donc aussi dans le dialogue. Deux messages visibles, un seul annoncé.
+- Les messages d'erreur du serveur sont écrits sans accents (convention ASCII des sources Java) et certains contiennent un identifiant technique : à reprendre côté serveur.
+- Restent humains : lecteur d'écran réel, toucher sur téléphone, notifications et son avec onglet suspendu.
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

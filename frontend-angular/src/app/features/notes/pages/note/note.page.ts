@@ -221,8 +221,15 @@ export class NotePage {
         if (this.dirty.size) this.timer = setTimeout(() => void this.flush(), SAVE_DELAY);
       } catch (e) {
         // Message affiche a cote de l'indicateur d'enregistrement ; l'intercepteur signale deja les pannes reseau.
+        // 404 : l'idee a ete supprimee ailleurs (autre onglet) ; le texte reste a l'ecran pour pouvoir le copier.
         this.saveState.set('error');
-        this.saveError.set(e instanceof AppError ? e.problem.detail : 'Enregistrement impossible.');
+        this.saveError.set(
+          e instanceof AppError && e.problem.status === 404
+            ? 'Cette idée a été supprimée entre-temps (autre onglet ?). Copiez votre texte si vous voulez le garder.'
+            : e instanceof AppError
+              ? e.problem.detail
+              : 'Enregistrement impossible.',
+        );
       } finally {
         this.saving = null;
       }

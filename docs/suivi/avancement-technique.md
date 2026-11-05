@@ -100,6 +100,8 @@ Préfixe commun `/api/v1` ; documentation interactive `/swagger-ui.html`, docume
 
 ### 3.5 État de validation backend
 
+Relevé du 5 novembre 2026 (lot 9, stabilisation) : **172 tests, 0 échec** sur PostgreSQL 18.6, dont `ExistingIdsTest` (identifiants existants lus par lots avant un import ; les tests d’import, de finance et de notes restent inchangés et verts). Côté Angular : 47 tests unitaires, dont `accessible-dialogs.spec.ts` ; 10 scénarios E2E. Détail et défauts corrigés : [refonte v2, lot 9](refonte-v2.md).
+
 Relevé du 5 novembre 2026 (lot 12, lanceurs et PostgreSQL 18) : **170 tests, 0 échec** sur **PostgreSQL 18.6** (`mvn test`), dont 3 tests unitaires du PostgreSQL embarqué (port de repli, refus d’une base d’une autre version majeure avec la commande de migration, PID d’un `postmaster.pid` qui n’est pas PostgreSQL ignoré) et `EmbeddedPostgresVersionIT` (le serveur embarqué a la version déclarée dans le `pom.xml`). La migration 14 → 18 (`scripts/migrate_postgres.ps1`, `scripts/lib/PgCopy.java`) a été essayée sur une copie de la base personnelle : voir [refonte v2, lot 12](refonte-v2.md).
 
 Relevé du 3 novembre 2026 (lot 11, Notes & idées) : **166 tests, 0 échec** (`mvn test`), dont `NoteIT` (10 scénarios : saisie et organisation, modification partielle, plusieurs tâches dans leurs quadrants, doublon, règles des tâches, suppression bloquée puis forcée, catégories, préférence d’éditeur, aller-retour de sauvegarde v4, import v3), `NoteMapperTest` (2) et la règle ArchUnit « les tâches ne dépendent pas des notes ».
@@ -184,7 +186,11 @@ Ne pas importer un composant Angular dans React ni réciproquement. Ne pas dupli
 | État applicatif React central       | Coordination de plusieurs responsabilités ; à extraire progressivement, après la version stable Angular.                        |
 | Lanceurs : ne jamais arrêter une autre application | Un lancement précédent de FocusWithAkram est reconnu à sa ligne de commande et arrêté ; pour toute autre application ou un port réservé par Windows, le port libre suivant est pris. |
 | PostgreSQL 18 embarqué              | 14 en fin de support ; les binaires embarqués ne contiennent ni `pg_dump` ni `pg_upgrade` : la migration recrée le schéma par Flyway et copie les tables par `COPY`, avec vérification par empreintes. |
-| Docker non validé                   | Contexte de build corrigé (racine du dépôt, `.dockerignore`), image PostgreSQL 18 ; construction réelle et healthchecks restent à essayer. |
+| Docker validé (WSL, lot 9)          | Santé du backend par `/dev/tcp` (ni `wget` ni `curl` dans l’image JRE) ; nginx transmet `Host` avec le port ; en-têtes de sécurité répétés par bloc `location`. |
+| Import par lots d’identifiants      | `common/ExistingIds` : une requête par lot de 1 000 au lieu d’une par élément, qui synchronisait tout le contexte de persistance (temps quadratique). À reprendre pour tout nouvel import. |
+| Dialogues accessibles               | `provideAccessibleDialogs()` (`shared/ui/accessible-dialogs.ts`) : `aria-modal` par défaut ; le nom, la description et le rôle déclarés par le contenu passent au conteneur CDK. Un nouveau dialogue garde simplement `role="dialog"` et `aria-labelledby` sur sa racine. |
+| Cartes compressibles                | `.card { min-width: 0 }` : une carte en grille ou en rangée flexible ne s’élargit pas au-delà de l’écran. |
+| Modifications concurrentes          | Pas de version envoyée dans les mises à jour : entre deux onglets, la dernière écriture l’emporte ; un élément supprimé ailleurs donne une 404 traitée par l’interface. |
 | Notes : Markdown comme format unique | Les deux modes d’éditeur, la recherche, la sauvegarde et un futur portage lisent le même texte ; le mode visuel (Tiptap) peut normaliser la syntaxe. Le rendu passe par le schéma ProseMirror : aucun HTML saisi n’est injecté tel quel. |
 | Notes : lien tâche → idée par identifiant | Pas de dépendance Java de `task` vers `note` (ArchUnit) ; la base détache les tâches si l’idée est supprimée. |
 | Avertissements de bibliothèques     | Dépréciations Spring/JDK et configuration de tests à examiner lors d’une mise à niveau dédiée.                                  |

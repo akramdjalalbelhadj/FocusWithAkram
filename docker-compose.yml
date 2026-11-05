@@ -32,7 +32,7 @@ services:
       FOCUSFLOW_DB_URL: jdbc:postgresql://db:5432/focusflow
       FOCUSFLOW_DB_USER: focusflow
       FOCUSFLOW_DB_PASSWORD: ${FOCUSFLOW_DB_PASSWORD}
-      FOCUSFLOW_CORS_ORIGINS: http://localhost:${FOCUSFLOW_PORT:-8088}
+      FOCUSFLOW_CORS_ORIGINS: http://localhost:${FOCUSFLOW_PORT:-8088},http://127.0.0.1:${FOCUSFLOW_PORT:-8088}
 
   frontend:
     build:

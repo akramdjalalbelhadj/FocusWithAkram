@@ -14,6 +14,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface PomodoroSessionRepository extends JpaRepository<PomodoroSession, UUID> {
 
+    /** Parmi ces identifiants, ceux deja en base (import par lots, voir ExistingIds). */
+    @Query("select s.id from PomodoroSession s where s.id in :ids")
+    List<UUID> findExistingIds(@Param("ids") Collection<UUID> ids);
+
     @EntityGraph(attributePaths = "task")
     Optional<PomodoroSession> findFirstByStatusIn(Collection<SessionStatus> statuses);
 

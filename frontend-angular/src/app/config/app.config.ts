@@ -10,10 +10,12 @@ import { routes } from '../routes/app.routes';
 import { errorInterceptor } from '../core/interceptors/error.interceptor';
 import { PomodoroEngine } from '../core/services/pomodoro.engine';
 import { SettingsStore } from '../core/services/settings.store';
+import { provideAccessibleDialogs } from '../shared/ui/accessible-dialogs';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    provideAccessibleDialogs(),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([errorInterceptor])),
     // Les parametres (theme, fuseau) sont charges avant le premier rendu ; le moteur Pomodoro se reconnecte

@@ -2,6 +2,7 @@ package com.focusflow.note;
 
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,6 +13,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface NoteRepository extends JpaRepository<Note, UUID>, JpaSpecificationExecutor<Note> {
+
+    /** Parmi ces identifiants, ceux deja en base (import par lots, voir ExistingIds). */
+    @Query("select n.id from Note n where n.id in :ids")
+    List<UUID> findExistingIds(@Param("ids") Collection<UUID> ids);
 
     /** Verrouille l'idee le temps d'en creer une tache : deux envois simultanes ne creent pas deux taches. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

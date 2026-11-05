@@ -1,5 +1,6 @@
 package com.focusflow.transfer;
 
+import com.focusflow.common.ExistingIds;
 import com.focusflow.common.Patch;
 import com.focusflow.common.exception.ApiException;
 import com.focusflow.finance.FinanceBackup;
@@ -262,12 +263,15 @@ public class TransferService {
 
     private void importTasks(BackupFile file, ImportRun run) {
         Set<UUID> seen = new HashSet<>();
+        // Identifiants deja en base, lus d'avance par lots (voir ExistingIds).
+        Set<UUID> existing = ExistingIds.among(nullToEmpty(file.tasks()).stream().map(TaskData::id).toList(),
+                tasks::findExistingIds);
         for (TaskData td : nullToEmpty(file.tasks())) {
             try {
                 if (td.id() != null && !seen.add(td.id())) {
                     throw new IllegalArgumentException("identifiant en double dans le fichier : " + td.id());
                 }
-                if (td.id() != null && tasks.existsById(td.id())) {
+                if (td.id() != null && existing.contains(td.id())) {
                     run.tasksByFileId.put(td.id(), tasks.getReferenceById(td.id()));
                     run.tasksSkipped++;
                     continue;
@@ -318,9 +322,11 @@ public class TransferService {
 
     private void importSessions(BackupFile file, ImportRun run) {
         Set<UUID> seen = new HashSet<>();
+        Set<UUID> existing = ExistingIds.among(nullToEmpty(file.sessions()).stream().map(SessionData::id).toList(),
+                sessions::findExistingIds);
         for (SessionData sd : nullToEmpty(file.sessions())) {
             try {
-                if (sd.id() != null && (!seen.add(sd.id()) || sessions.existsById(sd.id()))) {
+                if (sd.id() != null && (!seen.add(sd.id()) || existing.contains(sd.id()))) {
                     run.sessionsSkipped++;
                     continue;
                 }

@@ -1,5 +1,6 @@
 package com.focusflow.finance;
 
+import com.focusflow.common.ExistingIds;
 import com.focusflow.finance.dto.FinanceBackupData;
 import com.focusflow.finance.dto.FinanceBackupData.AccountData;
 import com.focusflow.finance.dto.FinanceBackupData.BudgetData;
@@ -352,12 +353,14 @@ public class FinanceBackup {
                                   Instant now, int[] counts, Consumer<String> errors) {
         Map<UUID, Operation> imported = new HashMap<>();
         Set<UUID> seen = new HashSet<>();
+        // Identifiants deja en base, lus d'avance par lots (voir ExistingIds).
+        Set<UUID> existing = ExistingIds.among(list.stream().map(OperationData::id).toList(), operations::findExistingIds);
         // Les remboursements apres les depenses qu'ils remboursent.
         List<OperationData> ordered = new ArrayList<>(list);
         ordered.sort(Comparator.comparing((OperationData o) -> o.refundOfId() != null));
         for (OperationData d : ordered) {
             try {
-                if (d.id() != null && (!seen.add(d.id()) || operations.existsById(d.id()))) {
+                if (d.id() != null && (!seen.add(d.id()) || existing.contains(d.id()))) {
                     counts[5]++;
                     continue;
                 }

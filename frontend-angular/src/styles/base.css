@@ -107,6 +107,10 @@ h4 {
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    /* Dans une grille ou une rangee flexible, une carte peut se reduire a la largeur disponible : sans cela
+       (min-width: auto), un contenu qui ne se coupe pas (texte tronque, montant) elargit la colonne au-dela de
+       l'ecran, constate a 390 px dans « Mes achats » avec des donnees. */
+    min-width: 0;
   }
 
   .btn {

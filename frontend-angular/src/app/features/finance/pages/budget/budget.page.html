@@ -25,10 +25,10 @@
 } @else if (loader.loading()) {
   <ff-skeleton [count]="3" [height]="120" />
 } @else if (loader.data(); as b) {
-  <section class="card p-5 mb-4" aria-labelledby="bud-cap">
+  <section class="card p-5 mb-4" aria-labelledby="bud-cap-title">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h3 id="bud-cap" class="section-title !mb-1">Dépenses variables</h3>
+        <h3 id="bud-cap-title" class="section-title !mb-1">Dépenses variables</h3>
         <p class="text-sm font-semibold" [class]="states[b.state].tone">{{ states[b.state].label }}</p>
       </div>
       @if (b.variableCap !== null) {

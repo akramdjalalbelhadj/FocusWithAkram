@@ -45,7 +45,7 @@ Les lanceurs vérifient les versions, arrêtent un lancement précédent, choisi
 
 ## Avec Docker
 
-`docker-compose.yml` (PostgreSQL 18 + backend + Angular/nginx) et `docker-compose.dev.yml` (PostgreSQL 18 seul) existent mais **ne sont pas validés** : le contexte de build a été corrigé (racine du dépôt, `.dockerignore`), sans construction réelle à ce jour. Voir [exploitation, section Docker](docs/technique/exploitation.md).
+`docker-compose.yml` (PostgreSQL 18 + backend + Angular/nginx) et `docker-compose.dev.yml` (PostgreSQL 18 seul) sont **validés** (5 novembre 2026, Docker dans WSL) : l'application Compose répond sur <http://127.0.0.1:8088>. Mot de passe de la base dans `.env` (voir `.env.example`). Voir [exploitation, section Docker](docs/technique/exploitation.md).
 
 ## Organisation du dépôt
 

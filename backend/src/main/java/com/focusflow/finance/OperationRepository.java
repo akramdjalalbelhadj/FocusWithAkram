@@ -12,8 +12,13 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface OperationRepository extends JpaRepository<Operation, UUID>, JpaSpecificationExecutor<Operation> {
+
+    /** Parmi ces identifiants, ceux deja en base (import par lots, voir ExistingIds). */
+    @Query("select o.id from Operation o where o.id in :ids")
+    List<UUID> findExistingIds(@Param("ids") Collection<UUID> ids);
 
     @Override
     @EntityGraph(attributePaths = {"account", "targetAccount", "category", "category.parent"})
