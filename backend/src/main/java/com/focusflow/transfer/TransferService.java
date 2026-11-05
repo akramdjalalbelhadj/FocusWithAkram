@@ -4,6 +4,8 @@ import com.focusflow.common.Patch;
 import com.focusflow.common.exception.ApiException;
 import com.focusflow.finance.FinanceBackup;
 import com.focusflow.finance.dto.FinanceImportSummary;
+import com.focusflow.note.NoteBackup;
+import com.focusflow.note.dto.NotesImportSummary;
 import com.focusflow.pomodoro.PomodoroSession;
 import com.focusflow.pomodoro.PomodoroSessionRepository;
 import com.focusflow.project.Project;
@@ -62,11 +64,13 @@ public class TransferService {
     private final DailyGoalRepository dailyGoals;
     private final SettingsService settings;
     private final FinanceBackup finance;
+    private final NoteBackup notes;
     private final Clock clock;
 
     public TransferService(TaskRepository tasks, ProjectRepository projects, TagRepository tags,
                            TaskExecutionRepository executions, PomodoroSessionRepository sessions,
-                           DailyGoalRepository dailyGoals, SettingsService settings, FinanceBackup finance, Clock clock) {
+                           DailyGoalRepository dailyGoals, SettingsService settings, FinanceBackup finance, NoteBackup notes,
+                           Clock clock) {
         this.tasks = tasks;
         this.projects = projects;
         this.tags = tags;
@@ -75,6 +79,7 @@ public class TransferService {
         this.dailyGoals = dailyGoals;
         this.settings = settings;
         this.finance = finance;
+        this.notes = notes;
         this.clock = clock;
     }
 
@@ -96,7 +101,8 @@ public class TransferService {
                 dailyGoals.findAll(Sort.by("goalDate", "position")).stream()
                         .map(g -> new DailyGoalData(g.getGoalDate(), g.getTask().getId(), g.getPosition(), g.getCreatedAt()))
                         .toList(),
-                finance.export());
+                finance.export(),
+                notes.export());
     }
 
     @Transactional(readOnly = true)
@@ -154,7 +160,10 @@ public class TransferService {
     // ---- Import -------------------------------------------------------------------------------
 
     /**
-     * Importe une sauvegarde (version 1 a 3).
+     * Importe une sauvegarde (version 1 a 4).
+     * <ul>
+     *   <li>Les idees (v4) sont importees avant les taches afin que chaque tache retrouve son idee d'origine.</li>
+     * </ul>
      * <ul>
      *   <li>Les taches deja presentes (meme identifiant, ou meme titre et date de creation) sont ignorees ;
      *       les projets sont rapproches par nom.</li>
@@ -179,6 +188,12 @@ public class TransferService {
         }
         ImportRun run = new ImportRun();
         importProjects(file, run);
+        NotesImportSummary notesSummary = null;
+        if (file.notes() != null) {
+            NoteBackup.Result result = notes.importData(file.notes(), run::error);
+            run.noteIdsByFileId.putAll(result.noteIdsByFileId());
+            notesSummary = result.summary();
+        }
         importTasks(file, run);
         importSessions(file, run);
         importDailyGoals(file, run);
@@ -189,7 +204,7 @@ public class TransferService {
         }
         return new ImportReport(dryRun, run.projectsCreated, run.projectsReused, run.tasksCreated, run.tasksSkipped,
                 run.sessionsCreated, run.sessionsSkipped, run.errors, run.settingsRestored, run.goalsCreated,
-                run.goalsSkipped, financeSummary);
+                run.goalsSkipped, financeSummary, notesSummary);
     }
 
     /** Etat d'un import : correspondances d'identifiants et compteurs du rapport. */
@@ -198,6 +213,8 @@ public class TransferService {
         final Map<UUID, Project> projectsByFileId = new HashMap<>();
         /** Taches de la sauvegarde resolues vers une tache de la base : creee, ou deja presente avec le meme identifiant. */
         final Map<UUID, Task> tasksByFileId = new HashMap<>();
+        /** Idees de la sauvegarde resolues vers une idee de la base (creee, ou deja presente). */
+        final Map<UUID, UUID> noteIdsByFileId = new HashMap<>();
         int projectsCreated, projectsReused, tasksCreated, tasksSkipped, sessionsCreated, sessionsSkipped;
         int goalsCreated, goalsSkipped;
         boolean settingsRestored;
@@ -265,6 +282,7 @@ public class TransferService {
                         td.plannedStartAt(), td.plannedEndAt(), td.actualStartAt(), td.actualEndAt(), td.archivedAt(),
                         td.executionNumber()));
                 if (td.projectId() != null) t.setProject(run.projectsByFileId.get(td.projectId()));
+                if (td.sourceNoteId() != null) t.setSourceNoteId(run.noteIdsByFileId.get(td.sourceNoteId()));
                 for (SubtaskData sd : nullToEmpty(td.subtasks())) {
                     t.addImportedSubtask(sd.title(), sd.done(), sd.position(), sd.createdAt() != null ? sd.createdAt() : t.getCreatedAt());
                 }
@@ -368,6 +386,7 @@ public class TransferService {
         values.put("subtasksCompleteParent", sd.subtasksCompleteParent());
         values.put("shortcutsEnabled", sd.shortcutsEnabled());
         values.put("compactMode", sd.compactMode());
+        values.put("noteEditorMode", sd.noteEditorMode());
         values.values().removeIf(Objects::isNull);
         try {
             // Validation complete sur une copie avant application : aucune preference n'est restauree a moitie.
@@ -405,7 +424,8 @@ public class TransferService {
         return new SettingsData(s.getTimeZone(), s.getWeekStartsOn(), s.getTheme(), s.getWorkMinutes(),
                 s.getShortBreakMinutes(), s.getLongBreakMinutes(), s.getSessionsBeforeLong(), s.isAutoStartBreaks(),
                 s.isAutoStartWork(), s.isNotificationsEnabled(), s.isSoundEnabled(), s.getSoundName(),
-                s.getDailyFocusGoalMinutes(), s.isSubtasksCompleteParent(), s.isShortcutsEnabled(), s.isCompactMode());
+                s.getDailyFocusGoalMinutes(), s.isSubtasksCompleteParent(), s.isShortcutsEnabled(), s.isCompactMode(),
+                s.getNoteEditorMode());
     }
 
     private static TaskData toData(Task t, Map<UUID, List<ExecutionData>> executionsByTask) {
@@ -415,7 +435,7 @@ public class TransferService {
                 t.getSubtasks().stream().map(s -> new SubtaskData(s.getTitle(), s.isDone(), s.getPosition(), s.getCreatedAt())).toList(),
                 t.getCreatedAt(), t.getUpdatedAt(), t.getPlannedStartAt(), t.getPlannedEndAt(), t.getActualStartAt(),
                 t.getActualEndAt(), t.getArchivedAt(), t.getExecutionNumber(),
-                executionsByTask.getOrDefault(t.getId(), List.of()));
+                executionsByTask.getOrDefault(t.getId(), List.of()), t.getSourceNoteId());
     }
 
     private static <T> List<T> nullToEmpty(List<T> list) {

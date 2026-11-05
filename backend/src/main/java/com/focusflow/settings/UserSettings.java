@@ -25,6 +25,10 @@ public class UserSettings {
     @Column(nullable = false)
     private String theme = "SYSTEM";
 
+    /** Mode par defaut de l'editeur des notes : MARKDOWN (saisie et apercu) ou RICH (editeur visuel). */
+    @Column(name = "note_editor_mode", nullable = false)
+    private String noteEditorMode = "MARKDOWN";
+
     @Column(name = "work_minutes", nullable = false)
     private int workMinutes = 25;
 
@@ -73,6 +77,8 @@ public class UserSettings {
     public void setWeekStartsOn(String weekStartsOn) { this.weekStartsOn = weekStartsOn; }
     public String getTheme() { return theme; }
     public void setTheme(String theme) { this.theme = theme; }
+    public String getNoteEditorMode() { return noteEditorMode; }
+    public void setNoteEditorMode(String noteEditorMode) { this.noteEditorMode = noteEditorMode; }
     public int getWorkMinutes() { return workMinutes; }
     public void setWorkMinutes(int workMinutes) { this.workMinutes = workMinutes; }
     public int getShortBreakMinutes() { return shortBreakMinutes; }

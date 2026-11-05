@@ -21,6 +21,11 @@ public class UpdateSettingsRequest extends PatchRequest {
         set("theme", value);
     }
 
+    @JsonSetter("noteEditorMode")
+    public void setNoteEditorMode(String value) {
+        set("noteEditorMode", value);
+    }
+
     @JsonSetter("soundName")
     public void setSoundName(String value) {
         set("soundName", value);

@@ -1,6 +1,6 @@
 # FocusWithAkram — checklist
 
-Relevé du **1 novembre 2026**. Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
+Relevé du **3 novembre 2026**. Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
 
 ## FWA-F001 — Navigation
 
@@ -64,6 +64,22 @@ Relevé du **1 novembre 2026**. Les cases cochées indiquent une réalisation ou
 - [x] Doublons et échappement CSV testés.
 - [ ] Exécuter une restauration complète sur base vierge et comparer les volumes.
 - [ ] Décider d’un format versionné incluant les préférences utilisateur.
+
+## FWA-F024 à F027 — Notes & idées (Angular)
+
+- [x] Page `/notes`, entrée de menu, G puis N ; saisie rapide par Entrée, touche I et palette.
+- [x] Créer, consulter, modifier (enregistrement automatique), supprimer ; données conservées après rechargement.
+- [x] Recherche titre/contenu, filtres catégorie, étiquette, favoris, avec/sans tâches ; tris.
+- [x] Catégories dans un écran dédié ; nom unique sans casse ; suppression qui conserve les idées.
+- [x] Éditeur Markdown (barre d’outils, Ctrl+B/I/Z, aperçu, cases cochables) et visuel ; même contenu ; préférence dans Paramètres.
+- [x] Transformation en une ou plusieurs tâches avec le formulaire existant ; quadrant et échéance ; tâches visibles dans la matrice.
+- [x] Lien idée ↔ tâche : panneau de l’idée, lien depuis le détail de la tâche, repère dans Mes tâches ; lien conservé à la restauration et à la duplication.
+- [x] Doublon confirmé explicitement ; idée jamais modifiée par la création d’une tâche.
+- [x] Suppression bloquée avec avertissement explicatif ; suppression forcée qui conserve les tâches.
+- [x] Sauvegarde v4 (idées, catégories, lien, mode d’éditeur) ; v3 importable.
+- [x] Recette navigateur sur base jetable : clair, sombre, 390 px sans défilement horizontal.
+- [ ] Recette humaine au lecteur d’écran et au toucher de l’éditeur visuel.
+- [ ] Interface React et import du format v4 dans Krimou.
 
 ## FWA-T001 — Backend
 

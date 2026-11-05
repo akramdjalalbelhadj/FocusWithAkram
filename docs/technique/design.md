@@ -23,6 +23,7 @@ Règles de conception : une action principale clairement identifiable dans un bl
 | Calendrier `/calendar`     | Quand faire les tâches ?                             | Choisir un jour ou replanifier              |
 | Statistiques `/statistics` | Comment mon travail évolue-t-il ?                    | Choisir une période et lire les mesures     |
 | Projets `/projects`        | Comment progressent mes regroupements ?              | Créer ou ouvrir un projet                   |
+| Notes & idées `/notes`     | Quelles idées ai-je, lesquelles concrétiser ?        | Noter, développer, créer une tâche          |
 | Archives `/archives`       | Quel travail ai-je terminé ?                         | Consulter ou restaurer                      |
 | Paramètres `/settings`     | Comment adapter l’application et gérer mes données ? | Régler l’apparence/région ou exporter       |
 
@@ -246,13 +247,22 @@ Titre/action → recherche et filtre d’archive → grille de cartes. Chaque pr
 
 Références : [clair](../maquettes/FocusWithAkram_Projets_clair.png), [sombre](../maquettes/FocusWithAkram_Projets_sombre.png).
 
+### Notes & idées
+
+- **Liste** (`/notes`) : titre et lien **Catégories** → carte de saisie rapide (icône ampoule, champ, **Noter**, **Développer**) → recherche, filtres catégorie/étiquette et tri → vues en pastilles (Toutes, Favorites, À transformer, Avec tâches) et compteur → grille de cartes (`auto-fill`, 17 rem minimum). Une carte porte un liseré supérieur à la couleur de sa catégorie (gris sans catégorie), le titre (2 lignes), l’extrait sans syntaxe (3 lignes), catégorie et étiquettes en `chip`, l’avancement des tâches (`badge-brand`, `badge-done` quand toutes sont terminées), la date de modification, l’étoile favori (`--warning`, icône pleine via `.icon-filled`) et la suppression.
+- **Éditeur** (`/notes/:id`) : barre supérieure (retour, état d’enregistrement en `aria-live` : vert « Enregistré », gris « en attente / Enregistrement… », rouge avec **Réessayer**), titre en grand sur plusieurs lignes (`field-sizing: content`), catégorie et étiquettes, puis l’éditeur. À droite (sous l’éditeur sous 1024 px), le panneau collant **Tâches issues de cette idée** : bouton principal **Créer une tâche**, puis une carte par tâche avec statut et quadrant (barrée si terminée).
+- **Éditeur de contenu** (`ff-note-editor`) : barre d’outils sur `--surface-2` (titre, gras, italique, listes, case à cocher, citation, code ; bouton actif en `--brand-soft` en mode visuel), onglets **Écrire / Aperçu** en mode Markdown, bascule **Markdown / Visuel** à droite. Saisie Markdown en police à chasse fixe ; rendu (`.note-prose`) en police de l’interface : titres 1,5 / 1,25 / 1,075 rem, cases à cocher alignées sur la première ligne, élément coché barré et atténué, citations à filet `--line-strong`, code sur `--surface-3`. Le cadre prend la bordure `--brand` et l’anneau `--ring` au focus.
+- **Catégories** (`/notes/categories`) : liste unique en carte, pastille de couleur, nombre d’idées, **Modifier** et suppression. Dialogue : nom et palette des couleurs des projets.
+- **Dialogues** : saisie rapide (titre obligatoire, détails facultatifs, **Enregistrer** / **Enregistrer et développer**) ; formulaire de tâche réutilisé avec le sous-titre « Idée : … » et, en cas de doublon, un encadré `bg-warning-soft` amené dans la vue avec **Créer quand même** ; suppression bloquée = dialogue de confirmation danger « Suppression bloquée » avec **Supprimer quand même**.
+- **Matrice** : les cartes compactes n’affichent pas le repère « Idée » (comme le projet et les étiquettes) ; **Mes tâches** l’affiche en `chip`.
+
 ### Archives
 
 Présenter le contexte de période et les filtres, puis les groupes temporels. Chaque entrée distingue date réelle, temps et cycle. Restaurer ne ressemble pas à supprimer. Le vide doit préciser si aucun résultat correspond aux filtres ou si aucune tâche n’a encore été terminée.
 
 ### Paramètres
 
-Apparence/région → préférences générales → export/import → raccourcis. Il n’y a plus de bloc de durées Pomodoro. L’enregistrement automatique Angular et le bouton React doivent être visibles et cohérents avec leur mode de fonctionnement.
+Apparence/région → préférences générales → Notes & idées (éditeur par défaut, deux cartes radio) → export/import → raccourcis. Il n’y a plus de bloc de durées Pomodoro. L’enregistrement automatique Angular et le bouton React doivent être visibles et cohérents avec leur mode de fonctionnement.
 
 L’import montre d’abord les conséquences ; erreurs et doublons restent lisibles. Le bouton de confirmation ne doit pas suggérer qu’un fichier a déjà été importé au stade de l’aperçu.
 

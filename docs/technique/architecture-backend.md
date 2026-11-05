@@ -21,6 +21,9 @@ backend/src/main/java/com/focusflow/
                    FinancePreferences, Goal (objectif d'achat), Loan (pret ou emprunt), ForecastEngine (calcul pur) et ForecastService,
                    Money, FinanceDates, services (comptes, operations, echeancier, budget, objectifs, prets),
                    FinanceOverviewService (bilan du mois), AlertService, FinanceStatisticsService, SimulationService (hypotheses sur la prevision), FinanceBackup (section de sauvegarde), dto/
+  note/            module Notes & idees : Note (idee, contenu Markdown, sans statut), NoteCategory, NoteService
+                   (saisie, recherche, suppression, transformation en tache), NoteCategoryService, NoteBackup
+                   (section de sauvegarde), NoteSpecifications, NoteMapper, controleurs, dto/
   transfer/        export CSV/JSON, sauvegarde versionnee et import, dto/
 ```
 
@@ -42,7 +45,8 @@ Les tests suivent les memes packages ; `architecture/`, `contract/` et `support/
 - `common` ne depend d'aucun domaine ;
 - un `@RestController` se nomme `*Controller`, ne se trouve ni dans `dto`, ni dans `common`, ni dans `config`, et n'est injecte nulle part ;
 - un DTO ne depend ni de Spring Data ni de JPA ;
-- `finance` ne depend d'aucun domaine de productivite (task, pomodoro, project…) et ne contient aucun champ `double`/`float`.
+- `finance` ne depend d'aucun domaine de productivite (task, pomodoro, project…) ni de `note`, et ne contient aucun champ `double`/`float` ;
+- `task`, `pomodoro`, `project` et `eisenhower` ne dependent pas de `note` : une tache ne connait son idee d'origine que par son identifiant (`Task.sourceNoteId`).
 
 `ControllerArchitectureTest` : un controleur n'injecte pas de repository, n'accepte pas de `Map` comme corps et n'expose aucune entite JPA, meme imbriquee dans un record.
 
@@ -96,17 +100,34 @@ Regles metier : [specification de « Mes achats »](../produit/mes-achats/specif
 
 API (`/api/v1/finance`) : `overview?month=AAAA-MM`, `accounts` (CRUD, `/{id}/reconcile`), `categories` (arbre, CRUD), `operations` (recherche paginee et filtree, CRUD, `/{id}/complete`, `/{id}/cancel`, `/duplicates`), `schedules` (CRUD, `/{id}/pause|resume|end`, `/{id}/occurrences/{AAAA-MM-JJ}/complete|skip`, `PUT /{id}/occurrences/{date}`), `budget?month=` et `PUT budget/{AAAA-MM}`, `preferences` (GET/PUT), `forecast`, `goals` (CRUD, `preview`, `/{id}/reservation`, `/{id}/purchase`, `/{id}/postpone|abandon|reopen`, `/{id}/position`), `loans` (liste, detail, creation, `PUT /{id}` personne/echeance/notes, `/{id}/repayments`, `/{id}/write-off`, `/{id}/cancel`), `alerts`, `statistics?from=&to=` (AAAA-MM, 1 a 24 mois), `POST simulation`, `calendar?month=`.
 
+## Module Notes & idees (`note`)
+
+Regles metier : [cahier des charges § 4.5](../produit/cahier-des-charges.md). Choix d'implementation :
+
+- **Dependance a sens unique** : `note` utilise `TaskService` (creation, taches d'une idee, avancement, detachement) ; le domaine des taches ne porte qu'une colonne `task.source_note_id` (UUID, cle etrangere `ON DELETE SET NULL`) et ne connait aucune classe de `note`. Il n'existe pas de second systeme de taches : `POST /notes/{id}/tasks` appelle `TaskService.create(req, noteId)`, avec les memes regles qu'une creation ordinaire (quadrant Q2 par defaut, dates prevues coherentes, etiquettes, projet).
+- **Pas de statut d'idee** : l'avancement affiche (`taskCount`, `tasksDone`) est une requete agregee sur `task` a la lecture (`TaskService.progressByNote`).
+- **Doublon** : un titre deja porte (casse ignoree) par une tache de la meme idee renvoie 409 `NOTE_TASK_DUPLICATE` sauf `allowDuplicate=true`. L'idee est verrouillee (`PESSIMISTIC_WRITE`) pendant la creation : deux envois simultanes ne creent pas deux taches.
+- **Suppression** : 409 `NOTE_HAS_TASKS` tant que des taches sont issues de l'idee ; `?force=true` detache les taches (mise a jour groupee) puis supprime l'idee. Supprimer une tache retire simplement le lien. La duplication et la restauration d'une tache conservent le lien.
+- **Contenu** : Markdown brut (100 000 caracteres), quel que soit le mode d'editeur ; l'extrait des listes (`NoteMapper.excerpt`, 240 caracteres) retire la syntaxe. Recherche `ILIKE` echappee sur titre et contenu.
+- **Modification** : `PATCH` partiel (`UpdateNoteRequest`, a presence) pour l'enregistrement automatique ; le favori ne change pas la date de modification.
+- **Categories** : nom unique sans casse (index `lower(name)`, 409 `NOTE_CATEGORY_NAME_TAKEN`), couleur `#rrggbb` ; suppression = `category_id` remis a NULL par la base.
+- **Mode d'editeur** : `user_settings.note_editor_mode` (`MARKDOWN` | `RICH`), valide par `SettingsService` comme les autres preferences.
+- **Migration** : `V7__notes.sql` (`note_category`, `note`, `note_tag`, `task.source_note_id`, `user_settings.note_editor_mode`). Additive : aucune donnee existante n'est modifiee.
+
+API : `/api/v1/notes` (`GET` pagine et filtre : `q`, `categoryId`, `tag`, `favorite`, `withTasks`, `sort=updatedAt|createdAt|title`, `dir` ; `GET /tags` ; `GET|PATCH|DELETE /{id}` avec `force` ; `POST /{id}/tasks` `{task, allowDuplicate}`), `/api/v1/note-categories` (`GET`, `POST`, `PATCH /{id}`, `DELETE /{id}`). `TaskResponse.sourceNoteId` expose l'idee d'origine.
+
 ## Sauvegarde et import
 
-`BackupFile` est un format JSON versionne (`CURRENT_VERSION = 2`) :
+`BackupFile` est un format JSON versionne (`CURRENT_VERSION = 4`) :
 
 | Version | Contenu |
 | --- | --- |
 | 1 | projets, taches (etiquettes, sous-taches, cycles), sessions Pomodoro terminees |
 | 2 | v1 + preferences (`settings`) + Top 3 quotidien (`dailyGoals`) |
 | 3 | v2 + module « Mes achats » (`finance` : comptes, categories, echeanciers, objectifs d'achat, prets, operations, budgets, preferences) |
+| 4 | v3 + Notes & idees (`notes` : categories, idees), idee d'origine des taches (`tasks[].sourceNoteId`) et `settings.noteEditorMode` |
 
-L'import accepte toute version de 1 a `CURRENT_VERSION` (sections absentes ignorees) et refuse un fichier plus recent avec `IMPORT_UNSUPPORTED_VERSION`. Chaque element est valide avant ecriture (memes regles que les contraintes SQL) : un element invalide est signale dans `ImportReport.errors` sans interrompre les autres. Le mode apercu (`dryRun=true`) execute l'import puis annule la transaction : son rapport est exactement celui de l'import reel. Les doublons sont ignores (taches : meme identifiant, ou meme titre et date de creation ; projets : meme nom ; sessions et Top 3 : meme identifiant ou meme date et position). Une session n'est rattachee a une tache existante que si leurs identifiants concordent. Les preferences du fichier remplacent les preferences courantes, apres validation complete.
+L'import accepte toute version de 1 a `CURRENT_VERSION` (sections absentes ignorees) et refuse un fichier plus recent avec `IMPORT_UNSUPPORTED_VERSION`. Chaque element est valide avant ecriture (memes regles que les contraintes SQL) : un element invalide est signale dans `ImportReport.errors` sans interrompre les autres. Le mode apercu (`dryRun=true`) execute l'import puis annule la transaction : son rapport est exactement celui de l'import reel. Les doublons sont ignores (taches : meme identifiant, ou meme titre et date de creation ; projets : meme nom ; sessions et Top 3 : meme identifiant ou meme date et position). Une session n'est rattachee a une tache existante que si leurs identifiants concordent. Les preferences du fichier remplacent les preferences courantes, apres validation complete. Les idees sont importees avant les taches : une tache retrouve son idee d'origine si celle-ci est dans le fichier (creee ou deja presente) ; les categories d'idees sont rapprochees par identifiant puis par nom, les idees par identifiant ou par titre et date de creation (`ImportReport.notes`).
 
 Pour ajouter un domaine a la sauvegarde : ajouter une section nullable a `BackupFile`, incrementer `CURRENT_VERSION`, ajouter ses compteurs a `ImportReport` et a `shared/models.ts`, et tester l'import d'un fichier de l'ancienne version.
 

@@ -1,12 +1,12 @@
 # FocusWithAkram — guide d’utilisation
 
-Mis à jour le **1 novembre 2026** pour Angular et React. Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
+Mis à jour le **3 novembre 2026** pour Angular et React (Notes & idées : Angular seulement). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
 
 ## 1. Ouvrir l’application
 
 Après lancement, ouvrir Angular sur `http://127.0.0.1:4200` ou React sur `http://127.0.0.1:5173`. Il n’y a pas de compte à créer pour l’usage local actuel.
 
-Sur ordinateur, la barre latérale permet de naviguer et de se replier. Sur mobile, la barre inférieure donne les accès principaux ; **Plus** ouvre les destinations complémentaires. Les neuf pages sont Tableau de bord, Matrice d’Eisenhower, Mes tâches, Focus / Pomodoro, Calendrier, Statistiques, Projets, Archives et Paramètres.
+Sur ordinateur, la barre latérale permet de naviguer et de se replier. Sur mobile, la barre inférieure donne les accès principaux ; **Plus** ouvre les destinations complémentaires. Les pages communes sont Tableau de bord, Matrice d’Eisenhower, Mes tâches, Focus / Pomodoro, Calendrier, Statistiques, Projets, Archives et Paramètres ; Angular ajoute **Mes achats** et **Notes & idées**.
 
 ## 2. Première utilisation : préparer sa journée
 
@@ -91,11 +91,11 @@ Les archives regroupent les tâches par fin réelle dans le fuseau de l’utilis
 
 ## 10. Exporter et importer
 
-Dans **Paramètres**, exporter les tâches en CSV ou JSON, ou télécharger une **Sauvegarde complète**. Pour une reprise complète des données métier, préférer cette dernière au CSV : elle contient aussi les préférences et le Top 3. À l’import, l’aperçu indique ce qui sera créé, ignoré (doublons) ou signalé comme invalide ; les préférences du fichier remplacent les préférences courantes.
+Dans **Paramètres**, exporter les tâches en CSV ou JSON, ou télécharger une **Sauvegarde complète**. Pour une reprise complète des données métier, préférer cette dernière au CSV : elle contient aussi les préférences, le Top 3, « Mes achats » et les **notes et idées** (catégories, idées et lien entre chaque tâche et son idée d’origine). À l’import, l’aperçu indique ce qui sera créé, ignoré (doublons) ou signalé comme invalide ; les préférences du fichier remplacent les préférences courantes.
 
 Pour importer : sélectionner le JSON, lire l’aperçu des créations, réutilisations, doublons et erreurs, puis confirmer l’import. Conserver le fichier d’origine jusqu’à vérification des tâches, projets et historiques.
 
-La sauvegarde actuelle ne contient pas les préférences utilisateur. Relever séparément thème, fuseau et réglages du minuteur lors d’un changement de poste. Un export contient des données personnelles en clair : le conserver à un endroit adapté.
+Depuis le format v2, la sauvegarde complète contient les préférences (thème, fuseau, minuteur, mode d’éditeur des notes) ; l’export CSV ne les contient pas. Un export contient des données personnelles en clair : le conserver à un endroit adapté.
 
 ## 11. Mes achats : comptes, dépenses et revenus
 
@@ -125,21 +125,41 @@ Le module **Mes achats** (menu, ou G puis B) suit votre argent réel. Ses règle
 
 La **Vue d’ensemble** montre le disponible, l’épargne, les revenus reçus et attendus, les dépenses du mois (indispensables et variables), le non dépensé, ce qu’on vous doit et ce que vous devez, les opérations à venir ou en retard et la répartition par catégorie. **Opérations** filtre l’historique par période, type, statut, compte, catégorie, nature, montant et texte.
 
-## 12. Recherche et raccourcis
+## 12. Notes & idées : de l’idée à la tâche
+
+La page **Notes & idées** (menu, ou G puis N) garde vos idées personnelles, professionnelles ou techniques pour les développer à votre rythme, puis les transformer en tâches. Une idée **n’a pas de statut** : ce sont les tâches qui en sont issues qui en ont un. Règles : [cahier des charges § 4.5](cahier-des-charges.md).
+
+1. **Noter une idée** : tapez un titre dans le champ en haut de la page puis **Entrée** (ou **Développer** pour l’ouvrir aussitôt). Depuis n’importe quelle page, la touche **I** (ou la palette : « Noter une idée ») ouvre une saisie rapide : un titre suffit.
+2. **Développer** : cliquez sur une carte pour ouvrir l’éditeur. Titre, catégorie, étiquettes et contenu sont **enregistrés automatiquement** (« Enregistré » s’affiche en haut) ; quitter la page enregistre aussi la saisie en cours. Un titre vide n’est pas enregistré.
+3. **Deux modes d’édition**, au choix avec le bouton **Markdown / Visuel** de l’éditeur (ou dans **Paramètres → Notes & idées**) :
+   - **Markdown** : vous écrivez la syntaxe (`## Titre`, `- liste`, `- [ ] case à cocher`, `**gras**`) ; la barre d’outils l’insère pour vous, **Ctrl+B** / **Ctrl+I** mettent en gras / en italique, **Ctrl+Z** annule. L’onglet **Aperçu** montre le rendu ; on peut y cocher les cases.
+   - **Visuel** : la mise en forme s’affiche directement pendant la saisie.
+
+   Le contenu est le même dans les deux modes : une note écrite dans l’un s’ouvre dans l’autre. Le mode visuel peut réécrire légèrement la syntaxe (par exemple ajouter une ligne vide sous un titre) sans changer le contenu.
+4. **Organiser** : une **catégorie** (créée dans l’écran **Catégories**, avec une couleur), des **étiquettes** séparées par des virgules et l’étoile **Favori**. La liste se filtre par texte (titre et contenu), catégorie, étiquette, et par vue : **Toutes**, **Favorites**, **À transformer** (aucune tâche encore), **Avec tâches** ; elle se trie par date de modification, de création ou par titre.
+5. **Transformer en tâche** : dans l’éditeur, **Créer une tâche** ouvre le formulaire de tâche habituel, prérempli avec le titre et les étiquettes de l’idée ; **Reprendre le contenu de l’idée** copie le texte dans la description. Choisissez le quadrant (urgence et importance), une échéance si besoin, puis **Créer la tâche** : elle rejoint la matrice d’Eisenhower. Recommencez autant de fois que nécessaire : une idée peut donner plusieurs tâches.
+6. **Suivre** : le panneau **Tâches issues de cette idée** liste ces tâches avec leur statut et leur quadrant ; cliquez pour ouvrir leur détail. Depuis le détail d’une tâche, le lien **Issue de l’idée « … »** ramène à l’idée. Dans **Mes tâches**, une pastille **Idée** signale ces tâches.
+7. **Doublon** : si une tâche du même titre est déjà issue de cette idée, le formulaire le signale ; modifiez le titre ou confirmez avec **Créer quand même**.
+8. **Supprimer** : une idée sans tâche se supprime après confirmation. Si des tâches en sont issues, la suppression simple est **bloquée** et un avertissement en explique la raison ; **Supprimer quand même** supprime l’idée définitivement, ses tâches restent dans la matrice sans lien vers elle.
+
+Supprimer une catégorie conserve ses idées, sans catégorie.
+
+## 13. Recherche et raccourcis
 
 | Action                             | Raccourci / accès                                              |
 | ---------------------------------- | -------------------------------------------------------------- |
 | Palette de recherche               | Ctrl + K, ou Cmd + K sur macOS                                 |
 | Nouvelle tâche                     | N, si les raccourcis simples sont activés                      |
 | Saisir une dépense                 | E, si les raccourcis simples sont activés                      |
-| Navigation                         | G puis D/M/T/F/C/S/B/A selon la destination (B : Mes achats)   |
+| Noter une idée (Angular)           | I, si les raccourcis simples sont activés                      |
+| Navigation                         | G puis D/M/T/F/C/S/B/N/A selon la destination (B : Mes achats, N : Notes & idées) |
 | Pause/reprise d’une session active | Espace, hors champ de saisie et selon l’élément qui a le focus |
 | Fermer une fenêtre                 | Échap lorsque le dialogue le permet                            |
 | Aide rapide Angular                | ? ; la palette accepte aussi /                                 |
 
 Les champs de saisie gardent leur usage normal. Les raccourcis simples peuvent être désactivés ; Ctrl/Cmd + K reste un accès privilégié. Consulter la liste affichée dans l’interface plutôt que de supposer que tous les raccourcis optionnels sont identiques dans les deux variantes.
 
-## 13. Messages et dépannage courant
+## 14. Messages et dépannage courant
 
 | Situation                               | Action                                                                                      |
 | --------------------------------------- | ------------------------------------------------------------------------------------------- |

@@ -9,6 +9,7 @@ import { TasksApi } from '../../core/api/tasks.api';
 import { PomodoroEngine } from '../../core/services/pomodoro.engine';
 import { SettingsStore } from '../../core/services/settings.store';
 import { openQuickExpense } from '../../features/finance/quick-expense';
+import { openQuickNote } from '../../features/notes/quick-note';
 import { TaskActions } from '../../features/tasks/services/task-actions.service';
 import { IconComponent } from '../../shared/ui/icon/icon';
 
@@ -66,6 +67,13 @@ export class CommandPaletteComponent {
       icon: 'receipt',
       hint: 'E',
       run: () => void openQuickExpense(this.injector),
+    },
+    {
+      id: 'idea',
+      label: 'Noter une idée',
+      icon: 'lightbulb',
+      hint: 'I',
+      run: () => void openQuickNote(this.injector),
     },
     {
       id: 'focus',

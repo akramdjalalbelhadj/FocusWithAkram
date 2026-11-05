@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -36,4 +37,22 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
 
     @Query("select t from Task t where t.createdAt >= :from and t.createdAt < :to")
     List<Task> findCreatedBetween(@Param("from") Instant from, @Param("to") Instant to);
+
+    // ---- Idee d'origine (module Notes & idees) ------------------------------------------------
+
+    @Query("select t from Task t left join fetch t.project where t.sourceNoteId = :noteId order by t.createdAt, t.id")
+    List<Task> findAllBySourceNoteId(@Param("noteId") UUID noteId);
+
+    long countBySourceNoteId(UUID noteId);
+
+    boolean existsBySourceNoteIdAndTitleIgnoreCase(UUID noteId, String title);
+
+    /** Lignes [idee, nombre de taches, nombre de taches terminees] pour les idees demandees. */
+    @Query("select t.sourceNoteId, count(t), sum(case when t.status = com.focusflow.task.TaskStatus.DONE then 1 else 0 end) "
+            + "from Task t where t.sourceNoteId in :noteIds group by t.sourceNoteId")
+    List<Object[]> progressBySourceNoteIds(@Param("noteIds") Collection<UUID> noteIds);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Task t set t.sourceNoteId = null where t.sourceNoteId = :noteId")
+    int detachFromSourceNote(@Param("noteId") UUID noteId);
 }

@@ -1,0 +1,80 @@
+<div class="note-editor">
+  <div class="note-toolbar" role="toolbar" [attr.aria-label]="'Mise en forme — ' + label()">
+    @if (mode() === 'MARKDOWN') {
+      <div class="note-tabs" role="tablist" aria-label="Affichage">
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="tab() === 'write'"
+          (click)="tab.set('write')"
+        >
+          <ff-icon name="pencil" [size]="14" />Écrire
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="tab() === 'preview'"
+          (click)="tab.set('preview')"
+        >
+          <ff-icon name="eye" [size]="14" />Aperçu
+        </button>
+      </div>
+    }
+    @if (mode() === 'RICH' || tab() === 'write') {
+      <div class="note-tools">
+        @for (item of toolbar; track item.action) {
+          <button
+            type="button"
+            class="note-tool"
+            [attr.aria-label]="item.label"
+            [attr.title]="item.keys ? item.label + ' (' + item.keys + ')' : item.label"
+            [attr.aria-pressed]="mode() === 'RICH' ? isActive(item.action) : null"
+            (mousedown)="$event.preventDefault()"
+            (click)="apply(item.action)"
+          >
+            <ff-icon [name]="item.icon" [size]="16" />
+          </button>
+        }
+      </div>
+    }
+    <div class="note-mode" role="radiogroup" aria-label="Mode d’édition">
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="mode() === 'MARKDOWN'"
+        title="Saisie Markdown avec aperçu"
+        (click)="setMode('MARKDOWN')"
+      >
+        Markdown
+      </button>
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="mode() === 'RICH'"
+        title="Éditeur visuel : la mise en forme s’affiche directement"
+        (click)="setMode('RICH')"
+      >
+        Visuel
+      </button>
+    </div>
+  </div>
+
+  @if (mode() === 'RICH') {
+    <div #richHost class="note-prose"></div>
+  } @else if (tab() === 'write') {
+    <textarea
+      #textarea
+      class="note-textarea"
+      [attr.aria-label]="label()"
+      [value]="value()"
+      (input)="onInput($event)"
+      (keydown)="onKeydown($event)"
+      spellcheck="true"
+      placeholder="Développez votre idée : contexte, pistes, questions…
+## Pistes
+- [ ] Première piste"
+    ></textarea>
+  } @else {
+    <div #previewHost class="note-prose note-prose-preview" role="tabpanel"></div>
+  }
+</div>

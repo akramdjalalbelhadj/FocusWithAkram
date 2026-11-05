@@ -1,0 +1,177 @@
+@if (notFound()) {
+  <div class="card">
+    <ff-empty icon="lightbulb" title="Idée introuvable" hint="Elle a peut-être été supprimée."
+      ><a routerLink="/notes" class="btn btn-secondary btn-sm mt-2">Retour aux notes</a></ff-empty
+    >
+  </div>
+} @else if (loadError()) {
+  <ff-error message="Impossible de charger cette idée." (retry)="retry()" />
+} @else if (!note()) {
+  <ff-skeleton [count]="3" [height]="140" />
+} @else {
+  @let n = note()!;
+  <div class="note-topbar">
+    <a routerLink="/notes" class="btn btn-ghost btn-sm"
+      ><ff-icon name="arrow-left" [size]="16" />Notes &amp; idées</a
+    >
+    <p class="note-save" [attr.data-state]="saveState()" aria-live="polite">
+      @switch (saveState()) {
+        @case ('saved') {
+          <ff-icon name="check" [size]="14" />Enregistré
+        }
+        @case ('pending') {
+          Modifications en attente…
+        }
+        @case ('saving') {
+          Enregistrement…
+        }
+        @case ('error') {
+          <ff-icon name="alert" [size]="14" />Non enregistré : {{ saveError() }}
+          <button type="button" class="underline" (click)="flush()">Réessayer</button>
+        }
+      }
+    </p>
+    <div class="flex gap-1 ml-auto">
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm note-star"
+        [attr.aria-pressed]="n.favorite"
+        (click)="toggleFavorite()"
+      >
+        <ff-icon name="star" [size]="16" [class.icon-filled]="n.favorite" />{{
+          n.favorite ? 'Favorite' : 'Favori'
+        }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-ghost btn-icon btn-sm text-danger"
+        aria-label="Supprimer l’idée"
+        title="Supprimer l’idée"
+        (click)="remove()"
+      >
+        <ff-icon name="trash" [size]="16" />
+      </button>
+    </div>
+  </div>
+
+  <div class="note-layout">
+    <section class="note-main" aria-label="Idée">
+      <label class="sr-only-text" for="note-title">Titre de l’idée</label>
+      <!-- Zone de texte sur plusieurs lignes pour les longs titres ; Entree ne cree pas de retour a la ligne. -->
+      <textarea
+        id="note-title"
+        class="note-title-input"
+        rows="1"
+        maxlength="200"
+        placeholder="Titre de l’idée"
+        [value]="title()"
+        [attr.aria-invalid]="titleInvalid()"
+        (input)="edit('title', $any($event.target).value)"
+        (keydown.enter)="$event.preventDefault()"
+        (blur)="flush()"
+      ></textarea>
+      @if (titleInvalid()) {
+        <p class="field-error" role="alert">
+          Le titre est obligatoire : il ne sera pas enregistré tant qu’il est vide.
+        </p>
+      }
+
+      <div class="note-meta">
+        <div>
+          <div class="flex items-center justify-between">
+            <label class="field-label" for="note-category">Catégorie</label>
+            <a routerLink="/notes/categories" class="text-xs text-muted underline hover:text-fg"
+              >Gérer les catégories</a
+            >
+          </div>
+          <select
+            id="note-category"
+            class="input"
+            [value]="categoryId()"
+            (change)="edit('categoryId', $any($event.target).value)"
+          >
+            <option value="" [selected]="!categoryId()">Sans catégorie</option>
+            @for (c of categories.data() ?? []; track c.id) {
+              <!-- [selected] : les options arrivent apres la note, [value] du select seul ne suffit pas. -->
+              <option [value]="c.id" [selected]="c.id === categoryId()">{{ c.name }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="note-tags">Étiquettes</label>
+          <input
+            id="note-tags"
+            class="input"
+            placeholder="séparées par des virgules : produit, perso"
+            [value]="tagsText()"
+            (input)="edit('tags', $any($event.target).value)"
+            (blur)="flush()"
+          />
+        </div>
+      </div>
+
+      <ff-note-editor
+        label="Contenu de l’idée"
+        [value]="content()"
+        (valueChange)="edit('content', $event)"
+        [mode]="mode()"
+        (modeChange)="setMode($event)"
+      />
+      <p class="text-xs text-muted mt-2">
+        Créée le {{ settings.fmt(n.createdAt) }} · modifiée le {{ settings.fmt(n.updatedAt) }}
+      </p>
+    </section>
+
+    <aside class="card note-side" aria-labelledby="note-tasks-title">
+      <h2 id="note-tasks-title" class="font-bold flex items-center gap-2">
+        <ff-icon name="grid" [size]="18" />Tâches issues de cette idée
+      </h2>
+      @if (tasks().length) {
+        <p class="text-sm text-muted">
+          {{ tasks().length }} tâche{{ tasks().length > 1 ? 's' : '' }} ·
+          {{ doneTasks().length }} terminée{{ doneTasks().length > 1 ? 's' : '' }}
+        </p>
+      } @else {
+        <p class="text-sm text-muted">
+          Quand l’idée est assez précise, transformez-la en une ou plusieurs tâches : elles
+          rejoignent la matrice d’Eisenhower et l’idée reste ici.
+        </p>
+      }
+      <button type="button" class="btn btn-primary w-full" (click)="createTask()">
+        <ff-icon name="plus" />Créer une tâche
+      </button>
+      @if (tasks().length) {
+        <ul class="note-tasks">
+          @for (t of tasks(); track t.id) {
+            <li>
+              <button
+                type="button"
+                class="note-task"
+                [class.note-task-done]="t.status === 'DONE'"
+                (click)="taskActions.openDetail(t.id)"
+              >
+                <span class="note-task-title">{{ t.title }}</span>
+                <span class="flex flex-wrap items-center gap-1.5">
+                  <ff-status-badge [status]="t.status" />
+                  <ff-quadrant-badge [q]="t.quadrant" [compact]="true" />
+                  @if (t.overdue) {
+                    <span class="badge badge-danger">En retard</span>
+                  }
+                </span>
+                @if (t.archivedAt) {
+                  <span class="text-xs text-muted"
+                    >Terminée le {{ settings.fmt(t.actualEndAt) }}</span
+                  >
+                } @else if (t.plannedEndAt) {
+                  <span class="text-xs text-muted"
+                    >Échéance : {{ settings.fmt(t.plannedEndAt) }}</span
+                  >
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </aside>
+  </div>
+}

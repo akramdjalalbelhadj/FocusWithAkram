@@ -91,6 +91,13 @@ public class Task {
     @Column(name = "execution_number", nullable = false)
     private int executionNumber = 1;
 
+    /**
+     * Idee (module Notes & idees) dont la tache est issue. Simple identifiant : le domaine des taches ne depend
+     * pas de celui des notes ; la base detache la tache si l'idee est supprimee.
+     */
+    @Column(name = "source_note_id")
+    private UUID sourceNoteId;
+
     @ManyToMany
     @JoinTable(name = "task_tag", joinColumns = @JoinColumn(name = "task_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     @BatchSize(size = 50)
@@ -347,6 +354,8 @@ public class Task {
     public Instant getActualEndAt() { return actualEndAt; }
     public Instant getArchivedAt() { return archivedAt; }
     public int getExecutionNumber() { return executionNumber; }
+    public UUID getSourceNoteId() { return sourceNoteId; }
+    public void setSourceNoteId(UUID sourceNoteId) { this.sourceNoteId = sourceNoteId; }
     public Set<Tag> getTags() { return tags; }
     public List<Subtask> getSubtasks() { return subtasks; }
     public long getVersion() { return version; }

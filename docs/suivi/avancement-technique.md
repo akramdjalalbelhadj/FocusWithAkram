@@ -1,6 +1,6 @@
 # FocusWithAkram — avancement technique
 
-Relevé des sources du **1 novembre 2026**, branche `main`. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends**.
+Relevé des sources du **3 novembre 2026**, branche `main`. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends**.
 
 ## 1. Architecture d’ensemble
 
@@ -23,7 +23,7 @@ Le backend est un monolithe modulaire. Les deux interfaces partagent les contrat
 | Partie    | Manifest / sources                               | Versions déclarées                                                                              |
 | --------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | Backend   | [pom.xml](../../backend/pom.xml)                    | Java 25, Spring Boot 4.1.2, springdoc 3.2.0, PostgreSQL, Flyway, JPA, Bean Validation           |
-| Angular   | [package.json](../../frontend-angular/package.json) | Angular 22.2.x, TypeScript 6.0.2, RxJS 7.8, Tailwind 4.3, ECharts 6.1, Lucide                   |
+| Angular   | [package.json](../../frontend-angular/package.json) | Angular 22.2.x, TypeScript 6.0.2, RxJS 7.8, Tailwind 4.3, ECharts 6.1, Lucide, Tiptap 3.32.0 (éditeur des notes, chargé à la demande) |
 | React     | [package.json](../../frontend-react/package.json)   | React 19.3.1, React Router 7.18, TanStack Query 5.105, Vite 8.3, TypeScript 6.0.2, Tailwind 4.3 |
 | Tests web | Manifest React                                   | Playwright 1.64, axe 4.14, Vitest 5, ESLint 10                                                  |
 | Identité  | [tokens](../../shared/design-tokens.css)            | Inter Variable locale ; thèmes via attribut `data-theme` et préférence système                  |
@@ -100,6 +100,8 @@ Préfixe commun `/api/v1` ; documentation interactive `/swagger-ui.html`, docume
 
 ### 3.5 État de validation backend
 
+Relevé du 3 novembre 2026 (lot 11, Notes & idées) : **166 tests, 0 échec** (`mvn test`), dont `NoteIT` (10 scénarios : saisie et organisation, modification partielle, plusieurs tâches dans leurs quadrants, doublon, règles des tâches, suppression bloquée puis forcée, catégories, préférence d’éditeur, aller-retour de sauvegarde v4, import v3), `NoteMapperTest` (2) et la règle ArchUnit « les tâches ne dépendent pas des notes ».
+
 Relevé du 1 novembre 2026 (refonte v2, lot 1) : **88 tests, 0 échec** (`mvn test`) : unitaires, intégration sur PostgreSQL embarqué jetable, contrat (`ApiContractIT`), architecture (`ControllerArchitectureTest`, `ModuleArchitectureTest` ArchUnit) et import/export (11 scénarios, dont la régression de l'import interrompu). Les preuves antérieures à la refonte sont dans [l’inventaire historique](../historique/2026-11-refonte-frontends/test-results/documentation-audit.json).
 
 Les sorties Maven autrefois suivies ont été retirées du suivi Git ; `target/` est ignoré. Les fichiers de données ne doivent pas être placés dans un dossier que `mvn clean` peut supprimer, sauf base jetable de test assumée.
@@ -123,7 +125,7 @@ app/
   shared/ui/                  composants regroupés par sous-dossier
 ```
 
-Composants standalone, `OnPush`, signaux, application sans zone.js et HttpClient/RxJS. `SettingsStore` et `PomodoroEngine` coordonnent les préférences et la session ; `RefreshService` provoque les relectures après mutation, et `Loader` annule la requête précédente. La navigation est déclarée une seule fois (`config/navigation.ts`). Tests unitaires (Vitest) : 22 au 1 novembre 2026 (dates, minuteur, chargement, recherche différée, erreurs, navigation) ; lint ESLint autonome. Les pages sont chargées depuis les routes ; ECharts est configuré dans les composants partagés.
+Composants standalone, `OnPush`, signaux, application sans zone.js et HttpClient/RxJS. `SettingsStore` et `PomodoroEngine` coordonnent les préférences et la session ; `RefreshService` provoque les relectures après mutation, et `Loader` annule la requête précédente. La navigation est déclarée une seule fois (`config/navigation.ts`). Tests unitaires (Vitest) : 43 au 3 novembre 2026 (dates, minuteur, chargement, recherche différée, erreurs, navigation, montants, alertes, Markdown des notes) ; lint ESLint autonome. Les pages sont chargées depuis les routes ; ECharts est configuré dans les composants partagés.
 
 30 templates ont été externalisés. Le lint interdit les propriétés de métadonnées Angular `template` et `styles` inline. La matrice a des classes sémantiques et une feuille locale ; d’autres templates gardent encore des classes Tailwind. L’externalisation des templates ne signifie donc pas que cette conversion CSS est complète.
 
@@ -158,6 +160,8 @@ Le panneau Pomodoro a un brouillon contrôlé pour préserver les modifications 
 | Chemin                     | Usage                                            |
 | -------------------------- | ------------------------------------------------ |
 | `shared/models.ts`         | DTO et enums TypeScript cohérents avec l’API     |
+| `shared/finance.ts`        | Contrats du module « Mes achats »                |
+| `shared/notes.ts`          | Contrats du module Notes & idées                 |
 | `shared/time.ts`           | Dates, jours locaux et conversions d’horodatages |
 | `shared/timer.ts`          | Calculs du temps restant                         |
 | `shared/design-tokens.css` | Couleurs sémantiques, thèmes, ombres, rayons     |
@@ -176,6 +180,8 @@ Ne pas importer un composant Angular dans React ni réciproquement. Ne pas dupli
 | CSS encore mixte en Angular         | Conversion des utilitaires à poursuivre ; styles globaux hérités à déplacer progressivement sans casser les composants enfants. |
 | État applicatif React central       | Coordination de plusieurs responsabilités ; extraire progressivement avec tests de comportement.                                |
 | Docker non validé                   | Contexte de build corrigé (racine du dépôt, `.dockerignore`) ; construction réelle et healthchecks restent à essayer.           |
+| Notes : Markdown comme format unique | Les deux modes d’éditeur, la recherche, la sauvegarde et un futur portage lisent le même texte ; le mode visuel (Tiptap) peut normaliser la syntaxe. Le rendu passe par le schéma ProseMirror : aucun HTML saisi n’est injecté tel quel. |
+| Notes : lien tâche → idée par identifiant | Pas de dépendance Java de `task` vers `note` (ArchUnit) ; la base détache les tâches si l’idée est supprimée. |
 | Avertissements de bibliothèques     | Dépréciations Spring/JDK et configuration de tests à examiner lors d’une mise à niveau dédiée.                                  |
 
 ## 8. Validation et points d’extension

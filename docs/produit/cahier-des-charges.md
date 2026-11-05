@@ -1,16 +1,17 @@
 # FocusWithAkram — cahier des charges
 
-Version documentaire du **1 novembre 2026**. État de livraison : [avancement fonctionnel](../suivi/avancement-fonctionnel.md). Critères de recette : [checklist](../suivi/checklist.md). Référence visuelle : [design](../technique/design.md).
+Version documentaire du **3 novembre 2026**. État de livraison : [avancement fonctionnel](../suivi/avancement-fonctionnel.md). Critères de recette : [checklist](../suivi/checklist.md). Référence visuelle : [design](../technique/design.md).
 
 ## 1. Contexte et vision
 
-FocusWithAkram est une application web de productivité personnelle. Elle relie la priorisation d’Eisenhower, les tâches et le travail chronométré par Pomodoro. L’utilisateur doit pouvoir décider quoi faire, commencer une session, conserver un historique fiable et comparer son planning au travail réalisé.
+FocusWithAkram est une application web de productivité personnelle. Elle relie la priorisation d’Eisenhower, les tâches et le travail chronométré par Pomodoro. L’utilisateur doit pouvoir décider quoi faire, commencer une session, conserver un historique fiable et comparer son planning au travail réalisé. En amont des tâches, l’espace **Notes & Brainstorming** recueille les idées : **idée → réflexion → tâches réalisables** dans la matrice.
 
 Le produit est actuellement **mono-utilisateur et local**. Angular et React sont deux interfaces du même produit ; elles utilisent la même API Spring Boot et les mêmes données PostgreSQL. Elles ne sont pas deux espaces personnels indépendants.
 
 ## 2. Objectifs et utilisateurs
 
 - Organiser les tâches par importance et urgence, sans stocker deux représentations contradictoires du quadrant.
+- Ne perdre aucune idée : la noter en quelques secondes, la développer plus tard, puis la transformer en une ou plusieurs tâches au moment choisi.
 - Réduire les changements de contexte : démarrer le travail depuis une tâche et configurer le minuteur dans Focus.
 - Distinguer le temps planifié, le temps réel écoulé et le temps actif mesuré.
 - Préserver l’historique lors d’une restauration de tâche.
@@ -23,7 +24,7 @@ La cible est une personne gérant ses propres activités : études, projets pers
 
 | ID       | Exigence                            | Critère d’acceptation principal                                                                                                |
 | -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| FWA-F001 | Navigation entre les neuf pages     | Chaque destination possède une URL et un titre ; le retour navigateur fonctionne.                                              |
+| FWA-F001 | Navigation entre les pages          | Chaque destination possède une URL et un titre ; le retour navigateur fonctionne. Angular : onze destinations (dont « Mes achats » et « Notes & idées ») ; React : neuf. |
 | FWA-F002 | Création et modification des tâches | Titre obligatoire ; projet, estimation, notes, dates et étiquettes sont enregistrés sans perte des champs non modifiés.        |
 | FWA-F003 | Sous-tâches et étiquettes           | Ajouter et cocher des sous-tâches ; filtrer les tâches par étiquette ; respecter les limites du contrat.                       |
 | FWA-F004 | Matrice d’Eisenhower                | Quatre quadrants ; déplacement persistant ; alternative clavier au glisser-déposer.                                            |
@@ -46,6 +47,10 @@ La cible est une personne gérant ses propres activités : études, projets pers
 | FWA-F021 | Mes achats — achats prévus          | Objectifs d’achat, matrice dédiée, prévision de trésorerie et faisabilité (spécification § 6 à § 8). |
 | FWA-F022 | Mes achats — prêts                  | Prêts accordés et emprunts, remboursements partiels et régularisation (spécification § 4.8). |
 | FWA-F023 | Mes achats — analyses et alertes    | Tableau de bord financier, statistiques, alertes et simulations (spécification § 10 et § 12). |
+| FWA-F024 | Notes & idées — espace d’idées      | Page dédiée : saisie rapide (titre seul), consultation, modification enregistrée automatiquement, suppression confirmée, recherche titre/contenu, filtres (catégorie, étiquette, favoris, avec/sans tâche) et tris ; données conservées après rechargement. Règles : § 4.5. |
+| FWA-F025 | Notes & idées — catégories          | Écran dédié : créer, renommer, colorer et supprimer une catégorie (nom unique) ; la suppression conserve les notes, sans catégorie. |
+| FWA-F026 | Notes & idées — éditeur             | Deux modes au choix, **Markdown avec aperçu** et **éditeur visuel**, sur le même contenu : titres, paragraphes, listes, cases à cocher. Mode par défaut dans les Paramètres, bascule depuis l’éditeur. |
+| FWA-F027 | Idée → tâches                       | Depuis une note, créer une ou plusieurs tâches avec le formulaire de tâche existant (titre, description, quadrant, échéance…) ; chaque tâche rejoint son quadrant et garde le lien vers l’idée ; doublon signalé avant création ; note conservée. |
 
 ## 4. Règles métier
 
@@ -88,6 +93,20 @@ Les démarrages automatiques, le son et les notifications sont facultatifs. Les 
 
 Un projet actif porte un nom non vide de 120 caractères maximum, unique parmi les projets actifs. Supprimer un projet conserve ses tâches et supprime leur rattachement. Une sauvegarde complète contient les projets, tâches, sous-tâches, cycles d’exécution et sessions ; elle n’inclut pas les préférences utilisateur dans son format actuel. Le rapport d’import distingue créations, réutilisations, doublons et erreurs.
 
+### 4.5 Notes et idées
+
+Décisions validées par le propriétaire le 3 novembre 2026.
+
+- **Une idée n’a pas de statut.** Seules les tâches qui en sont issues ont un statut (`TODO`, `IN_PROGRESS`, `DONE`) ; la note affiche ces tâches et leur avancement (« 2 tâches · 1 terminée »), calculé à la lecture, jamais stocké.
+- **Contenu d’une note** : titre obligatoire (200 caractères, une ligne), contenu facultatif en Markdown (100 000 caractères), une catégorie facultative, au plus 10 étiquettes de 40 caractères (doublons sans casse fusionnés), favori. Création et dernière modification sont horodatées par le serveur ; mettre en favori ne compte pas comme une modification. L’enregistrement est automatique ; un titre vide n’est pas enregistré.
+- **Éditeur** : le contenu est toujours stocké en Markdown ; le mode Markdown (saisie avec barre d’outils et aperçu) et le mode visuel lisent et écrivent ce même texte. Une note écrite dans un mode s’ouvre dans l’autre. Le mode visuel peut normaliser l’écriture Markdown (par exemple `*` devient `-`) sans changer le contenu.
+- **Catégories** : gérées dans un écran dédié ; nom obligatoire (60 caractères), unique sans tenir compte de la casse ; couleur. Supprimer une catégorie conserve ses notes, sans catégorie.
+- **Transformation en tâche** : le formulaire de tâche existant est réutilisé, prérempli avec le titre et les étiquettes de l’idée ; la description peut reprendre le contenu de la note. La tâche suit les règles habituelles (quadrant dérivé de importance × urgence, Q2 par défaut, dates prévues cohérentes) et apparaît dans la matrice. La note n’est ni supprimée ni modifiée.
+- **Plusieurs tâches par idée** ; une tâche provient d’au plus une idée. Le lien est conservé lorsque la tâche est terminée, archivée, restaurée ou dupliquée ; il disparaît si la tâche est supprimée.
+- **Doublon** : créer, depuis la même idée, une tâche dont le titre (sans tenir compte de la casse) est déjà celui d’une tâche issue de cette idée demande une confirmation explicite. Un double envoi du formulaire ne crée pas deux tâches.
+- **Suppression d’une idée** : refusée tant que des tâches en sont issues, avec un avertissement qui en donne la raison et le nombre de tâches. Une **suppression forcée** explicite reste possible : la note est supprimée, ses tâches sont **conservées** dans la matrice et perdent seulement le lien.
+- **Sauvegarde** : catégories, notes, lien tâche → idée et mode d’éditeur font partie de la sauvegarde complète (format v4) ; les formats v1 à v3 restent importables.
+
 ## 5. Exigences non fonctionnelles
 
 | ID       | Exigence                       | Situation et contrôle                                                                                                                    |
@@ -123,8 +142,12 @@ Les mesures de volume disponibles utilisent 120 tâches supplémentaires de rece
 | Reprendre une activité | Restaurer → nouveau cycle → nouveau travail                | Historique ancien conservé et distinct du cycle courant.                                                     |
 | Régler le minuteur     | Focus → Configurer → modifier → vérifier l’enregistrement  | Permission refusée : notifications désactivées ; durée hors bornes : correction requise.                     |
 | Restaurer un fichier   | Sélectionner JSON → aperçu → confirmer                     | JSON invalide : message ; doublons : rapport ; ne pas annoncer une restauration intégrale des réglages.      |
+| Capturer une idée      | Notes & idées → saisir un titre → Entrée (ou raccourci I)  | Titre vide : refusé ; la note est développée plus tard dans l’éditeur.                                      |
+| Concrétiser une idée   | Ouvrir la note → Créer une tâche → choisir quadrant et échéance → confirmer, autant de fois que nécessaire | Titre déjà utilisé pour cette idée : confirmation ; suppression d’une idée avec tâches : refus expliqué ou suppression forcée. |
 
 ## 7. Contraintes et hors périmètre
+
+Notes & idées : pas de pièces jointes, d’historique des versions d’une note, de partage ni de rattachement d’une note à un projet ; pas d’interface React tant que la phase v2 n’est pas reportée ; l’application Krimou n’importe pas encore le format v4.
 
 Pas de comptes multiples, authentification, collaboration, délégation à une autre personne, tâches récurrentes, synchronisation cloud ou fonctionnement complet hors ligne. Aucun déploiement Internet sécurisé n’est livré. Le son et les notifications ne sont pas garantis lorsque le navigateur est fermé ou fortement suspendu.
 
@@ -139,6 +162,7 @@ Docker est fourni pour une composition locale Angular + API + PostgreSQL ; React
 | C     | Organisation des pages/composants et du backend                   | Implémenté ; contrôles d’architecture disponibles |
 | D     | Réglages Pomodoro regroupés dans Focus                            | Implémenté ; E2E ciblés disponibles               |
 | E     | Dossier documentaire et exploitation                              | Présente révision                                 |
+| F     | Notes & Brainstorming (API et Angular)                            | Implémenté le 3 novembre 2026 ; tests backend et recette navigateur (lot 11 de la [refonte v2](../suivi/refonte-v2.md)) ; React et Krimou à adapter |
 | Suite | Harmonisation CSS, recette humaine, Docker et restauration réelle | À planifier / à vérifier                          |
 
 Une exigence est clôturée après contrôle du code, résultat de test ou recette identifié, mise à jour documentaire et absence de blocage critique sur son parcours. Un état « partiel » reste visible dans la checklist.

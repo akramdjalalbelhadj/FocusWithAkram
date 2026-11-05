@@ -55,8 +55,15 @@ class ModuleArchitectureTest {
             .that().resideInAPackage("com.focusflow.finance..")
             .should().dependOnClassesThat().resideInAnyPackage("com.focusflow.task..", "com.focusflow.pomodoro..",
                     "com.focusflow.project..", "com.focusflow.dashboard..", "com.focusflow.eisenhower..",
-                    "com.focusflow.statistics..", "com.focusflow.search..", "com.focusflow.transfer..")
+                    "com.focusflow.statistics..", "com.focusflow.search..", "com.focusflow.transfer..",
+                    "com.focusflow.note..")
             .because("le module financier ne depend que de common, config et des preferences");
+
+    @ArchTest
+    static final ArchRule tasksDoNotKnowTheNotesModule = noClasses()
+            .that().resideInAnyPackage(TASK, POMODORO, "com.focusflow.project..", "com.focusflow.eisenhower..")
+            .should().dependOnClassesThat().resideInAPackage("com.focusflow.note..")
+            .because("une tache ne connait son idee d'origine que par son identifiant (sourceNoteId)");
 
     @ArchTest
     static final ArchRule moneyIsNeverAFloatingPointNumber = noFields()

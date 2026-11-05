@@ -3,7 +3,7 @@ import { Overlay } from '@angular/cdk/overlay';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { Quadrant, Task, TaskStatus } from '../../../core/api/models';
+import { QUADRANT_META, Quadrant, Task, TaskStatus } from '../../../core/api/models';
 import { TasksApi } from '../../../core/api/tasks.api';
 import { PomodoroEngine } from '../../../core/services/pomodoro.engine';
 import { RefreshService } from '../../../core/services/refresh.service';
@@ -37,7 +37,13 @@ export class TaskActions {
       }).closed,
     );
     if (saved) {
-      this.toast.success(data.task ? 'Tâche mise à jour.' : 'Tâche créée.');
+      this.toast.success(
+        data.task
+          ? 'Tâche mise à jour.'
+          : data.fromNote
+            ? `Tâche créée dans la matrice : ${saved.quadrant} · ${QUADRANT_META[saved.quadrant].label}.`
+            : 'Tâche créée.',
+      );
       this.refresh.bump();
     }
     return saved;

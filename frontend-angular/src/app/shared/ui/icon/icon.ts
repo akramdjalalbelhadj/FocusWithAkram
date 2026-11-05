@@ -84,6 +84,19 @@ import {
   TrendingUp,
   Utensils,
   Wallet,
+  ArrowLeft,
+  Bold,
+  Code,
+  Eye,
+  FileText,
+  Heading2,
+  Italic,
+  Lightbulb,
+  List,
+  ListOrdered,
+  Quote,
+  SquareCheck,
+  Star,
 } from 'lucide';
 
 const ICONS: Record<string, IconNode> = {
@@ -170,6 +183,20 @@ const ICONS: Record<string, IconNode> = {
   'credit-card': CreditCard,
   scale: Scale,
   'hand-coins': HandCoins,
+  // Module Notes & idees
+  lightbulb: Lightbulb,
+  star: Star,
+  'arrow-left': ArrowLeft,
+  'file-text': FileText,
+  eye: Eye,
+  bold: Bold,
+  italic: Italic,
+  heading: Heading2,
+  'list-bullet': List,
+  'list-ordered': ListOrdered,
+  'square-check': SquareCheck,
+  quote: Quote,
+  code: Code,
 };
 
 /** Icone Lucide inline. Le balisage provient de donnees statiques de la bibliotheque, jamais de l'utilisateur. */

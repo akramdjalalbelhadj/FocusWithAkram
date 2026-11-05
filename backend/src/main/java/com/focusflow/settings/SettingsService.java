@@ -73,6 +73,13 @@ public class SettingsService {
             }
             s.setTheme(t);
         }
+        if (p.has("noteEditorMode")) {
+            String m = String.valueOf(p.string("noteEditorMode"));
+            if (!m.equals("MARKDOWN") && !m.equals("RICH")) {
+                throw new IllegalArgumentException("Mode d'editeur des notes invalide : " + m);
+            }
+            s.setNoteEditorMode(m);
+        }
         if (p.has("soundName")) {
             String n = String.valueOf(p.string("soundName"));
             if (!SOUNDS.contains(n)) {

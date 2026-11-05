@@ -9,5 +9,5 @@ public record TaskData(UUID id, String title, String description, String notes, 
                        boolean urgent, int position, Integer estimatedMinutes, UUID projectId, List<String> tags,
                        List<SubtaskData> subtasks, Instant createdAt, Instant updatedAt, Instant plannedStartAt,
                        Instant plannedEndAt, Instant actualStartAt, Instant actualEndAt, Instant archivedAt,
-                       int executionNumber, List<ExecutionData> executions) {
+                       int executionNumber, List<ExecutionData> executions, UUID sourceNoteId) {
 }

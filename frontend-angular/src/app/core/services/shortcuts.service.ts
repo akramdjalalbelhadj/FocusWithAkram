@@ -2,6 +2,7 @@ import { Injectable, Injector, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { NAV } from '../../config/navigation';
 import { openQuickExpense } from '../../features/finance/quick-expense';
+import { openQuickNote } from '../../features/notes/quick-note';
 import { TaskActions } from '../../features/tasks/services/task-actions.service';
 import { PomodoroEngine } from './pomodoro.engine';
 import { SettingsStore } from './settings.store';
@@ -10,6 +11,7 @@ export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['Ctrl/⌘', 'K'], label: 'Ouvrir la palette de commandes' },
   { keys: ['N'], label: 'Créer une nouvelle tâche' },
   { keys: ['E'], label: 'Saisir une dépense' },
+  { keys: ['I'], label: 'Noter une idée' },
   { keys: ['/'], label: 'Rechercher' },
   { keys: ['Espace'], label: 'Démarrer / mettre en pause le Pomodoro' },
   ...NAV.flatMap((n) =>
@@ -81,6 +83,9 @@ export class ShortcutsService {
     } else if (key === 'e') {
       e.preventDefault();
       void openQuickExpense(this.injector);
+    } else if (key === 'i') {
+      e.preventDefault();
+      void openQuickNote(this.injector);
     } else if (key === '/') {
       e.preventDefault();
       this.openPalette?.();

@@ -1,4 +1,5 @@
 import type { FinanceImportSummary } from "./finance";
+import type { NoteEditorMode, NotesImportSummary } from "./notes";
 
 /** Types alignes sur les DTO de l'API REST (voir backend, /swagger-ui.html). Les instants sont des chaines ISO-8601 UTC. */
 
@@ -58,6 +59,8 @@ export interface Task {
   timeSpentSeconds: number;
   timing: TaskTiming;
   version: number;
+  /** Idee (module Notes & idees) dont la tache est issue ; absent ou null sinon. */
+  sourceNoteId?: string | null;
 }
 
 export interface Page<T> {
@@ -258,6 +261,8 @@ export interface Settings {
   subtasksCompleteParent: boolean;
   shortcutsEnabled: boolean;
   compactMode: boolean;
+  /** Mode par defaut de l'editeur des notes (facultatif : les interfaces sans module de notes l'ignorent). */
+  noteEditorMode?: NoteEditorMode;
 }
 
 // ---- Dashboard / statistiques ---------------------------------------------
@@ -367,6 +372,8 @@ export interface ImportReport {
   dailyGoalsSkipped: number;
   /** Sauvegarde v3 : section « Mes achats » (absente si le fichier n'en contient pas). */
   finance: FinanceImportSummary | null;
+  /** Sauvegarde v4 : section Notes & idees (absente si le fichier n'en contient pas). */
+  notes?: NotesImportSummary | null;
 }
 
 /** Erreur API normalisee (ProblemDetail RFC 9457). */

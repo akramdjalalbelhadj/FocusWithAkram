@@ -1,0 +1,58 @@
+<form
+  class="card w-[min(32rem,calc(100vw-1.5rem))] p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit(false)"
+  role="dialog"
+  aria-labelledby="qn-title"
+>
+  <h2 id="qn-title" class="text-lg font-bold flex items-center gap-2 mb-4">
+    <span class="grid place-items-center size-8 rounded-lg bg-brand-soft text-brand"
+      ><ff-icon name="lightbulb" [size]="18"
+    /></span>
+    Noter une idée
+  </h2>
+  <div class="space-y-4">
+    <div>
+      <label class="field-label" for="qn-title-input"
+        >Titre <span class="text-danger" aria-hidden="true">*</span></label
+      >
+      <input
+        id="qn-title-input"
+        class="input"
+        formControlName="title"
+        maxlength="200"
+        placeholder="L’idée en quelques mots"
+        cdkFocusInitial
+        [attr.aria-invalid]="form.controls.title.invalid && form.controls.title.touched"
+      />
+      @if (form.controls.title.touched && form.controls.title.invalid) {
+        <p class="field-error">Le titre est obligatoire.</p>
+      }
+    </div>
+    <div>
+      <label class="field-label" for="qn-content"
+        >Détails <span class="text-muted">(facultatif)</span></label
+      >
+      <textarea
+        id="qn-content"
+        class="input"
+        rows="4"
+        formControlName="content"
+        placeholder="De quoi vous souvenir pour la développer plus tard"
+      ></textarea>
+      <p class="field-hint">
+        Vous pourrez l’enrichir, la classer et la transformer en tâches ensuite.
+      </p>
+    </div>
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex flex-wrap justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="submit(true)">
+      Enregistrer et développer
+    </button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">Enregistrer</button>
+  </div>
+</form>

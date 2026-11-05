@@ -1,12 +1,12 @@
 # FocusWithAkram — avancement fonctionnel
 
-Relevé du **1 novembre 2026**. Cible : [cahier des charges](../produit/cahier-des-charges.md). Contrôles : [checklist](checklist.md). « Livré » signifie présent dans le code et relié à l’API ; cela ne couvre pas automatiquement tous les appareils et tous les scénarios.
+Relevé du **3 novembre 2026**. Cible : [cahier des charges](../produit/cahier-des-charges.md). Contrôles : [checklist](checklist.md). « Livré » signifie présent dans le code et relié à l’API ; cela ne couvre pas automatiquement tous les appareils et tous les scénarios.
 
 ## 1. État des fonctionnalités
 
 | Exigence                          | Backend                | Angular                    | React                          | Preuves / réserve                                                                            |
 | --------------------------------- | ---------------------- | -------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------- |
-| FWA-F001 Navigation               | Routes API disponibles | 9 pages                    | 9 pages                        | 36 contrôles route/viewport lors de l’organisation ; test navigateur commun.                 |
+| FWA-F001 Navigation               | Routes API disponibles | 11 pages                   | 9 pages                        | 36 contrôles route/viewport lors de l’organisation ; test navigateur commun.                 |
 | FWA-F002 Tâches                   | Livré                  | Livré                      | Livré                          | Cycle de vie et formulaires couverts par tests métier et E2E.                                |
 | FWA-F003 Sous-tâches / tags       | Livré                  | Livré                      | Livré                          | Sous-tâche persistée dans le scénario de formulaire ; couverture non exhaustive des limites. |
 | FWA-F004 Matrice                  | Livré                  | Livré                      | Livré                          | Déplacement clavier et ordre persistés ; grille mobile à quadrant sélectionné.               |
@@ -29,9 +29,14 @@ Relevé du **1 novembre 2026**. Cible : [cahier des charges](../produit/cahier-d
 | FWA-F021 Mes achats — achats prévus | Livré                | Livré                      | Non commencé                   | Moteur testé sur 12 scénarios chiffrés ; 6 tests d'intégration ; recette navigateur. |
 | FWA-F022 Mes achats — prêts       | Livré                  | Livré                      | Non commencé                   | 7 tests d'intégration ; recette navigateur. |
 | FWA-F023 Mes achats — analyses    | Livré                  | Livré                      | Non commencé                   | Alertes, statistiques, simulations, calendrier : 5 tests d'intégration, 4 tests unitaires ; recette navigateur. |
+| FWA-F024 Notes & idées — espace   | Livré                  | Livré                      | Non commencé                   | Saisie rapide (champ, touche I, palette), enregistrement automatique, recherche titre/contenu, filtres, tris, favoris ; `NoteIT` ; recette navigateur clair/sombre et 390 px. |
+| FWA-F025 Notes & idées — catégories | Livré                | Livré                      | Non commencé                   | Écran dédié, nom unique sans casse, suppression qui conserve les idées ; tests d'intégration et recette. |
+| FWA-F026 Notes & idées — éditeur  | Préférence livrée      | Livré (Markdown + visuel)  | Non commencé                   | Contenu Markdown unique ; barre d'outils, Ctrl+B/I/Z, aperçu avec cases cochables ; mode visuel Tiptap ; préférence enregistrée. 8 tests unitaires ; recette navigateur. |
+| FWA-F027 Idée → tâches            | Livré                  | Livré                      | Non commencé                   | Formulaire de tâche réutilisé, quadrant et échéance, plusieurs tâches, lien conservé (restauration, duplication), doublon confirmé, suppression bloquée ou forcée ; `NoteIT` (10 scénarios) ; recette navigateur. |
 
 ## 2. Modifications fonctionnelles récentes
 
+- **Notes & idées** (3 novembre 2026) : idées sans statut, catégories gérées, éditeur Markdown ou visuel, transformation en une ou plusieurs tâches de la matrice avec lien conservé ; sauvegarde v4. Angular seulement.
 - Le minuteur se configure dans **Focus / Pomodoro → Configurer** : travail, pauses, fréquence de pause longue, objectif quotidien, options automatiques, son et notifications.
 - Les paramètres généraux conservent l’apparence, la région, les préférences de tâches, les raccourcis et les transferts de données.
 - Les saisies non enregistrées du panneau Pomodoro React sont conservées lors d’une actualisation des préférences.

@@ -6,9 +6,18 @@
   aria-labelledby="tf-title"
 >
   <header class="flex items-center justify-between px-6 pt-5 pb-3">
-    <h2 id="tf-title" class="text-lg font-bold">
-      {{ editing ? 'Modifier la tâche' : 'Nouvelle tâche' }}
-    </h2>
+    <div class="min-w-0">
+      <h2 id="tf-title" class="text-lg font-bold">
+        {{ editing ? 'Modifier la tâche' : fromNote ? 'Nouvelle tâche depuis une idée' : 'Nouvelle tâche' }}
+      </h2>
+      @if (fromNote) {
+        <p class="text-sm text-muted flex items-center gap-1.5 mt-0.5 min-w-0">
+          <ff-icon name="lightbulb" [size]="14" class="text-brand" /><span class="truncate"
+            >Idée : {{ fromNote.title }}</span
+          >
+        </p>
+      }
+    </div>
     <button
       type="button"
       class="btn btn-ghost btn-icon btn-sm"
@@ -42,7 +51,14 @@
     </div>
 
     <div>
-      <label class="field-label" for="tf-desc">Description</label>
+      <div class="flex items-center justify-between gap-2">
+        <label class="field-label" for="tf-desc">Description</label>
+        @if (fromNote?.content) {
+          <button type="button" class="btn btn-ghost btn-sm -mt-1" (click)="useNoteContent()">
+            <ff-icon name="file-text" [size]="14" />Reprendre le contenu de l’idée
+          </button>
+        }
+      </div>
       <textarea
         id="tf-desc"
         class="input"
@@ -156,6 +172,26 @@
       <textarea id="tf-notes" class="input" formControlName="notes" rows="2"></textarea>
     </div>
 
+    @if (duplicate()) {
+      <div
+        id="tf-duplicate"
+        class="rounded-xl border border-[var(--q3-line)] bg-warning-soft p-3 text-sm"
+        role="alert"
+      >
+        <p class="font-semibold flex items-center gap-2">
+          <ff-icon name="alert" [size]="16" />Tâche déjà créée depuis cette idée
+        </p>
+        <p class="mt-1">{{ duplicate() }} Modifiez le titre, ou confirmez pour créer une seconde tâche.</p>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm mt-2"
+          [disabled]="saving()"
+          (click)="submit(true)"
+        >
+          Créer quand même
+        </button>
+      </div>
+    }
     @if (error()) {
       <p class="field-error" role="alert">{{ error() }}</p>
     }

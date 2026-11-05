@@ -10,6 +10,8 @@ import com.focusflow.task.dto.TaskResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,8 +77,19 @@ public class TaskService {
 
     @Transactional
     public TaskResponse create(CreateTaskRequest req) {
+        return create(req, null);
+    }
+
+    /**
+     * Cree une tache selon les regles habituelles (quadrant Q2 par defaut, dates prevues coherentes...).
+     * {@code sourceNoteId} rattache la tache a l'idee dont elle est issue ; l'existence de l'idee est verifiee
+     * par l'appelant (domaine des notes).
+     */
+    @Transactional
+    public TaskResponse create(CreateTaskRequest req, UUID sourceNoteId) {
         Instant now = now();
         Task task = new Task(req.title().strip(), now);
+        task.setSourceNoteId(sourceNoteId);
         Quadrant q = req.quadrant() == null ? Quadrant.Q2 : req.quadrant();
         task.moveToQuadrant(q, tasks.maxPosition(q.important(), q.urgent()) + 1, now);
         task.setDescription(blankToNull(req.description()));
@@ -150,9 +163,47 @@ public class TaskService {
         copy.setNotes(src.getNotes());
         copy.setEstimatedMinutes(src.getEstimatedMinutes());
         copy.setProject(src.getProject());
+        copy.setSourceNoteId(src.getSourceNoteId());
         copy.getTags().addAll(src.getTags());
         src.getSubtasks().forEach(s -> copy.addSubtask(s.getTitle(), now));
         return mapper.toResponse(tasks.save(copy));
+    }
+
+    // ---- Idee d'origine (module Notes & idees) ------------------------------------------------
+
+    /** Taches issues d'une idee, terminees et archivees comprises, par ordre de creation. */
+    @Transactional(readOnly = true)
+    public List<TaskResponse> fromNote(UUID noteId) {
+        return mapper.toResponses(tasks.findAllBySourceNoteId(noteId));
+    }
+
+    @Transactional(readOnly = true)
+    public long countFromNote(UUID noteId) {
+        return tasks.countBySourceNoteId(noteId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsFromNoteWithTitle(UUID noteId, String title) {
+        return title != null && tasks.existsBySourceNoteIdAndTitleIgnoreCase(noteId, title.strip());
+    }
+
+    /** Avancement des taches issues de chaque idee demandee ; une idee sans tache est absente du resultat. */
+    @Transactional(readOnly = true)
+    public Map<UUID, OriginProgress> progressByNote(Collection<UUID> noteIds) {
+        if (noteIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, OriginProgress> result = new HashMap<>();
+        for (Object[] row : tasks.progressBySourceNoteIds(noteIds)) {
+            result.put((UUID) row[0], new OriginProgress(((Number) row[1]).longValue(), ((Number) row[2]).longValue()));
+        }
+        return result;
+    }
+
+    /** Retire le lien vers l'idee sans toucher aux taches (suppression forcee d'une idee). */
+    @Transactional
+    public int detachFromNote(UUID noteId) {
+        return tasks.detachFromSourceNote(noteId);
     }
 
     // ---- Matrice : quadrant et ordre ----------------------------------------------------------

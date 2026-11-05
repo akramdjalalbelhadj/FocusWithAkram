@@ -11,6 +11,6 @@ public final class SettingsMapper {
                 s.getShortBreakMinutes(), s.getLongBreakMinutes(), s.getSessionsBeforeLong(),
                 s.isAutoStartBreaks(), s.isAutoStartWork(), s.isNotificationsEnabled(), s.isSoundEnabled(),
                 s.getSoundName(), s.getDailyFocusGoalMinutes(), s.isSubtasksCompleteParent(),
-                s.isShortcutsEnabled(), s.isCompactMode());
+                s.isShortcutsEnabled(), s.isCompactMode(), s.getNoteEditorMode());
     }
 }

@@ -17,6 +17,17 @@
             <span class="badge badge-brand"><ff-icon name="archive" [size]="12" />Archivée</span>
           }
         </div>
+        @if (sourceNote(); as idea) {
+          <button
+            type="button"
+            class="mt-2 inline-flex max-w-full items-center gap-1.5 text-sm text-brand hover:underline"
+            (click)="openSourceNote(idea.id)"
+          >
+            <ff-icon name="lightbulb" [size]="14" /><span class="truncate"
+              >Issue de l’idée « {{ idea.title }} »</span
+            >
+          </button>
+        }
       } @else {
         <div class="skeleton h-6 w-2/3"></div>
       }

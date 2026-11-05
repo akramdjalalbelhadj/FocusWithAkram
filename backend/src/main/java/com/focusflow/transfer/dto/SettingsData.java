@@ -8,5 +8,6 @@ public record SettingsData(String timeZone, String weekStartsOn, String theme, I
                            Integer shortBreakMinutes, Integer longBreakMinutes, Integer sessionsBeforeLong,
                            Boolean autoStartBreaks, Boolean autoStartWork, Boolean notificationsEnabled,
                            Boolean soundEnabled, String soundName, Integer dailyFocusGoalMinutes,
-                           Boolean subtasksCompleteParent, Boolean shortcutsEnabled, Boolean compactMode) {
+                           Boolean subtasksCompleteParent, Boolean shortcutsEnabled, Boolean compactMode,
+                           String noteEditorMode) {
 }

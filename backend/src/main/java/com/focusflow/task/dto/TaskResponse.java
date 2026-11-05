@@ -34,6 +34,8 @@ public record TaskResponse(
         boolean overdue,
         long timeSpentSeconds,
         TaskTiming timing,
-        long version) {
+        long version,
+        /** Idee d'origine (module Notes & idees), ou null. */
+        UUID sourceNoteId) {
 
 }

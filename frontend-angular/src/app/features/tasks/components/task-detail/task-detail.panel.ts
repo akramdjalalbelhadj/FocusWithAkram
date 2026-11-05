@@ -9,7 +9,9 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Task, TaskExecution, TimelineEvent, TimelineEventType } from '../../../../core/api/models';
+import { NotesApi } from '../../../../core/api/notes.api';
 import { TasksApi } from '../../../../core/api/tasks.api';
+import { Router } from '@angular/router';
 import { AppError } from '../../../../core/api/app-error';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
@@ -43,6 +45,8 @@ const EVENT_LABEL: Record<TimelineEventType, string> = {
 export class TaskDetailPanelComponent {
   private readonly api = inject(TasksApi);
   private readonly refresh = inject(RefreshService);
+  private readonly notesApi = inject(NotesApi);
+  private readonly router = inject(Router);
   protected readonly data = inject<{ id: string }>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<void>>(DialogRef);
   protected readonly actions = inject(TaskActions);
@@ -52,6 +56,8 @@ export class TaskDetailPanelComponent {
   protected readonly timeline = signal<TimelineEvent[]>([]);
   protected readonly executions = signal<TaskExecution[]>([]);
   protected readonly error = signal('');
+  /** Idee d'origine (module Notes & idees), si la tache en est issue et que l'idee existe encore. */
+  protected readonly sourceNote = signal<{ id: string; title: string } | null>(null);
 
   constructor() {
     // Se recharge apres chaque action (demarrage, fin, sous-tache...) pour rester coherent.
@@ -72,10 +78,30 @@ export class TaskDetailPanelComponent {
       this.timeline.set(timeline);
       this.executions.set(executions);
       this.error.set('');
+      void this.loadSourceNote(task.sourceNoteId ?? null);
     } catch (e) {
       if (e instanceof AppError && e.problem.status === 404) this.ref.close();
       else this.error.set('Impossible de charger la tâche.');
     }
+  }
+
+  private async loadSourceNote(noteId: string | null): Promise<void> {
+    if (!noteId) {
+      this.sourceNote.set(null);
+      return;
+    }
+    if (this.sourceNote()?.id === noteId) return;
+    try {
+      const note = await firstValueFrom(this.notesApi.get(noteId));
+      this.sourceNote.set({ id: note.id, title: note.title });
+    } catch {
+      this.sourceNote.set(null);
+    }
+  }
+
+  protected openSourceNote(id: string): void {
+    this.ref.close();
+    void this.router.navigate(['/notes', id]);
   }
 
   protected readonly rows = computed<[string, string, string?][]>(() => {

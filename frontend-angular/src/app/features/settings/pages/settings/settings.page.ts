@@ -30,6 +30,19 @@ export class SettingsPage {
   protected readonly report = signal<ImportReport | null>(null);
   protected readonly pending = signal<unknown>(null);
 
+  protected readonly editorModes = [
+    {
+      value: 'MARKDOWN' as const,
+      label: 'Markdown avec aperçu',
+      hint: 'Vous écrivez la syntaxe (# titre, - [ ] case) et consultez le rendu dans l’onglet Aperçu.',
+    },
+    {
+      value: 'RICH' as const,
+      label: 'Éditeur visuel',
+      hint: 'La mise en forme s’affiche directement pendant la saisie.',
+    },
+  ];
+
   protected readonly themes = [
     { value: 'LIGHT' as const, label: 'Clair', icon: 'sun' },
     { value: 'DARK' as const, label: 'Sombre', icon: 'moon' },

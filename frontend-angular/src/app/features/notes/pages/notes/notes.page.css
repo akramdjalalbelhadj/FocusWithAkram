@@ -1,0 +1,134 @@
+.notes-capture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-color: var(--brand-soft);
+}
+
+.notes-capture .input {
+  flex: 1 1 16rem;
+}
+
+.notes-capture-icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.notes-views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.notes-view {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.notes-view:hover {
+  color: var(--fg);
+}
+
+.notes-view[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.notes-view:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+  gap: 1rem;
+}
+
+.note-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.75rem;
+  border-top: 3px solid var(--note-color);
+  transition: box-shadow 0.15s ease;
+}
+
+.note-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.note-card-link {
+  display: block;
+  flex: 1;
+  border-radius: var(--radius-sm);
+  color: inherit;
+}
+
+.note-card-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+.note-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-weight: 700;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.note-card-excerpt {
+  display: -webkit-box;
+  margin-top: 0.35rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow-wrap: anywhere;
+}
+
+.note-card-footer {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.note-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 999px;
+}
+
+.note-star[aria-pressed='true'] {
+  color: var(--warning);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-card {
+    transition: none;
+  }
+}

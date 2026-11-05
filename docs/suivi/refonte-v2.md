@@ -12,6 +12,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-01 | Portage Kotlin : toute FocusWithAkram dans Krimou ; données hors ligne sur le téléphone (stockage local chiffré, import/export de la sauvegarde v3) ; réalisé après les lots 7 et 8 | Lot 10 ; moteurs de calcul dans `:engines` (Kotlin pur), testés avec les mêmes scénarios que le backend |
 | 2026-11-01 | Règles financières D3 à D6 : épargne mobilisable par objectif au-dessus d'un plancher ; achats d'objectifs hors plafond variable ; faisabilité sur salaires prévus, sans remboursements attendus ; une entrée « Mes achats » à onglets | [Spécification § 14](../produit/mes-achats/specification.md) |
 | 2026-11-01 | Finances : **plusieurs comptes simples** (courant, épargne, espèces…) ; mettre de côté = virement vers un compte d'épargne ; réservations pour achats = affectations virtuelles | Modèle de données du lot 4 |
+| 2026-11-03 | Notes & Brainstorming : une idée **n'a pas de statut** (seules ses tâches en ont) ; catégories gérées dans un écran dédié ; deux modes d'éditeur (Markdown avec aperçu, visuel) sur un contenu Markdown unique, mode par défaut dans les Paramètres ; suppression d'une idée refusée tant que des tâches en sont issues, avec suppression forcée qui conserve les tâches | Lot 11 ; [cahier des charges § 4.5](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
 
@@ -28,6 +29,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 8 | Tableau de bord, statistiques, alertes, simulations, calendrier financier | Livré |
 | 9 | Documentation finale et dossier de migration React | À faire |
 | 10 | Portage de toute FocusWithAkram (productivité et Mes achats) dans l'application Android Krimou (`D:\Projet\agent-android`, Kotlin, Jetpack Compose) | Livré dans Krimou le 1 novembre 2026, non essayé sur téléphone |
+| 11 | Notes & Brainstorming : idées, catégories, éditeur à deux modes, transformation en tâches de la matrice (API et Angular) | Livré le 3 novembre 2026 |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -164,6 +166,19 @@ Différences connues : interface en français seulement ; pas de notification de
 seulement ; déplacements dans les matrices par menu (pas de glisser-déposer). Toute règle modifiée ici doit l'être aussi
 dans `engine.focus` de Krimou, avec son scénario de test. Documentation : `D:\Projet\docs\modules\focuswithakram\`.
 
+### Réalisé au lot 11 — Notes & Brainstorming
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Schéma | `V7__notes.sql` : `note_category`, `note` (sans statut), `note_tag`, `task.source_note_id` (`ON DELETE SET NULL`), `user_settings.note_editor_mode` ; additive | Tests d'intégration sur base neuve |
+| Règles | Idée sans statut, avancement calculé ; tâche créée par `TaskService` (mêmes règles que la matrice) ; doublon de titre confirmé (`allowDuplicate`) sous verrou de l'idée ; suppression bloquée (`NOTE_HAS_TASKS`) ou forcée qui détache les tâches ; catégories uniques sans casse | `NoteIT` (10 scénarios), `NoteMapperTest` ; règle ArchUnit `task` ↛ `note` |
+| Sauvegarde | Format v4 : section `notes`, `tasks[].sourceNoteId`, `settings.noteEditorMode` ; idées importées avant les tâches ; réimport sans doublon ; v3 importable | Aller-retour testé |
+| Angular | Page Notes & idées (saisie rapide, filtres, vues, cartes), écran Catégories, éditeur avec enregistrement automatique et panneau des tâches issues, éditeur Markdown/visuel (Tiptap), formulaire de tâche réutilisé (`fromNote`), lien dans le détail de tâche, repère « Idée » dans Mes tâches, touche I, palette, préférence dans Paramètres | 43 tests unitaires, lint, build ; recette navigateur |
+
+Vérifications : 166 tests backend, 43 tests Angular, lint et build sans erreur ; React compile et se construit sans modification (types partagés étendus en champs facultatifs). Recette du 3 novembre 2026 sur backend et base **jetables** (18080/54339), Angular sur 4300, Chrome piloté par Playwright : 22 contrôles réussis — saisie rapide, catégorie en double refusée, enregistrement automatique, gras puis Ctrl+Z, case cochée depuis l'aperçu sans réécrire le texte, bascule visuelle enregistrée, saisie visuelle sauvegardée en Markdown, formulaire prérempli, tâches en Q1 et Q2 de la matrice, doublon signalé, retour à l'idée depuis le détail de tâche, catégorie affichée à l'ouverture directe, suppression bloquée, touche I, suppression simple, 390 px sans défilement horizontal ; thème sombre vérifié sur captures. Défauts trouvés et corrigés pendant la recette : cases à cocher mal alignées (sélecteur Tiptap), Ctrl+Z inopérant après la barre d'outils, catégorie non affichée quand les options arrivent après la note, titres longs tronqués, avertissement de doublon hors champ.
+
+Hors périmètre de ce lot : interface React, import du format v4 dans Krimou, recherche des idées dans la palette globale.
+
 ## 4. Adaptations React à prévoir (phase 2)
 
 | Origine | Adaptation |
@@ -173,4 +188,6 @@ dans `engine.focus` de Krimou, avec son scénario de test. Documentation : `D:\P
 | Lot 4 | Implémenter le module « Mes achats » : contrats dans `shared/finance.ts`, API `/api/v1/finance` (voir l'architecture backend), entrée de navigation `/finance` (G puis B), raccourci E. `ImportReport.finance` (sauvegarde v3) à afficher dans l'aperçu d'import |
 | Lot 7 | `OperationType` compte quatre types de mouvements de prêt (`LOAN_*`) à libeller ; `FinanceOverview.receivables` / `debts`, `ForecastResponse.expectedRepayments`, type `Loan` et API `/api/v1/finance/loans` ; `ImportReport.finance.loansCreated` / `loansSkipped` |
 | Lot 8 | API `/finance/alerts`, `/finance/statistics`, `/finance/simulation`, `/finance/calendar` et types `FinanceAlert`, `FinanceStatistics`, `SimulationBody` / `SimulationResult` dans `shared/finance.ts` ; formulation des alertes à reprendre de `alert-text.ts` |
+| Lot 11 | Module Notes & idées : contrats `shared/notes.ts`, API `/api/v1/notes` et `/api/v1/note-categories`, entrée `/notes` (G puis N), touche I ; éditeur à deux modes sur un contenu Markdown (préférence `Settings.noteEditorMode`) ; création de tâche depuis une idée via `POST /notes/{id}/tasks` avec gestion de `NOTE_TASK_DUPLICATE` ; suppression avec `NOTE_HAS_TASKS` / `force` ; `Task.sourceNoteId` (lien et repère) ; `ImportReport.notes`. Champs ajoutés en facultatifs : React compile sans changement |
+| Lot 11 (Krimou) | Importer et exporter le format v4 (section `notes`, `sourceNoteId`, `noteEditorMode`) dans `engine.focus` ; jusque-là, une sauvegarde v4 est refusée par Krimou |
 | Lot 0 | La suite E2E (`frontend-react/e2e`, `playwright.config.ts`) écrit dans `docs/test-results/` et `docs/screenshots/`, désormais ignorés par Git ; envisager de la déplacer hors du dossier React puisqu'elle teste aussi Angular |

@@ -93,6 +93,11 @@ h4 {
   border: 0;
 }
 
+/* Icone pleine (etat actif d'un bouton a bascule, ex. favori) : remplit le trace Lucide. */
+.icon-filled svg {
+  fill: currentColor;
+}
+
 /* ------------------------------------------------------------------ *
  * Composants du design system
  * ------------------------------------------------------------------ */

@@ -88,6 +88,39 @@
     >
   </section>
 
+  <section class="card p-5 space-y-4" aria-labelledby="s-notes">
+    <h2 id="s-notes" class="font-bold text-lg">Notes &amp; idées</h2>
+    <fieldset>
+      <legend class="field-label">Éditeur par défaut</legend>
+      <div class="grid sm:grid-cols-2 gap-2" role="radiogroup">
+        @for (m of editorModes; track m.value) {
+          <label
+            class="cursor-pointer rounded-xl border p-3 text-sm has-[:focus-visible]:outline-2 outline-offset-2"
+            [class]="
+              (s().noteEditorMode ?? 'MARKDOWN') === m.value
+                ? 'border-brand bg-brand-soft text-brand'
+                : 'border-line hover:bg-surface-2'
+            "
+          >
+            <input
+              type="radio"
+              name="noteEditorMode"
+              class="sr-only-text"
+              [checked]="(s().noteEditorMode ?? 'MARKDOWN') === m.value"
+              (change)="set({ noteEditorMode: m.value })"
+            />
+            <span class="font-semibold block">{{ m.label }}</span>
+            <span class="text-xs opacity-80">{{ m.hint }}</span>
+          </label>
+        }
+      </div>
+      <p class="field-hint">
+        Le contenu est toujours enregistré au même format : une note s’ouvre dans l’un ou l’autre
+        mode. Le bouton « Markdown / Visuel » de l’éditeur change aussi ce réglage.
+      </p>
+    </fieldset>
+  </section>
+
   <section class="card p-5 space-y-4" aria-labelledby="s-data">
     <h2 id="s-data" class="font-bold text-lg">Données : export et import</h2>
     <div class="flex flex-wrap gap-2">
@@ -142,6 +175,13 @@
                 {{ r.dryRun ? 'à créer' : 'créée(s)' }}, {{ f.operationsSkipped }} ignorée(s) ;
                 {{ f.accountsCreated }} compte(s) et {{ f.categoriesCreated }} catégorie(s)
                 {{ r.dryRun ? 'à créer' : 'créé(e)s' }}
+              </li>
+            }
+            @if (r.notes; as nt) {
+              <li>
+                Notes &amp; idées : {{ nt.notesCreated }} idée(s)
+                {{ r.dryRun ? 'à créer' : 'créée(s)' }}, {{ nt.notesSkipped }} ignorée(s) ;
+                {{ nt.categoriesCreated }} catégorie(s) {{ r.dryRun ? 'à créer' : 'créée(s)' }}
               </li>
             }
             @if (r.settingsRestored) {

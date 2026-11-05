@@ -57,6 +57,10 @@ export const routes: Routes = [
           import('../features/finance/finance.routes').then((m) => m.FINANCE_ROUTES),
       },
       {
+        path: 'notes',
+        loadChildren: () => import('../features/notes/notes.routes').then((m) => m.NOTES_ROUTES),
+      },
+      {
         path: 'archives',
         title: 'Archives — FocusWithAkram',
         loadComponent: () =>

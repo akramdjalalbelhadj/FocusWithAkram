@@ -1,0 +1,77 @@
+<a routerLink="/notes" class="btn btn-ghost btn-sm mb-3"
+  ><ff-icon name="arrow-left" [size]="16" />Notes &amp; idées</a
+>
+<header class="flex flex-wrap items-end justify-between gap-3 mb-5">
+  <div>
+    <h1 class="page-title">
+      <span class="page-icon"><ff-icon name="tag" [size]="24" /></span>Catégories d’idées
+    </h1>
+    <p class="page-sub">
+      Regroupez vos idées par thème. Supprimer une catégorie conserve ses idées.
+    </p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="actions.editCategory(null)">
+    <ff-icon name="plus" />Nouvelle catégorie
+  </button>
+</header>
+
+@if (loader.error()) {
+  <ff-error (retry)="loader.load()" />
+} @else if (loader.loading()) {
+  <ff-skeleton [count]="3" [height]="64" />
+} @else if (!categories().length) {
+  <div class="card">
+    <ff-empty
+      icon="tag"
+      title="Aucune catégorie"
+      hint="Par exemple : Personnel, Professionnel, Technique."
+      ><button
+        type="button"
+        class="btn btn-primary btn-sm mt-2"
+        (click)="actions.editCategory(null)"
+      >
+        Créer une catégorie
+      </button></ff-empty
+    >
+  </div>
+} @else {
+  <ul class="card divide-y divide-line">
+    @for (c of categories(); track c.id) {
+      <li class="flex items-center gap-3 px-4 py-3">
+        <span
+          class="size-4 rounded-full flex-none"
+          [style.background]="c.color"
+          aria-hidden="true"
+        ></span>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold truncate">{{ c.name }}</p>
+          <p class="text-sm text-muted">
+            {{
+              c.noteCount === 0
+                ? 'Aucune idée'
+                : c.noteCount === 1
+                  ? '1 idée'
+                  : c.noteCount + ' idées'
+            }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [attr.aria-label]="'Modifier ' + c.name"
+          (click)="actions.editCategory(c)"
+        >
+          <ff-icon name="pencil" [size]="14" /><span class="hidden sm:inline">Modifier</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-ghost btn-icon btn-sm text-danger"
+          [attr.aria-label]="'Supprimer ' + c.name"
+          (click)="actions.removeCategory(c)"
+        >
+          <ff-icon name="trash" [size]="14" />
+        </button>
+      </li>
+    }
+  </ul>
+}

@@ -67,6 +67,11 @@
       @if (task().timeSpentSeconds > 0) {
         <span class="chip"><ff-icon name="timer" [size]="11" />{{ spent() }}</span>
       }
+      @if (!compact() && task().sourceNoteId) {
+        <span class="chip" title="Tâche issue d’une idée (Notes &amp; idées)"
+          ><ff-icon name="lightbulb" [size]="11" />Idée</span
+        >
+      }
     </div>
 
     @if (!compact() && task().subtasksTotal > 0) {
