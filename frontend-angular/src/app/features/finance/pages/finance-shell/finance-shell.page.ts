@@ -9,8 +9,8 @@ import {
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { ErrorComponent, SkeletonComponent } from '../../../../shared/ui/states';
-import { FinanceTourComponent } from '../../components/finance-tour/finance-tour';
 import { FinanceTourService } from '../../components/finance-tour/finance-tour.service';
+import { TourComponent } from '../../../../shared/ui/tour/tour';
 import { FinanceActions } from '../../services/finance-actions.service';
 import { FinanceReferenceStore } from '../../services/finance-reference.store';
 
@@ -28,7 +28,7 @@ import { FinanceReferenceStore } from '../../services/finance-reference.store';
     IconComponent,
     ErrorComponent,
     SkeletonComponent,
-    FinanceTourComponent,
+    TourComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './finance-shell.page.html',

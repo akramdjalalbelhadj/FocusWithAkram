@@ -1,6 +1,6 @@
 # FocusWithAkram — guide d’utilisation
 
-Mis à jour le **5 novembre 2026** pour Angular et React (Mes achats et Notes & idées : Angular seulement ; « Mes achats » décrit la version simplifiée du lot 13). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
+Mis à jour le **6 novembre 2026** pour Angular et React (Mes achats et Notes & idées : Angular seulement ; « Mes achats » décrit la version simplifiée du lot 13, Notes & idées et la matrice leurs tutoriels des lots 14 et 15). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
 
 ## 1. Ouvrir l’application
 
@@ -31,6 +31,32 @@ Ouvrir le détail d’une tâche pour consulter ses informations, ses sous-tâch
 Sur grand écran, les quatre quadrants sont affichés en grille. Déplacer une carte dans un autre quadrant modifie son importance/urgence et enregistre son nouvel emplacement. Sur petit écran, sélectionner l’onglet Q1, Q2, Q3 ou Q4.
 
 Pour le clavier, placer le focus sur la carte puis utiliser **Alt + 1…4** pour changer de quadrant et **Alt + ↑/↓** pour modifier l’ordre, lorsque cette carte expose les commandes de déplacement. La souris n’est pas obligatoire pour les parcours couverts.
+
+### Tutoriel de la matrice
+
+Le principe tient en deux questions : la tâche est-elle **urgente** ? est-elle **importante** ? La case où elle tombe dit quoi en faire :
+
+```mermaid
+flowchart TB
+  subgraph I["Important"]
+    direction LR
+    Q1["🔥 Q1 Faire maintenant<br/>Urgent et important : à traiter en premier"] ~~~ Q2["📅 Q2 Planifier<br/>Important, pas urgent : réservez-lui du temps"]
+  end
+  subgraph P["Pas important"]
+    direction LR
+    Q3["👥 Q3 Déléguer / limiter<br/>Urgent, pas important : confiez-le ou faites court"] ~~~ Q4["🗄️ Q4 Éliminer / plus tard<br/>Ni urgent ni important : abandonnez ou reportez"]
+  end
+  I ~~~ P
+  style Q1 fill:#fff0f4,stroke:#ff4769,color:#1b1835
+  style Q2 fill:#edf5ff,stroke:#168cf5,color:#1b1835
+  style Q3 fill:#fff6e9,stroke:#f4a11a,color:#1b1835
+  style Q4 fill:#f6efff,stroke:#a64dff,color:#1b1835
+```
+
+Colonnes : **Urgent** à gauche, **Pas urgent** à droite ; lignes : **Important** en haut, **Pas important** en bas (Q1 en haut à gauche, comme sur la page).
+
+- Le **tutoriel de la matrice** (Angular) s’ouvre seul à votre première visite. Il montre cette grille aux couleurs des quadrants (elle reste en 2 × 2 sur téléphone), puis : le bouton **Nouvelle tâche** (touche N), les onglets Q1 à Q4 (sur petit écran seulement), les quatre cases (couleur, nombre de tâches, retard, bouton **+** et ajout rapide), une carte de tâche (glisser-déposer, **Alt + 1…4**, **Alt + ↑/↓**, clic pour ouvrir, menu pour lancer un Pomodoro), le secret de la case **Planifier** (Q2 mise en avant : les tâches importantes mais pas urgentes sont celles qui vous font avancer ; planifiez-les avant qu’elles deviennent urgentes, Q1 se videra), les filtres (recherche, projet, statut, étiquette, **En retard**), enfin le bouton qui le relance. Une étape sans élément à montrer (aucune tâche, onglets sur grand écran) est sautée.
+- **Suivant**, **Précédent**, **Passer** (Échap passe aussi). Une fois terminé ou passé, il ne revient plus de lui-même, indépendamment de celui de Notes & idées ; le bouton **Comment ça marche ?** en haut de la matrice, à côté de **Nouvelle tâche**, le relance. Quitter la page pendant le tutoriel l’interrompt sans rien enregistrer.
 
 Dans **Mes tâches**, choisir Priorités, Aujourd’hui, Semaine, Toutes, En retard ou Terminées. Les filtres projet, statut, texte et étiquette dépendent de la page. Si une tâche semble absente, commencer par retirer les filtres. Pour retrouver des tâches terminées anciennes, préférer **Archives**.
 
@@ -208,6 +234,23 @@ Si vous utilisiez déjà Mes achats :
 
 La page **Notes & idées** (menu, ou G puis N) garde vos idées personnelles, professionnelles ou techniques pour les développer à votre rythme, puis les transformer en tâches. Une idée **n’a pas de statut** : ce sont les tâches qui en sont issues qui en ont un. Règles : [cahier des charges § 4.5](cahier-des-charges.md).
 
+### 12.1 Le parcours d’une idée et le tutoriel
+
+Chaque idée suit le même chemin, en trois étapes :
+
+```mermaid
+flowchart LR
+  A["💡 1. Nouvelle idée<br/>Capturer une pensée spontanée"] --> B["✨ 2. Brainstorming<br/>Développer, enrichir et organiser l’idée"] --> C["✅ 3. Transformation en tâches<br/>Créer une ou plusieurs actions réalisables"]
+  style A fill:#fff5df,stroke:#f4a11a,color:#1b1835
+  style B fill:#eee5ff,stroke:#7437f6,color:#1b1835
+  style C fill:#e6faf4,stroke:#087d66,color:#1b1835
+```
+
+- Le **tutoriel « de l’idée à l’action »** s’ouvre seul à votre première visite de la liste des idées. Il commence par ce schéma (ambre, violet, vert ; de haut en bas sur téléphone), puis montre où se fait chaque étape : la barre de saisie rapide (**Nouvelle idée**), la liste des idées (**Brainstorming**), le bouton **Catégories**, le schéma de nouveau avec l’étape 3 mise en avant (**Créer une tâche** dans une idée), les vues **À transformer**, **Avec tâches** et **Favorites**, enfin le bouton qui le relance.
+- Chaque étape a **Suivant**, **Précédent** et **Passer** (Échap passe aussi). Une fois terminé ou passé, il ne revient plus de lui-même (le choix est enregistré dans vos préférences) ; le bouton **Comment ça marche ?** en haut de Notes & idées le relance à tout moment. Quitter la page pendant le tutoriel l’interrompt sans rien enregistrer : il sera proposé de nouveau à la prochaine visite.
+
+### 12.2 Pas à pas
+
 1. **Noter une idée** : tapez un titre dans le champ en haut de la page puis **Entrée** (ou **Développer** pour l’ouvrir aussitôt). Depuis n’importe quelle page, la touche **I** (ou la palette : « Noter une idée ») ouvre une saisie rapide : un titre suffit.
 2. **Développer** : cliquez sur une carte pour ouvrir l’éditeur. Titre, catégorie, étiquettes et contenu sont **enregistrés automatiquement** (« Enregistré » s’affiche en haut) ; quitter la page enregistre aussi la saisie en cours. Un titre vide n’est pas enregistré.
 3. **Deux modes d’édition**, au choix avec le bouton **Markdown / Visuel** de l’éditeur (ou dans **Paramètres → Notes & idées**) :
@@ -236,6 +279,8 @@ Supprimer une catégorie conserve ses idées, sans catégorie.
 | Fermer une fenêtre                 | Échap lorsque le dialogue le permet                            |
 | Aide rapide Angular                | ? ; la palette accepte aussi /                                 |
 | Visite guidée de Mes achats        | Bouton **?** en haut de Mes achats (distinct de la touche ?)   |
+| Tutoriel de Notes & idées          | Bouton **Comment ça marche ?** en haut de Notes & idées        |
+| Tutoriel de la matrice             | Bouton **Comment ça marche ?** en haut de la matrice           |
 
 Les champs de saisie gardent leur usage normal. Les raccourcis simples peuvent être désactivés ; Ctrl/Cmd + K reste un accès privilégié. Consulter la liste affichée dans l’interface plutôt que de supposer que tous les raccourcis optionnels sont identiques dans les deux variantes.
 

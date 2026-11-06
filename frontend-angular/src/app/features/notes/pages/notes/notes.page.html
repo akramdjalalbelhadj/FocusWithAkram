@@ -7,10 +7,27 @@
       Notez vos idées, développez-les à votre rythme, puis transformez-les en tâches de la matrice.
     </p>
   </div>
-  <a routerLink="/notes/categories" class="btn btn-secondary"> <ff-icon name="tag" />Catégories </a>
+  <div class="flex flex-wrap gap-2">
+    <button
+      type="button"
+      class="btn btn-ghost"
+      data-tour="notes-tour-button"
+      [attr.aria-busy]="tour.starting() || null"
+      (click)="tour.start()"
+    >
+      <ff-icon name="help" />Comment ça marche ?
+    </button>
+    <a routerLink="/notes/categories" class="btn btn-secondary" data-tour="notes-categories">
+      <ff-icon name="tag" />Catégories
+    </a>
+  </div>
 </header>
 
-<form class="card notes-capture mb-4" (submit)="$event.preventDefault(); capture()">
+<form
+  class="card notes-capture mb-4"
+  data-tour="notes-capture"
+  (submit)="$event.preventDefault(); capture()"
+>
   <span class="notes-capture-icon" aria-hidden="true"><ff-icon name="lightbulb" /></span>
   <label for="notes-capture" class="sr-only-text">Nouvelle idée</label>
   <input
@@ -83,7 +100,7 @@
 </div>
 
 <div class="notes-views mb-4">
-  <div class="flex flex-wrap gap-1.5" role="group" aria-label="Afficher">
+  <div class="flex flex-wrap gap-1.5" role="group" aria-label="Afficher" data-tour="notes-views">
     @for (v of views; track v.value) {
       <button
         type="button"
@@ -113,7 +130,7 @@
 } @else if (loader.loading()) {
   <ff-skeleton [count]="3" [height]="150" />
 } @else if (!notes().length) {
-  <div class="card">
+  <div class="card" data-tour="notes-list">
     @if (filtered()) {
       <ff-empty
         icon="search"
@@ -132,7 +149,7 @@
     }
   </div>
 } @else {
-  <div class="notes-grid">
+  <div class="notes-grid" data-tour="notes-list">
     @for (n of notes(); track n.id) {
       <article
         class="card note-card"
@@ -201,3 +218,5 @@
     </div>
   }
 }
+
+<ff-tour [engine]="tour" />

@@ -90,4 +90,14 @@ public class UpdateSettingsRequest extends PatchRequest {
     public void setCompactMode(Boolean value) {
         set("compactMode", value);
     }
+
+    @JsonSetter("notesTutorialDone")
+    public void setNotesTutorialDone(Boolean value) {
+        set("notesTutorialDone", value);
+    }
+
+    @JsonSetter("matrixTutorialDone")
+    public void setMatrixTutorialDone(Boolean value) {
+        set("matrixTutorialDone", value);
+    }
 }

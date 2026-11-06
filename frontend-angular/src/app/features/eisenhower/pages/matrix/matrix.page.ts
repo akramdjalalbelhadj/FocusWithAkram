@@ -24,8 +24,10 @@ import { debounced } from '../../../../core/util/debounced';
 import { Loader } from '../../../../core/util/loader';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { EmptyComponent, ErrorComponent } from '../../../../shared/ui/states/index';
+import { TourComponent } from '../../../../shared/ui/tour/tour';
 import { TaskActions } from '../../../tasks/services/task-actions.service';
 import { TaskCardComponent } from '../../../tasks/components/task-card/task-card';
+import { MatrixTourService } from '../../components/matrix-tour/matrix-tour.service';
 
 @Component({
   selector: 'ff-matrix-page',
@@ -37,6 +39,7 @@ import { TaskCardComponent } from '../../../tasks/components/task-card/task-card
     TaskCardComponent,
     EmptyComponent,
     ErrorComponent,
+    TourComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix.page.html',
@@ -47,6 +50,8 @@ export class MatrixPage {
   private readonly api = inject(TasksApi);
   private readonly toast = inject(ToastService);
   private readonly refresh = inject(RefreshService);
+  /** Tutoriel « décider quoi faire d’abord » : propose seul a la premiere visite, relance par « Comment ça marche ? ». */
+  protected readonly tour = inject(MatrixTourService);
 
   protected readonly meta = QUADRANT_META;
   protected readonly q = signal('');
@@ -75,6 +80,10 @@ export class MatrixPage {
   protected readonly filtersActive = computed(
     () => !!(this.q() || this.projectId() || this.status() || this.tag() || this.overdue()),
   );
+
+  constructor() {
+    void this.tour.autoStart();
+  }
 
   protected overdueOf(q: QuadrantView): number {
     return q.tasks.filter((t) => t.overdue).length;

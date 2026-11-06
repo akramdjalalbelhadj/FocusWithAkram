@@ -4,17 +4,29 @@
       <span class="page-icon"><ff-icon name="grid" [size]="24" /></span>Matrice d’Eisenhower
     </h1>
   </div>
-  <button
-    type="button"
-    class="btn btn-primary"
-    (click)="actions.create({ quadrant: mobileQuadrant() })"
-  >
-    <ff-icon name="plus" />Nouvelle tâche
-  </button>
+  <div class="matrix-header-actions">
+    <button
+      type="button"
+      class="btn btn-ghost"
+      data-tour="matrix-tour-button"
+      [attr.aria-busy]="tour.starting() || null"
+      (click)="tour.start()"
+    >
+      <ff-icon name="help" />Comment ça marche ?
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-tour="matrix-new-task"
+      (click)="actions.create({ quadrant: mobileQuadrant() })"
+    >
+      <ff-icon name="plus" />Nouvelle tâche
+    </button>
+  </div>
 </header>
 
 <!-- Filtres -->
-<div class="matrix-filters" role="search">
+<div class="matrix-filters" role="search" data-tour="matrix-filters">
   <div class="matrix-search">
     <ff-icon name="search" [size]="16" class="matrix-search-icon" />
     <input
@@ -79,7 +91,7 @@
   </div>
 } @else {
   <!-- Selecteur de quadrant (mobile / tablette etroite) -->
-  <div class="matrix-tabs" role="tablist" aria-label="Quadrants">
+  <div class="matrix-tabs" role="tablist" aria-label="Quadrants" data-tour="matrix-tabs">
     @for (q of view(); track q.quadrant) {
       <button
         type="button"
@@ -94,7 +106,7 @@
     }
   </div>
 
-  <div class="matrix-grid" cdkDropListGroup>
+  <div class="matrix-grid" cdkDropListGroup data-tour="matrix-grid">
     @for (q of view(); track q.quadrant) {
       <section
         class="matrix-quadrant"
@@ -144,6 +156,7 @@
               cdkDrag
               [cdkDragData]="t"
               class="matrix-draggable-task"
+              [attr.data-tour]="i === 0 ? 'matrix-task' : null"
               (keydown)="onCardKey($event, t, q.quadrant, i)"
             >
               <ff-task-card [task]="t" [compact]="true" />
@@ -174,3 +187,5 @@
     </p>
   }
 }
+
+<ff-tour [engine]="tour" />

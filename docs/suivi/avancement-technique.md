@@ -1,6 +1,6 @@
 # FocusWithAkram — avancement technique
 
-Relevé des sources du **5 novembre 2026**, branche `main` ; le lot 13 (« Mes achats » simplifié) est validé sur la branche `lot-13-mes-achats-simplifie` (6 novembre 2026). Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends** ; jusqu’à la version stable, seul Angular évolue (React et mobile déprioritisés, voir [refonte v2](refonte-v2.md)).
+Relevé des sources du **5 novembre 2026**, branche `main` ; le lot 13 (« Mes achats » simplifié) est validé sur la branche `lot-13-mes-achats-simplifie` (6 novembre 2026), les lots 14 et 15 (tutoriels de Notes & idées et de la matrice) le même jour. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends** ; jusqu’à la version stable, seul Angular évolue (React et mobile déprioritisés, voir [refonte v2](refonte-v2.md)).
 
 ## 1. Architecture d’ensemble
 
@@ -102,7 +102,11 @@ Préfixe commun `/api/v1` ; documentation interactive `/swagger-ui.html`, docume
 
 ### 3.5 État de validation backend
 
-Lot 13 (« Mes achats » simplifié, 6 novembre 2026) : **188 tests sans échec**. Les sources ajoutent la migration `V8__finance_single_account.sql` (fusion des comptes, conversion des prêts) et son test `SingleAccountMigrationIT`, retirent `LoanIT` avec le domaine des prêts et adaptent `FinanceIT` et `InsightIT` ; la migration `V9__finance_month_sheet.sql` (montants datés, dépenses variables plafonnées, catégorie « Prêts ») s’accompagne de `MonthSheetIT` et `EnvelopeIT`. Détail : [refonte v2, lot 13](refonte-v2.md).
+Lot 15 (tutoriel de la matrice, 6 novembre 2026) : **183 tests sans échec**. La migration additive `V11__matrix_tutorial.sql` ajoute `user_settings.matrix_tutorial_done` ; `GET` / `PATCH /settings` exposent `matrixTutorialDone`, indépendant de `notesTutorialDone` et hors sauvegarde JSON ; nouveau test `MatrixAndPrioritiesIT.theMatrixTutorialIsOfferedUntilItIsFinishedOrSkippedIndependentlyOfTheNotesOne`. Détail : [refonte v2, lot 15](refonte-v2.md).
+
+Lot 14 (tutoriel de Notes & idées, 6 novembre 2026) : **182 tests sans échec**. La migration additive `V10__notes_tutorial.sql` ajoute `user_settings.notes_tutorial_done` ; `GET` / `PATCH /settings` exposent `notesTutorialDone` (hors sauvegarde JSON, comme `tutorialDone` de Mes achats) ; nouveau test `NoteIT.theTutorialIsOfferedUntilItIsFinishedOrSkipped`. Détail : [refonte v2, lot 14](refonte-v2.md).
+
+Lot 13 (« Mes achats » simplifié, 6 novembre 2026) : **181 tests sans échec**. Les sources ajoutent la migration `V8__finance_single_account.sql` (fusion des comptes, conversion des prêts) et son test `SingleAccountMigrationIT`, retirent `LoanIT` avec le domaine des prêts et adaptent `FinanceIT` et `InsightIT` ; la migration `V9__finance_month_sheet.sql` (montants datés, dépenses variables plafonnées, catégorie « Prêts ») s’accompagne de `MonthSheetIT` et `EnvelopeIT`. Détail : [refonte v2, lot 13](refonte-v2.md).
 
 Relevé du 5 novembre 2026 (lot 9, stabilisation) : **172 tests, 0 échec** sur PostgreSQL 18.6, dont `ExistingIdsTest` (identifiants existants lus par lots avant un import ; les tests d’import, de finance et de notes restent inchangés et verts). Côté Angular : 47 tests unitaires, dont `accessible-dialogs.spec.ts` ; 10 scénarios E2E. Détail et défauts corrigés : [refonte v2, lot 9](refonte-v2.md).
 
@@ -138,6 +142,10 @@ Composants standalone, `OnPush`, signaux, application sans zone.js et HttpClient
 30 templates ont été externalisés. Le lint interdit les propriétés de métadonnées Angular `template` et `styles` inline. La matrice a des classes sémantiques et une feuille locale ; d’autres templates gardent encore des classes Tailwind. L’externalisation des templates ne signifie donc pas que cette conversion CSS est complète.
 
 « Mes achats » (lot 13, validé le 6 novembre 2026 : 104 tests unitaires Angular, `finance.spec.ts` réécrit) : quatre onglets (Mon mois, Opérations, Projets d’achat, Analyses) et ⚙ Réglages, vues secondaires par paramètre d’adresse (`?vue=`), anciennes adresses redirigées, visite guidée et composant d’infobulle `ff-help-tip` ; voir l’[architecture frontend](../technique/architecture-frontend.md).
+
+Tutoriel de « Notes & idées » (lot 14, validé le 6 novembre 2026 : 115 tests unitaires Angular, dont `tour.spec.ts` et `notes-tour.service.spec.ts`, lint et build de production ; 11 scénarios E2E, dont `notes.spec.ts` à deux scénarios en série) : la visite guidée de Mes achats devient un composant partagé `ff-tour` (`shared/ui/tour/` : modèle d’étape `TourStep` à cible et schéma facultatifs, moteur abstrait `TourEngine`), dont héritent `FinanceTourService` et `NotesTourService`. Le tutoriel des notes présente un schéma en trois étapes colorées (liste ordonnée accessible, flèches en CSS) puis les zones `data-tour` de la liste ; comportement de la visite de Mes achats inchangé. Voir l’[architecture frontend](../technique/architecture-frontend.md).
+
+Tutoriel de la matrice d’Eisenhower (lot 15, validé le 6 novembre 2026 : 122 tests unitaires Angular, lint et build de production ; 12 scénarios E2E, dont le nouveau `matrix.spec.ts`) : le schéma de `ff-tour` gagne une disposition `matrix` (grille 2 × 2 avec axes, badges Q1–Q4, tons `q1`–`q4`) ; la nouvelle classe abstraite `PageTourEngine` (`shared/ui/tour/page-tour.ts`) regroupe le démarrage à la première visite d’une page, la relance avec navigation et l’enregistrement de la préférence ; `NotesTourService` (inchangé pour l’utilisateur) et `MatrixTourService` en héritent. Voir l’[architecture frontend](../technique/architecture-frontend.md).
 
 Le composant de réglages se trouve dans `features/pomodoro/components/pomodoro-settings/`. Il utilise le store partagé, vérifie les bornes, enregistre au changement et affiche les refus de notification. Les paramètres généraux ne portent plus les réglages du minuteur.
 

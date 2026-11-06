@@ -68,6 +68,14 @@ public class UserSettings {
     @Column(name = "compact_mode", nullable = false)
     private boolean compactMode;
 
+    /** Tutoriel de « Notes & idées » termine ou passe : il n'est plus propose de lui-meme. */
+    @Column(name = "notes_tutorial_done", nullable = false)
+    private boolean notesTutorialDone;
+
+    /** Tutoriel de la matrice d'Eisenhower termine ou passe : il n'est plus propose de lui-meme. */
+    @Column(name = "matrix_tutorial_done", nullable = false)
+    private boolean matrixTutorialDone;
+
     @Version
     private long version;
 
@@ -105,4 +113,8 @@ public class UserSettings {
     public void setShortcutsEnabled(boolean shortcutsEnabled) { this.shortcutsEnabled = shortcutsEnabled; }
     public boolean isCompactMode() { return compactMode; }
     public void setCompactMode(boolean compactMode) { this.compactMode = compactMode; }
+    public boolean isNotesTutorialDone() { return notesTutorialDone; }
+    public void setNotesTutorialDone(boolean notesTutorialDone) { this.notesTutorialDone = notesTutorialDone; }
+    public boolean isMatrixTutorialDone() { return matrixTutorialDone; }
+    public void setMatrixTutorialDone(boolean matrixTutorialDone) { this.matrixTutorialDone = matrixTutorialDone; }
 }

@@ -61,7 +61,8 @@ public abstract class IntegrationTest {
                 + "sessions_before_long = DEFAULT, auto_start_breaks = DEFAULT, auto_start_work = DEFAULT, "
                 + "notifications_enabled = DEFAULT, sound_enabled = DEFAULT, sound_name = DEFAULT, "
                 + "daily_focus_goal_minutes = DEFAULT, subtasks_complete_parent = DEFAULT, shortcuts_enabled = DEFAULT, "
-                + "compact_mode = DEFAULT, note_editor_mode = DEFAULT");
+                + "compact_mode = DEFAULT, note_editor_mode = DEFAULT, notes_tutorial_done = DEFAULT, "
+                + "matrix_tutorial_done = DEFAULT");
         clock.set(START);
     }
 

@@ -1,9 +1,19 @@
-/** Etape de la visite guidee : l'element montre (attribut `data-tour`), un titre et une explication courte. */
-export interface TourStep {
-  target: string;
-  title: string;
-  text: string;
-}
+import type { TourStep } from '../../../../shared/ui/tour/tour-model';
+
+// Modele et calculs communs a toutes les visites guidees (partages avec « Notes & idées »).
+export {
+  PHONE_MAX_WIDTH,
+  SPOT_PADDING,
+  TOP_OFFSET,
+  availableSteps,
+  nextIndex,
+  placeBubble,
+  previousIndex,
+  scrollTopFor,
+  spotBox,
+  stepLabel,
+} from '../../../../shared/ui/tour/tour-model';
+export type { Box, BubblePlacement, Size, TourStep } from '../../../../shared/ui/tour/tour-model';
 
 /**
  * Visite guidee de « Mes achats ». Toutes les cibles sont visibles depuis l'onglet « Mon mois » (en-tete du module
@@ -61,109 +71,3 @@ export const FINANCE_TOUR_STEPS: readonly TourStep[] = [
     text: 'Ce bouton relance la visite guidée quand vous le souhaitez ; elle est aussi proposée dans les réglages.',
   },
 ];
-
-/** Etapes dont la cible est presente a l'ecran, dans l'ordre de la visite. */
-export function availableSteps(
-  steps: readonly TourStep[],
-  isPresent: (target: string) => boolean,
-): TourStep[] {
-  return steps.filter((s) => isPresent(s.target));
-}
-
-/** « Étape x sur n » (index a partir de 0). */
-export function stepLabel(index: number, total: number): string {
-  return `Étape ${index + 1} sur ${total}`;
-}
-
-/** Etape suivante, ou null apres la derniere (fin de la visite). */
-export function nextIndex(index: number, total: number): number | null {
-  return index + 1 < total ? index + 1 : null;
-}
-
-/** Etape precedente ; la premiere reste la premiere. */
-export function previousIndex(index: number): number {
-  return Math.max(0, index - 1);
-}
-
-export interface Box {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-export interface Size {
-  width: number;
-  height: number;
-}
-
-/** En dessous de cette largeur (telephone), la bulle occupe le bas de l'ecran. */
-export const PHONE_MAX_WIDTH = 640;
-/** Hauteur de la barre superieure collante de l'application, plus une marge. */
-export const TOP_OFFSET = 72;
-/** Marge autour de la cible mise en valeur. */
-export const SPOT_PADDING = 6;
-
-/**
- * Position de la bulle : `sheet` en bas de l'ecran (telephone), `below` ou `above` la cible selon la place,
- * `pinned` en bas de l'ecran par-dessus une cible trop haute, `center` sans cible.
- */
-export interface BubblePlacement {
-  mode: 'sheet' | 'below' | 'above' | 'pinned' | 'center';
-  top: number | null;
-  left: number | null;
-}
-
-const clamp = (v: number, min: number, max: number) =>
-  Math.min(Math.max(v, min), Math.max(min, max));
-
-/** Zone mise en valeur : la cible elargie d'une petite marge. */
-export function spotBox(rect: Box, padding = SPOT_PADDING): Box {
-  return {
-    top: rect.top - padding,
-    left: rect.left - padding,
-    width: rect.width + 2 * padding,
-    height: rect.height + 2 * padding,
-  };
-}
-
-/** Place la bulle pres de la cible (coordonnees de la fenetre), sans deborder de l'ecran. */
-export function placeBubble(
-  target: Box | null,
-  bubble: Size,
-  viewport: Size,
-  gap = 12,
-): BubblePlacement {
-  if (viewport.width < PHONE_MAX_WIDTH) return { mode: 'sheet', top: null, left: null };
-  if (!target) return { mode: 'center', top: null, left: null };
-  const left = clamp(target.left, gap, viewport.width - bubble.width - gap);
-  const below = target.top + target.height + gap;
-  if (below + bubble.height <= viewport.height - gap) return { mode: 'below', top: below, left };
-  const above = target.top - gap - bubble.height;
-  if (above >= gap) return { mode: 'above', top: above, left };
-  return { mode: 'pinned', top: Math.max(gap, viewport.height - bubble.height - gap), left };
-}
-
-/**
- * Defilement vertical de la fenetre qui montre la cible et sa bulle : inchange si tout est deja visible ; sinon la
- * cible (et la bulle sous elle, sur ordinateur) est centree dans l'espace libre, ou alignee sous la barre superieure
- * si elle est trop haute. Sur telephone, l'espace libre s'arrete au-dessus de la bulle.
- */
-export function scrollTopFor(
-  target: Box,
-  bubble: Size,
-  viewport: Size,
-  scrollY: number,
-  gap = 12,
-): number {
-  const phone = viewport.width < PHONE_MAX_WIDTH;
-  const bottom = viewport.height - (phone ? bubble.height + 2 * gap : 0);
-  const visible = target.top >= TOP_OFFSET && target.top + target.height <= bottom;
-  if (visible && (phone || placeBubble(target, bubble, viewport, gap).mode !== 'pinned')) {
-    return scrollY;
-  }
-  const room = bottom - TOP_OFFSET;
-  const block = phone ? target.height : target.height + gap + bubble.height;
-  const offset = block < room ? (room - block) / 2 : 0;
-  return Math.max(0, Math.round(target.top + scrollY - TOP_OFFSET - offset));
-}

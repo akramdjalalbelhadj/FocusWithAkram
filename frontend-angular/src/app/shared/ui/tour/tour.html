@@ -1,3 +1,4 @@
+@let tour = engine();
 @if (tour.current(); as step) {
   <div class="tour-layer" aria-hidden="true" (mousedown)="block($event)" (click)="block($event)">
     @if (spot(); as s) {
@@ -16,6 +17,7 @@
   <div
     #bubble
     class="tour-bubble card anim-pop"
+    [class.tour-wide]="!!step.diagram"
     [class.tour-sheet]="placement().mode === 'sheet'"
     [class.tour-center]="placement().mode === 'center'"
     [style.top.px]="placement().top"
@@ -31,6 +33,41 @@
       <p class="tour-progress">{{ tour.progress() }}</p>
       <h2 id="ff-tour-title" class="tour-title">{{ step.title }}</h2>
       <p id="ff-tour-text" class="tour-text">{{ step.text }}</p>
+      @if (step.diagram; as d) {
+        <div class="tour-figure" [class.tour-figure-matrix]="d.layout === 'matrix'">
+          @if (d.axes; as a) {
+            <div class="tour-axis-columns" aria-hidden="true">
+              <span>{{ a.columns[0] }}</span
+              ><span>{{ a.columns[1] }}</span>
+            </div>
+            <div class="tour-axis-rows" aria-hidden="true">
+              <span>{{ a.rows[0] }}</span
+              ><span>{{ a.rows[1] }}</span>
+            </div>
+          }
+          <ol class="tour-diagram" [attr.aria-label]="d.label">
+            @for (s of d.stages; track s.title; let i = $index) {
+              <li
+                class="tour-stage"
+                [attr.data-tone]="s.tone"
+                [class.tour-stage-dim]="d.focus !== undefined && d.focus !== i"
+                [attr.aria-current]="d.focus === i ? 'step' : null"
+              >
+                <span class="tour-stage-icon" aria-hidden="true"
+                  ><ff-icon [name]="s.icon" [size]="20"
+                /></span>
+                <span class="tour-stage-body">
+                  <span class="tour-stage-title"
+                    ><span class="tour-stage-num">{{ s.badge ?? i + 1 }}</span
+                    >{{ s.title }}</span
+                  >
+                  <span class="tour-stage-text">{{ s.text }}</span>
+                </span>
+              </li>
+            }
+          </ol>
+        </div>
+      }
     </div>
     <div class="tour-bar" aria-hidden="true">
       <span [style.width.%]="((tour.index() + 1) / tour.steps().length) * 100"></span>

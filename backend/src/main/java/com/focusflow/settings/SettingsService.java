@@ -109,6 +109,8 @@ public class SettingsService {
         if (p.has("subtasksCompleteParent")) s.setSubtasksCompleteParent(Boolean.TRUE.equals(p.bool("subtasksCompleteParent")));
         if (p.has("shortcutsEnabled")) s.setShortcutsEnabled(Boolean.TRUE.equals(p.bool("shortcutsEnabled")));
         if (p.has("compactMode")) s.setCompactMode(Boolean.TRUE.equals(p.bool("compactMode")));
+        if (p.has("notesTutorialDone")) s.setNotesTutorialDone(Boolean.TRUE.equals(p.bool("notesTutorialDone")));
+        if (p.has("matrixTutorialDone")) s.setMatrixTutorialDone(Boolean.TRUE.equals(p.bool("matrixTutorialDone")));
     }
 
     private static int range(String field, Integer value, int min, int max) {

@@ -1,6 +1,6 @@
 # FocusWithAkram — cahier des charges
 
-Version documentaire du **5 novembre 2026** (« Mes achats » simplifié, lot 13, validé le 6 novembre 2026). État de livraison : [avancement fonctionnel](../suivi/avancement-fonctionnel.md). Critères de recette : [checklist](../suivi/checklist.md). Référence visuelle : [design](../technique/design.md).
+Version documentaire du **6 novembre 2026** (« Mes achats » simplifié, lot 13, et tutoriels de Notes & idées et de la matrice, lots 14 et 15, validés le 6 novembre 2026). État de livraison : [avancement fonctionnel](../suivi/avancement-fonctionnel.md). Critères de recette : [checklist](../suivi/checklist.md). Référence visuelle : [design](../technique/design.md).
 
 ## 1. Contexte et vision
 
@@ -53,6 +53,8 @@ La cible est une personne gérant ses propres activités : études, projets pers
 | FWA-F027 | Idée → tâches                       | Depuis une note, créer une ou plusieurs tâches avec le formulaire de tâche existant (titre, description, quadrant, échéance…) ; chaque tâche rejoint son quadrant et garde le lien vers l’idée ; doublon signalé avant création ; note conservée. |
 | FWA-F028 | Mes achats — feuille du mois        | Onglet « Mon mois » par défaut : revenus, dépenses fixes, dépenses variables plafonnées et autres dépenses du mois choisi, avec prévu, réel et écart. Revenus saisis une fois pour un mois ou une période, réel confirmé (éventuellement plus bas) ; dépenses fixes déjà remplies chaque mois, confirmées « payé » ; montant modifiable à partir d’un mois sans toucher aux mois précédents, ou pour ce mois seulement ; dépenses variables plafonnées avec dépensé, reste, total du mois saisissable et commentaire demandé en cas de dépassement ; épargne prévue et réelle face à l’objectif du mois. Navigation en quatre onglets (Mon mois, Opérations, Projets d’achat, Analyses) et ⚙ Réglages ; anciennes adresses redirigées. Règles : [feuille du mois](mes-achats/feuille-du-mois.md). |
 | FWA-F029 | Mes achats — aide intégrée          | Visite guidée ouverte à la première visite, avec Suivant, Précédent et Passer, non réaffichée une fois terminée ou passée (état enregistré côté serveur) et relançable par le bouton ? ; bulles d’aide à côté de chaque section et des notions (prévu, réel, plafond, épargne, « à partir de », « ce mois seulement »), utilisables au clavier et annoncées par les lecteurs d’écran. |
+| FWA-F030 | Notes & idées — tutoriel            | Tutoriel ouvert à la première visite de la liste des idées : il explique le but du module par un schéma coloré en trois étapes (**Nouvelle idée** → **Brainstorming** → **Transformation en tâches**) puis montre où se fait chacune ; Suivant, Précédent et Passer (Échap) ; non réaffiché une fois terminé ou passé (état enregistré côté serveur) et relançable par le bouton « Comment ça marche ? » ; schéma lu comme une liste ordonnée par les lecteurs d’écran et affiché de haut en bas sur téléphone. Règles : § 4.5. |
+| FWA-F031 | Matrice d’Eisenhower — tutoriel     | Tutoriel ouvert à la première visite de la matrice : il explique la méthode par une grille 2 × 2 aux couleurs des quadrants (axes Urgent / Pas urgent et Important / Pas important ; Q1 Faire maintenant, Q2 Planifier, Q3 Déléguer / limiter, Q4 Éliminer / plus tard) puis montre l’ajout, les cases, le déplacement d’une tâche, l’intérêt de Q2 et les filtres ; Suivant, Précédent et Passer (Échap) ; non réaffiché une fois terminé ou passé (état enregistré côté serveur, indépendant de celui des notes) et relançable par le bouton « Comment ça marche ? » ; grille lue comme une liste ordonnée par les lecteurs d’écran et gardée en 2 × 2 sur téléphone. Règles : § 4.1. |
 
 ## 4. Règles métier
 
@@ -66,6 +68,8 @@ La cible est une personne gérant ses propres activités : études, projets pers
 | Q4       | Non       | Non    | Éliminer / plus tard |
 
 Le quadrant est calculé à partir de `important` et `urgent`. Le classement Priorités considère le quadrant, le retard, l’échéance, le statut en cours, l’ordre manuel puis la création. Les vues Aujourd’hui et Semaine utilisent le fuseau et le début de semaine configurés. La vue Terminées est actuellement limitée aux 100 résultats récents côté priorités ; les archives restent le parcours de consultation dédié.
+
+**Tutoriel** (FWA-F031, demande du propriétaire du 6 novembre 2026) : la matrice s’explique par elle-même, une grille 2 × 2 aux couleurs des quadrants où deux questions (urgent ? important ?) donnent la case, donc quoi faire. Le tutoriel insiste sur **Q2 Planifier** : les tâches importantes mais pas urgentes sont celles qui font avancer ; les planifier avant qu’elles deviennent urgentes vide Q1. Il s’ouvre seul à la visite de la matrice tant qu’il n’a été ni terminé ni passé ; une étape dont l’élément visé est absent est sautée (onglets sur grand écran, carte de tâche quand la matrice est vide) ; quitter la page ne l’enregistre pas. Cet état (`matrixTutorialDone`) est indépendant de celui de Notes & idées, enregistré côté serveur et **exclu de la sauvegarde**, comme les autres visites guidées.
 
 ### 4.2 Tâches, dates et historique
 
@@ -108,6 +112,7 @@ Décisions validées par le propriétaire le 3 novembre 2026.
 - **Doublon** : créer, depuis la même idée, une tâche dont le titre (sans tenir compte de la casse) est déjà celui d’une tâche issue de cette idée demande une confirmation explicite. Un double envoi du formulaire ne crée pas deux tâches.
 - **Suppression d’une idée** : refusée tant que des tâches en sont issues, avec un avertissement qui en donne la raison et le nombre de tâches. Une **suppression forcée** explicite reste possible : la note est supprimée, ses tâches sont **conservées** dans la matrice et perdent seulement le lien.
 - **Sauvegarde** : catégories, notes, lien tâche → idée et mode d’éditeur font partie de la sauvegarde complète (depuis le format v4) ; les formats antérieurs restent importables.
+- **Tutoriel** (FWA-F030, demande du propriétaire du 6 novembre 2026) : le module s’explique par un schéma en trois étapes — **Nouvelle idée** (capturer une pensée spontanée) → **Brainstorming** (développer, enrichir et organiser l’idée) → **Transformation en tâches** (créer une ou plusieurs actions réalisables). Le tutoriel s’ouvre seul à la visite de la liste des idées tant qu’il n’a été ni terminé ni passé ; une étape dont l’élément visé est absent est sautée ; quitter la page pendant le tutoriel ne l’enregistre pas. Cet état (`notesTutorialDone`) est une préférence d’interface enregistrée côté serveur et **exclue de la sauvegarde**, comme la visite guidée de Mes achats : après une restauration sur une nouvelle installation, le tutoriel est simplement proposé une fois de plus.
 
 ## 5. Exigences non fonctionnelles
 

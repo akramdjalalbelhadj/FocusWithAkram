@@ -15,6 +15,13 @@ const routes = [
   ["statistiques", "/statistics"],
   ["projets", "/projects"],
 ] as const;
+// Tutoriels de page (matrice, notes) deja vus : ils ne recouvrent pas les ecrans verifies ici.
+test.beforeEach(async ({ request }) => {
+  const r = await request.patch(base + "settings", {
+    data: { matrixTutorialDone: true, notesTutorialDone: true },
+  });
+  expect(r.ok()).toBeTruthy();
+});
 test("navigation, thèmes, captures et accessibilité", async ({
   page,
   request,

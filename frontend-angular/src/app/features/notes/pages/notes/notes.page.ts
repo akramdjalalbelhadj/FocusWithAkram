@@ -14,6 +14,8 @@ import {
   ErrorComponent,
   SkeletonComponent,
 } from '../../../../shared/ui/states/index';
+import { TourComponent } from '../../../../shared/ui/tour/tour';
+import { NotesTourService } from '../../components/notes-tour/notes-tour.service';
 import { NoteActions } from '../../services/note-actions.service';
 
 /** Vues rapides : toutes, favorites, encore a transformer (sans tache), deja transformees (avec taches). */
@@ -23,7 +25,14 @@ const PAGE = 60;
 
 @Component({
   selector: 'ff-notes-page',
-  imports: [IconComponent, EmptyComponent, ErrorComponent, SkeletonComponent, RouterLink],
+  imports: [
+    IconComponent,
+    EmptyComponent,
+    ErrorComponent,
+    SkeletonComponent,
+    RouterLink,
+    TourComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notes.page.html',
   styleUrl: './notes.page.css',
@@ -35,6 +44,8 @@ export class NotesPage {
   private readonly toast = inject(ToastService);
   protected readonly actions = inject(NoteActions);
   protected readonly settings = inject(SettingsStore);
+  /** Tutoriel « de l’idée à l’action » : propose seul a la premiere visite, relance par « Comment ça marche ? ». */
+  protected readonly tour = inject(NotesTourService);
 
   protected readonly views: { value: NoteView; label: string }[] = [
     { value: 'all', label: 'Toutes' },
@@ -74,6 +85,10 @@ export class NotesPage {
   protected readonly filtered = computed(
     () => !!(this.query().trim() || this.categoryId() || this.tag() || this.view() !== 'all'),
   );
+
+  constructor() {
+    void this.tour.autoStart();
+  }
 
   /** Saisie rapide en tete de page. */
   protected readonly draft = signal('');

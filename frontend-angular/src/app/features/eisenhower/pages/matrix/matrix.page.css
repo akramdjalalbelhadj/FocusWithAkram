@@ -35,6 +35,12 @@
   margin-bottom: 1.25rem;
 }
 
+.matrix-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .matrix-filters {
   display: flex;
   flex-wrap: wrap;

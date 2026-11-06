@@ -1,6 +1,6 @@
 # FocusWithAkram — checklist
 
-Relevé du **5 novembre 2026** (après le lot 9 ; lot 13 « Mes achats simplifié » validé le 6 novembre 2026). Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
+Relevé du **5 novembre 2026** (après le lot 9 ; lot 13 « Mes achats simplifié » et lots 14 et 15 « tutoriels de Notes & idées et de la matrice » validés le 6 novembre 2026). Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
 
 **Priorité** : version stable de FocusWithAkram web avec **Angular** d’abord. Les cases marquées *(après la version stable)* concernent React ou le mobile, déprioritisés (décision du 5 novembre 2026, [refonte v2](refonte-v2.md)).
 
@@ -19,13 +19,24 @@ Relevé du **5 novembre 2026** (après le lot 9 ; lot 13 « Mes achats simplifi�
 - [x] Un PATCH de titre conserve projet et planning ; un `null` explicite les efface.
 - [ ] Recette des longueurs maximales, doublons de tags et erreurs concurrentes dans les deux formulaires.
 
-## FWA-F004 / F005 / F006 — Priorisation
+## FWA-F004 / F005 / F006, F031 — Priorisation
 
 - [x] Quadrants dérivés d’important/urgent ; ordre manuel persistant.
 - [x] Déplacement clavier dans la matrice et onglets des quadrants en mobile.
 - [x] Listes Priorités, Aujourd’hui, Semaine, Toutes, En retard, Terminées.
 - [x] Top 3 quotidien et progression.
 - [ ] Vérifier toutes les combinaisons de filtres et le parcours au-delà de 100 tâches terminées.
+
+Lot 15 — tutoriel de la matrice (FWA-F031), validé le 6 novembre 2026 (183 tests backend, 122 tests Angular, scénario E2E `matrix.spec.ts`) :
+
+- [x] Ouverture seule à la première visite de `/matrix` tant que `matrixTutorialDone` est faux ; quitter la page l’interrompt sans l’enregistrer.
+- [x] Grille 2 × 2 : quatre cases et leurs libellés (Q1 Faire maintenant, Q2 Planifier, Q3 Déléguer / limiter, Q4 Éliminer / plus tard), positions comme sur la page, quatre couleurs des quadrants, axes Urgent / Pas urgent et Important / Pas important ; Q2 mise en avant à l’étape « Planifier ».
+- [x] Suivant / Précédent / Passer (Échap passe aussi) ; étape des onglets sautée sur ordinateur, présente à 390 px ; étape de la carte sautée sans tâche.
+- [x] Terminé ou passé : `matrixTutorialDone` enregistré côté serveur (vérifié par l’API), indépendamment de `notesTutorialDone` ; non réaffiché après rechargement ; focus rendu au bouton « Comment ça marche ? » ; test backend `MatrixAndPrioritiesIT`.
+- [x] Relance par « Comment ça marche ? » et parcours complet jusqu’à « Terminer ».
+- [x] 390 px : grille toujours en 2 × 2, aucun débordement horizontal ; audits axe sans violation sur ordinateur et à 390 px.
+- [x] `smoke.spec.ts` marque les tutoriels comme vus (`PATCH /settings`) pour qu’ils ne couvrent pas les écrans contrôlés.
+- [ ] Tutoriel de la matrice essayé avec un vrai lecteur d’écran et au toucher.
 
 ## FWA-F007 / F008 — Cycle de vie et archives
 
@@ -80,7 +91,7 @@ Validé avant le lot 13 et toujours vrai :
 - [x] Alertes, calendrier financier, statistiques sur 3 à 24 mois.
 - [ ] Matrice d’achats au glisser-déposer vérifiée par l’automatisation (le déplacement est testé par l’API et par le menu clavier).
 
-Lot 13 — validé le 6 novembre 2026 (188 tests backend, 104 tests Angular, scénario E2E `finance.spec.ts`) :
+Lot 13 — validé le 6 novembre 2026 (181 tests backend, 104 tests Angular, scénario E2E `finance.spec.ts`) :
 
 - [x] Compte unique : premier accès par le total disponible (banque, épargne, espèces) ; second compte refusé ; renommer et corriger le solde dans ⚙ Réglages.
 - [x] Migration V8 essayée sur une base au schéma V7 remplie de deux comptes, d’un virement et d’un prêt (`SingleAccountMigrationIT`) : solde total inchangé, corrections « Solde de départ — <nom> », virements supprimés, mouvements de prêt convertis dans la catégorie « Prêts », table des prêts supprimée.
@@ -100,7 +111,7 @@ Lot 13 — validé le 6 novembre 2026 (188 tests backend, 104 tests Angular, sc�
 - [x] Tests backend et Angular, lint et build sans échec ; 390 px sans défilement horizontal sur les 8 vues de Mes achats (E2E) ; thème sombre vérifié sur la page Mon mois avec des données simulées.
 - [x] Données personnelles (1 compte, sans prêt) importées telles quelles dans une base jetable à la nouvelle version : solde identique, aucune erreur ; sauvegarde JSON prise avant la mise à jour.
 
-## FWA-F024 à F027 — Notes & idées (Angular)
+## FWA-F024 à F027, F030 — Notes & idées (Angular)
 
 - [x] Page `/notes`, entrée de menu, G puis N ; saisie rapide par Entrée, touche I et palette.
 - [x] Créer, consulter, modifier (enregistrement automatique), supprimer ; données conservées après rechargement.
@@ -116,13 +127,24 @@ Lot 13 — validé le 6 novembre 2026 (188 tests backend, 104 tests Angular, sc�
 - [ ] Recette humaine au lecteur d’écran et au toucher de l’éditeur visuel.
 - [ ] Interface React et import du format v4 dans Krimou *(après la version stable)*.
 
+Lot 14 — tutoriel (FWA-F030), validé le 6 novembre 2026 (182 tests backend, 115 tests Angular, scénario E2E `notes.spec.ts` « tutoriel ») :
+
+- [x] Ouverture seule à la première visite de `/notes` tant que `notesTutorialDone` est faux ; quitter la page pendant le tutoriel l’interrompt sans l’enregistrer.
+- [x] Schéma en trois étapes colorées (Nouvelle idée, Brainstorming, Transformation en tâches) : liste ordonnée nommée, textes des trois étapes, trois couleurs différentes de gauche à droite ; étape 3 mise en avant à l’étape « 3. Transformation en tâches ».
+- [x] Suivant / Précédent / Passer (Échap passe aussi) ; une étape dont la cible est absente est sautée.
+- [x] Terminé ou passé : `notesTutorialDone` enregistré côté serveur (vérifié par l’API), tutoriel non réaffiché après rechargement, focus rendu au bouton « Comment ça marche ? » ; test backend `NoteIT.theTutorialIsOfferedUntilItIsFinishedOrSkipped`.
+- [x] Relance par « Comment ça marche ? » et parcours complet jusqu’à « Terminer ».
+- [x] 390 px : étapes du schéma de haut en bas, aucun débordement horizontal ; audits axe sans violation sur ordinateur et à 390 px.
+- [x] Visite guidée de Mes achats passée au composant partagé `ff-tour` sans changement de comportement (`finance.spec.ts` toujours vert).
+- [ ] Tutoriel et schéma essayés avec un vrai lecteur d’écran et au toucher.
+
 ## FWA-T001 — Backend
 
 - [x] Organisation par domaine et responsabilité.
 - [x] Entités dans `entity`, DTO dédiés, mappers et repositories séparés.
 - [x] Exceptions regroupées ; statuts et codes HTTP conservés sur les cas testés.
 - [x] Contrôleurs sans corps `Map` et sans repository directement injecté.
-- [x] 188 tests sans échec sur PostgreSQL 18.6 (unitaires, intégration, contrat, architecture, migrations), relevé du 6 novembre 2026 (lot 13).
+- [x] 183 tests sans échec sur PostgreSQL 18.6 (unitaires, intégration, contrat, architecture, migrations), relevé du 6 novembre 2026 (lot 15).
 - [x] JAR généré ; sorties `target/` retirées du suivi Git.
 - [ ] Vérifier les avertissements de dépréciation lors de la prochaine mise à niveau de dépendances (par exemple la configuration de test que Spring Framework 7.1 ne tolérera plus).
 
@@ -132,7 +154,7 @@ Lot 13 — validé le 6 novembre 2026 (188 tests backend, 104 tests Angular, sc�
 - [x] Templates HTML Angular externalisés et vues JSX React séparées de la logique des pages.
 - [x] Feuilles CSS dédiées et tokens partagés.
 - [x] Builds, typage et lints vérifiés pendant les lots correspondants.
-- [x] Tests unitaires disponibles : 104 Angular (6 novembre 2026), 12 React.
+- [x] Tests unitaires disponibles : 122 Angular (6 novembre 2026, lot 15), 12 React.
 - [ ] Retirer les utilitaires Tailwind de tous les templates Angular si cette cible est confirmée pour la suite.
 - [ ] Décomposer davantage la coordination de l’état applicatif React quand son évolution le justifie *(après la version stable)*.
 

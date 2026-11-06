@@ -5,5 +5,6 @@ public record SettingsResponse(String timeZone, String weekStartsOn, String them
                                boolean autoStartBreaks, boolean autoStartWork, boolean notificationsEnabled,
                                boolean soundEnabled, String soundName, int dailyFocusGoalMinutes,
                                boolean subtasksCompleteParent, boolean shortcutsEnabled, boolean compactMode,
-                               String noteEditorMode) {
+                               String noteEditorMode, boolean notesTutorialDone,
+                               boolean matrixTutorialDone) {
 }

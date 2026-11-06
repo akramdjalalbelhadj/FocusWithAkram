@@ -29,6 +29,21 @@ class MatrixAndPrioritiesIT extends IntegrationTest {
     }
 
     @Test
+    void theMatrixTutorialIsOfferedUntilItIsFinishedOrSkippedIndependentlyOfTheNotesOne() throws Exception {
+        mvc.perform(get("/api/v1/settings"))
+                .andExpect(jsonPath("$.matrixTutorialDone").value(false))
+                .andExpect(jsonPath("$.notesTutorialDone").value(false));
+        mvc.perform(patch("/api/v1/settings").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"matrixTutorialDone\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.matrixTutorialDone").value(true))
+                .andExpect(jsonPath("$.notesTutorialDone").value(false));
+        mvc.perform(patch("/api/v1/settings").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"compactMode\":true}"))
+                .andExpect(jsonPath("$.matrixTutorialDone").value(true));
+    }
+
+    @Test
     void movingToAQuadrantUpdatesImportanceAndUrgency() throws Exception {
         String id = create("A", "Q4", "");
         mvc.perform(patch("/api/v1/tasks/" + id + "/quadrant").contentType(MediaType.APPLICATION_JSON).content("{\"quadrant\":\"Q1\"}"))

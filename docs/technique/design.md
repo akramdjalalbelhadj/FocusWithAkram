@@ -169,6 +169,8 @@ Une carte doit conserver titre, statut, repères de date et commandes pertinente
 
 La page Angular utilise [son template](../../frontend-angular/src/app/features/eisenhower/pages/matrix/matrix.page.html) et [sa feuille CSS](../../frontend-angular/src/app/features/eisenhower/pages/matrix/matrix.page.css) avec des classes sémantiques. `data-quadrant` et `is-active` expriment la donnée et l’état ; les règles visuelles restent dans la feuille.
 
+**Tutoriel** (lot 15, composant partagé `ff-tour`) : bouton discret **Comment ça marche ?** dans l’en-tête, à côté de **Nouvelle tâche**. Le schéma est la matrice elle-même : grille 2 × 2 dans la disposition de la page (Q1 en haut à gauche), axes visuels « Urgent / Pas urgent » en tête de colonnes et « Important / Pas important » en tête de lignes, cases aux couleurs des quadrants (tokens `q1`–`q4`) avec badge Q1–Q4, icône (flamme, calendrier coché, personnes, archive), intitulé et phrase courte. La grille reste en 2 × 2 sur téléphone. À l’étape « Planifier », Q2 reçoit l’anneau de mise en avant et les autres cases passent en neutre, texte toujours lisible.
+
 Références : [clair](../maquettes/Matrice_Eisenhower_clair.png), [sombre](../maquettes/Matrice_Eisenhower_sombre.png).
 
 ## 12. Mes tâches, formulaires et détail
@@ -255,6 +257,7 @@ Références : [clair](../maquettes/FocusWithAkram_Projets_clair.png), [sombre](
 - **Catégories** (`/notes/categories`) : liste unique en carte, pastille de couleur, nombre d’idées, **Modifier** et suppression. Dialogue : nom et palette des couleurs des projets.
 - **Dialogues** : saisie rapide (titre obligatoire, détails facultatifs, **Enregistrer** / **Enregistrer et développer**) ; formulaire de tâche réutilisé avec le sous-titre « Idée : … » et, en cas de doublon, un encadré `bg-warning-soft` amené dans la vue avec **Créer quand même** ; suppression bloquée = dialogue de confirmation danger « Suppression bloquée » avec **Supprimer quand même**.
 - **Matrice** : les cartes compactes n’affichent pas le repère « Idée » (comme le projet et les étiquettes) ; **Mes tâches** l’affiche en `chip`.
+- **Tutoriel** (lot 14, composant partagé `ff-tour`) : bouton discret (`btn-ghost`) **Comment ça marche ?** (icône d’aide) dans l’en-tête, avant **Catégories**. Le schéma « de l’idée à l’action » est une suite de trois cartes numérotées (icône ronde, titre, phrase) : **ambre** (ampoule ; `--warning-soft`, `--q3-accent`), **violet** (étincelles ; `--brand-soft`, `--brand`) et **vert** (liste cochée ; `--success-soft`, `--success`), tirés des tokens pour rester justes en clair et en sombre. Flèches dessinées en CSS (`--muted`) entre les cartes ; de gauche à droite sur ordinateur, empilées de haut en bas sous 640 px (cartes en ligne, texte à gauche). L’étape mise en avant reçoit un anneau de 3 px à sa couleur ; les autres passent en neutre (`--surface-2`, `--line`, `--muted`) en gardant le texte en `--fg`, donc lisible. Les étapes ciblées sont éclairées par le projecteur et la bulle de la visite guidée de Mes achats.
 
 ### Archives
 

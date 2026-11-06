@@ -1,0 +1,387 @@
+/* Visite guidee partagee (Mes achats, Notes & idees). Au-dessus de l'en-tete collant et de la navigation mobile, sous les dialogues CDK. */
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+}
+
+.tour-dim {
+  position: absolute;
+  inset: 0;
+  background: rgb(8 10 20 / 0.6);
+}
+
+/* Projecteur : la cible reste visible, entouree d'un contour, le reste de l'ecran est assombri. */
+.tour-spot {
+  position: fixed;
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 0 0 3px var(--brand),
+    0 0 0 9999px rgb(8 10 20 / 0.6);
+  pointer-events: none;
+}
+
+.tour-bubble {
+  position: fixed;
+  z-index: 901;
+  width: min(22rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow-lg);
+  outline: none;
+}
+
+.tour-bubble:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}
+
+/* Centree sans transformation (l'animation d'apparition en utilise une). */
+.tour-center {
+  inset: 0;
+  height: fit-content;
+  margin: auto;
+}
+
+/* Telephone : la bulle occupe le bas de l'ecran, au-dessus de la navigation mobile. */
+.tour-sheet {
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  width: auto;
+  max-height: 50dvh;
+}
+
+.tour-progress {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tour-title {
+  margin-top: 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.tour-text {
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.tour-bar {
+  height: 4px;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.tour-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+  transition: width 0.2s ease;
+}
+
+.tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.tour-actions .btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Etape avec schema : bulle plus large ; sur telephone, presque tout l'ecran. */
+.tour-wide {
+  width: min(44rem, calc(100vw - 1.5rem));
+}
+
+.tour-sheet.tour-wide {
+  width: auto;
+  max-height: 88dvh;
+}
+
+/* Schema : etapes colorees reliees par des fleches (de gauche a droite, de haut en bas sur telephone). */
+.tour-figure {
+  margin: 0.9rem 0 0.1rem;
+}
+
+.tour-diagram {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 1.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tour-stage {
+  --stage: var(--brand);
+  --stage-accent: var(--brand);
+  --stage-soft: var(--brand-soft);
+  --stage-line: var(--q4-line);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 0.7rem;
+  border: 1.5px solid var(--stage-line);
+  border-radius: var(--radius-md);
+  background: var(--stage-soft);
+  text-align: center;
+}
+
+.tour-stage[data-tone='amber'] {
+  --stage: var(--warning);
+  --stage-accent: var(--q3-accent);
+  --stage-soft: var(--warning-soft);
+  --stage-line: var(--q3-line);
+}
+
+.tour-stage[data-tone='green'] {
+  --stage: var(--success);
+  --stage-accent: var(--success);
+  --stage-soft: var(--success-soft);
+  --stage-line: color-mix(in srgb, var(--success) 45%, transparent);
+}
+
+.tour-stage[data-tone='blue'] {
+  --stage: var(--info);
+  --stage-accent: var(--q2-accent);
+  --stage-soft: var(--info-soft);
+  --stage-line: var(--q2-line);
+}
+
+/* Quadrants de la matrice d'Eisenhower : memes couleurs que la matrice elle-meme. */
+.tour-stage[data-tone='q1'] {
+  --stage: var(--q1);
+  --stage-accent: var(--q1-accent);
+  --stage-soft: var(--q1-soft);
+  --stage-line: var(--q1-line);
+}
+
+.tour-stage[data-tone='q2'] {
+  --stage: var(--q2);
+  --stage-accent: var(--q2-accent);
+  --stage-soft: var(--q2-soft);
+  --stage-line: var(--q2-line);
+}
+
+.tour-stage[data-tone='q3'] {
+  --stage: var(--q3);
+  --stage-accent: var(--q3-accent);
+  --stage-soft: var(--q3-soft);
+  --stage-line: var(--q3-line);
+}
+
+.tour-stage[data-tone='q4'] {
+  --stage: var(--q4);
+  --stage-accent: var(--q4-accent);
+  --stage-soft: var(--q4-soft);
+  --stage-line: var(--q4-line);
+}
+
+/* Fleche vers l'etape suivante, dessinee (aucun texte lu par les lecteurs d'ecran). */
+.tour-stage:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -1.1rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-top: 3px solid var(--muted);
+  border-right: 3px solid var(--muted);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.tour-stage[aria-current='step'] {
+  box-shadow: 0 0 0 3px var(--stage-accent);
+}
+
+/* Etapes en retrait quand une seule est mise en avant (couleurs neutres, texte toujours lisible) ; prime sur la
+   couleur de chaque etape. */
+.tour-stage.tour-stage-dim[data-tone] {
+  --stage-accent: var(--line-strong);
+  --stage-soft: var(--surface-2);
+  --stage-line: var(--line);
+  --stage: var(--muted);
+}
+
+.tour-stage-icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: var(--stage-accent);
+  color: var(--surface);
+  flex: none;
+}
+
+.tour-stage-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.tour-stage-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--fg);
+}
+
+.tour-stage-num {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  border: 1.5px solid var(--stage);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--stage);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.tour-stage-text {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--fg);
+}
+
+/* Matrice : quatre cases en 2 × 2, intitules des colonnes en haut et des lignes a gauche (sans fleches). */
+.tour-figure-matrix {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    '. columns'
+    'rows list';
+  gap: 0.4rem 0.5rem;
+}
+
+.tour-figure-matrix .tour-diagram {
+  grid-area: list;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 0.6rem;
+}
+
+.tour-figure-matrix .tour-stage {
+  padding: 0.65rem 0.6rem;
+  gap: 0.35rem;
+}
+
+.tour-figure-matrix .tour-stage::after {
+  display: none;
+}
+
+.tour-figure-matrix .tour-stage-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+
+.tour-figure-matrix .tour-stage-num {
+  padding: 0 0.3rem;
+}
+
+.tour-axis-columns {
+  grid-area: columns;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.tour-axis-rows {
+  grid-area: rows;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tour-axis-columns > span,
+.tour-axis-rows > span {
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tour-axis-rows > span {
+  flex: 1;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+@media (max-width: 640px) {
+  .tour-diagram {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 1.3rem;
+  }
+
+  .tour-stage {
+    flex-direction: row;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+  }
+
+  .tour-stage-title {
+    justify-content: flex-start;
+  }
+
+  .tour-figure-matrix .tour-diagram {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .tour-figure-matrix .tour-stage {
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 0.4rem;
+    text-align: center;
+  }
+
+  .tour-figure-matrix .tour-stage-title {
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+  }
+
+  .tour-figure-matrix .tour-stage-text {
+    font-size: 0.72rem;
+  }
+
+  .tour-stage:not(:last-child)::after {
+    top: auto;
+    right: auto;
+    bottom: -0.95rem;
+    left: 50%;
+    transform: translateX(-50%) rotate(135deg);
+  }
+}

@@ -263,6 +263,10 @@ export interface Settings {
   compactMode: boolean;
   /** Mode par defaut de l'editeur des notes (facultatif : les interfaces sans module de notes l'ignorent). */
   noteEditorMode?: NoteEditorMode;
+  /** Tutoriel de « Notes & idées » termine ou passe (facultatif : les interfaces sans module de notes l'ignorent). */
+  notesTutorialDone?: boolean;
+  /** Tutoriel de la matrice d'Eisenhower termine ou passe (facultatif : React l'ignore). */
+  matrixTutorialDone?: boolean;
 }
 
 // ---- Dashboard / statistiques ---------------------------------------------

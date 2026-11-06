@@ -261,6 +261,22 @@ class NoteIT extends IntegrationTest {
     }
 
     @Test
+    void theTutorialIsOfferedUntilItIsFinishedOrSkipped() throws Exception {
+        mvc.perform(get("/api/v1/settings")).andExpect(jsonPath("$.notesTutorialDone").value(false));
+        send(patch("/api/v1/settings"), "{\"notesTutorialDone\":true}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.notesTutorialDone").value(true))
+                .andExpect(jsonPath("$.noteEditorMode").value("MARKDOWN"));
+        // Un autre reglage modifie ensuite ne fait pas revenir le tutoriel.
+        send(patch("/api/v1/settings"), "{\"theme\":\"DARK\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.notesTutorialDone").value(true));
+        // Relance possible (remise a faux).
+        send(patch("/api/v1/settings"), "{\"notesTutorialDone\":false}")
+                .andExpect(jsonPath("$.notesTutorialDone").value(false));
+    }
+
+    @Test
     void ideasCategoriesTaskLinksAndEditorModeSurviveABackupRoundTrip() throws Exception {
         String category = createCategory("Technique");
         String note = createNote("{\"title\":\"Idee\",\"content\":\"## Pistes\\n- [ ] A\",\"categoryId\":\"" + category
