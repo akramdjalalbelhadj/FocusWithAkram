@@ -1,5 +1,5 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -46,7 +46,6 @@ export class ScheduleDialogComponent {
     type: [(this.s?.type ?? (this.initialKind === 'SALARY' ? 'INCOME' : 'EXPENSE')) as 'INCOME' | 'EXPENSE'],
     label: [this.s?.label ?? (this.initialKind === 'SALARY' ? 'Salaire' : '')],
     amount: [amountInput(this.s?.amount)],
-    accountId: [this.s?.account.id ?? ''],
     categoryId: [this.s?.category?.id ?? ''],
     incomeKind: [(this.s?.incomeKind ?? 'SALARY') as IncomeKind],
     essential: [this.s?.essential ?? false],
@@ -63,19 +62,10 @@ export class ScheduleDialogComponent {
   protected readonly endMode = computed(() => this.value().endMode ?? 'none');
   protected readonly saving = signal(false);
   protected readonly error = signal('');
-  protected readonly accounts = computed(() =>
-    this.store.accounts().filter((a) => !a.archived || a.id === this.s?.account.id),
-  );
   protected readonly categories = computed(() => this.store.activeCategories());
 
   constructor() {
     this.store.ensure();
-    effect(() => {
-      const first = this.store.activeAccounts().find((a) => a.type !== 'SAVINGS');
-      if (first && !untracked(() => this.form.controls.accountId.value)) {
-        this.form.controls.accountId.setValue(first.id);
-      }
-    });
     // Un salaire est un revenu ; un abonnement, une charge ou un paiement en plusieurs fois, une depense.
     this.form.controls.kind.valueChanges.subscribe((kind) => {
       if (kind === 'SALARY') this.form.patchValue({ type: 'INCOME', incomeKind: 'SALARY' });
@@ -90,7 +80,8 @@ export class ScheduleDialogComponent {
     const fail = (m: string) => this.error.set(m);
     if (!v.label.trim()) return fail('Le libellé est obligatoire.');
     if (amount === null || amount <= 0) return fail('Saisissez un montant positif, au centime près.');
-    if (!v.accountId) return fail('Choisissez un compte.');
+    const accountId = this.s?.account.id ?? this.store.account()?.id;
+    if (!accountId) return fail('Saisissez d’abord le solde de votre compte.');
     if (v.type === 'EXPENSE' && !v.categoryId) return fail('Choisissez une catégorie.');
     if (!v.startDate) return fail('Indiquez la première échéance.');
     const interval = Number(v.intervalCount);
@@ -108,7 +99,7 @@ export class ScheduleDialogComponent {
       label: v.label.trim(),
       type: v.type,
       kind: v.kind,
-      accountId: v.accountId,
+      accountId,
       categoryId: v.type === 'EXPENSE' ? v.categoryId : null,
       incomeKind: v.type === 'INCOME' ? v.incomeKind : null,
       amount,

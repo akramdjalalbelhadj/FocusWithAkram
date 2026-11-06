@@ -14,29 +14,43 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Budget mensuel : plafond des depenses variables, objectif d'epargne et suivi. Tout est recalcule a la lecture
  * a partir des operations et des echeances calculees du mois.
+ *
+ * <p>Plafond variable d'un mois ({@link #capFor}) : la somme des plafonds des depenses variables plafonnees
+ * (enveloppes) actives ce mois-la ; sans enveloppe, le plafond saisi pour le mois, sinon le plafond par defaut des
+ * preferences. Il sert au budget, a la jauge, aux alertes, a la prevision et aux statistiques.
  */
 @Service
 public class BudgetService {
+
+    /** Plafond variable d'un mois et son origine : ENVELOPES, MONTH, DEFAULT ou NONE (montant absent). */
+    public record Cap(BigDecimal amount, String source) {
+    }
 
     private final MonthlyBudgetRepository budgets;
     private final FinancePreferencesRepository preferences;
     private final OperationRepository operations;
     private final ScheduleService schedules;
+    private final EnvelopeRepository envelopes;
     private final FinanceDates dates;
 
     public BudgetService(MonthlyBudgetRepository budgets, FinancePreferencesRepository preferences,
-                         OperationRepository operations, ScheduleService schedules, FinanceDates dates) {
+                         OperationRepository operations, ScheduleService schedules, EnvelopeRepository envelopes,
+                         FinanceDates dates) {
         this.budgets = budgets;
         this.preferences = preferences;
         this.operations = operations;
         this.schedules = schedules;
+        this.envelopes = envelopes;
         this.dates = dates;
     }
 
@@ -51,7 +65,7 @@ public class BudgetService {
     public PreferencesResponse preferencesResponse() {
         FinancePreferences p = preferences();
         return new PreferencesResponse(p.getSafetyReserve(), p.getSavingsFloor(), p.getDefaultVariableCap(),
-                p.getDefaultSavingsTarget(), p.getWarningPercent());
+                p.getDefaultSavingsTarget(), p.getWarningPercent(), p.isTutorialDone());
     }
 
     @Transactional
@@ -63,7 +77,48 @@ public class BudgetService {
         p.setDefaultSavingsTarget(r.defaultSavingsTarget() == null ? null
                 : nonNegative(r.defaultSavingsTarget(), "L'objectif d'epargne"));
         p.setWarningPercent(r.warningPercent());
+        if (r.tutorialDone() != null) {
+            p.setTutorialDone(r.tutorialDone());
+        }
         preferences.save(p);
+    }
+
+    // ---- Plafond variable et objectif d'epargne ------------------------------------------------------
+
+    /** Plafond variable du mois ; voir {@link BudgetService}. */
+    @Transactional(readOnly = true)
+    public Cap capFor(YearMonth month) {
+        return capsBetween(month, month).get(month);
+    }
+
+    /** Plafond variable de chaque mois de `from` a `to` inclus (une seule lecture des enveloppes et des budgets). */
+    @Transactional(readOnly = true)
+    public Map<YearMonth, Cap> capsBetween(YearMonth from, YearMonth to) {
+        List<Envelope> all = envelopes.findAllOrdered();
+        Map<YearMonth, MonthlyBudget> byMonth = new HashMap<>();
+        budgets.findAllByOrderByMonthAsc().forEach(b -> byMonth.put(YearMonth.from(b.getMonth()), b));
+        BigDecimal defaultCap = preferences().getDefaultVariableCap();
+        Map<YearMonth, Cap> caps = new LinkedHashMap<>();
+        for (YearMonth m = from; !m.isAfter(to); m = m.plusMonths(1)) {
+            BigDecimal sum = null;
+            for (Envelope e : all) {
+                BigDecimal cap = e.capFor(m);
+                if (cap != null) sum = sum == null ? cap : sum.add(cap);
+            }
+            MonthlyBudget b = byMonth.get(m);
+            if (sum != null) caps.put(m, new Cap(sum, "ENVELOPES"));
+            else if (b != null && b.getVariableCap() != null) caps.put(m, new Cap(b.getVariableCap(), "MONTH"));
+            else if (defaultCap != null) caps.put(m, new Cap(defaultCap, "DEFAULT"));
+            else caps.put(m, new Cap(null, "NONE"));
+        }
+        return caps;
+    }
+
+    /** Objectif d'epargne du mois : valeur du mois, sinon valeur par defaut (null si aucune). */
+    @Transactional(readOnly = true)
+    public BigDecimal savingsTargetFor(YearMonth month) {
+        BigDecimal target = budgets.findByMonth(month.atDay(1)).map(MonthlyBudget::getSavingsTarget).orElse(null);
+        return target != null ? target : preferences().getDefaultSavingsTarget();
     }
 
     // ---- Budget du mois ---------------------------------------------------------------------------
@@ -101,8 +156,9 @@ public class BudgetService {
         MonthTotals totals = FinanceOverviewService.totals(plan);
         FinancePreferences prefs = preferences();
         MonthlyBudget b = budgets.findByMonth(month.atDay(1)).orElse(null);
-        BigDecimal cap = b != null && b.getVariableCap() != null ? b.getVariableCap() : prefs.getDefaultVariableCap();
-        String capSource = b != null && b.getVariableCap() != null ? "MONTH" : cap != null ? "DEFAULT" : "NONE";
+        Cap variableCap = capFor(month);
+        BigDecimal cap = variableCap.amount();
+        String capSource = variableCap.source();
         BigDecimal target = b != null && b.getSavingsTarget() != null ? b.getSavingsTarget() : prefs.getDefaultSavingsTarget();
         String targetSource = b != null && b.getSavingsTarget() != null ? "MONTH" : target != null ? "DEFAULT" : "NONE";
 
@@ -126,13 +182,10 @@ public class BudgetService {
                 plannedVariable);
     }
 
-    /** Jauge du plafond variable pour la vue d'ensemble. */
+    /** Jauge du plafond variable pour la vue d'ensemble et les alertes. */
     @Transactional(readOnly = true)
     public BudgetGauge gauge(YearMonth month, MonthTotals totals) {
-        FinancePreferences prefs = preferences();
-        BigDecimal cap = budgets.findByMonth(month.atDay(1)).map(MonthlyBudget::getVariableCap)
-                .orElse(null);
-        return gauge(cap != null ? cap : prefs.getDefaultVariableCap(), totals.variablePaid(), prefs.getWarningPercent());
+        return gauge(capFor(month).amount(), totals.variablePaid(), preferences().getWarningPercent());
     }
 
     /** Jauge du plafond variable ; voir {@link BudgetGauge}. */

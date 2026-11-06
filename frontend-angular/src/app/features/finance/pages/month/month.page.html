@@ -1,0 +1,373 @@
+<div class="month-nav" data-tour="month-nav">
+  <div class="flex items-center gap-1 min-w-0">
+    <button type="button" class="btn btn-ghost btn-sm btn-icon" aria-label="Mois précédent" (click)="shift(-1)">
+      <ff-icon name="chevron-left" />
+    </button>
+    <h2 class="month-title" aria-live="polite">{{ monthTitle() }}</h2>
+    <button type="button" class="btn btn-ghost btn-sm btn-icon" aria-label="Mois suivant" (click)="shift(1)">
+      <ff-icon name="chevron-right" />
+    </button>
+    <ff-help-tip label="La feuille du mois" [text]="help.sheet" />
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    @if (period() === 'PAST') {
+      <span class="badge badge-todo">Mois passé · modifiable</span>
+    } @else if (period() === 'FUTURE') {
+      <span class="badge badge-progress">Mois à venir</span>
+    }
+    @if (month() !== currentMonth) {
+      <button type="button" class="btn btn-secondary btn-sm" (click)="goTo(currentMonth)">
+        <ff-icon name="calendar-check" [size]="15" />Mois en cours
+      </button>
+    }
+  </div>
+</div>
+
+@if (alerts().length) {
+  <section class="card p-3 mb-4" aria-labelledby="mon-alerts">
+    <h3 id="mon-alerts" class="sr-only-text">Alertes du jour</h3>
+    <ul class="space-y-1">
+      @for (a of alerts(); track $index) {
+        <li>
+          <a
+            [routerLink]="'../' + a.link"
+            class="flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2"
+          >
+            <ff-icon [name]="a.icon" [size]="16" class="mt-0.5 flex-none" [class]="tone[a.severity]" />
+            <span>{{ a.text }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (loader.error()) {
+  <ff-error (retry)="loader.load()" />
+} @else if (loader.loading()) {
+  <ff-skeleton [count]="4" [height]="96" />
+} @else if (sheet(); as s) {
+  <div class="month-body" [class.is-stale]="stale()" [attr.aria-busy]="stale()">
+    @if (empty()) {
+      <section class="card p-5 sm:p-6 mb-5" aria-labelledby="mon-start">
+        <h3 id="mon-start" class="text-lg font-bold flex items-center gap-2">
+          <ff-icon name="sparkles" class="text-brand" />Pour bien démarrer
+        </h3>
+        <p class="text-sm text-muted mt-1">
+          Trois saisies, une seule fois : ensuite, la feuille de chaque mois se remplit toute seule. Il ne vous
+          restera qu’à indiquer ce qui s’est réellement passé.
+        </p>
+        <ol class="start-steps">
+          <li class="start-step">
+            <span class="start-num" aria-hidden="true">1</span>
+            <p class="font-semibold">Votre revenu prévu</p>
+            <p class="text-sm text-muted">Votre salaire, pour un mois ou chaque mois d’une période.</p>
+            <button type="button" class="btn btn-primary btn-sm mt-auto" (click)="actions.planIncome(month())">
+              <ff-icon name="plus" [size]="15" />Revenu prévu
+            </button>
+          </li>
+          <li class="start-step">
+            <span class="start-num" aria-hidden="true">2</span>
+            <p class="font-semibold">Vos dépenses fixes</p>
+            <p class="text-sm text-muted">Loyer, téléphone, transport : déjà remplies chaque mois.</p>
+            <button type="button" class="btn btn-secondary btn-sm mt-auto" (click)="actions.newFixedCharge(month())">
+              <ff-icon name="plus" [size]="15" />Dépense fixe
+            </button>
+          </li>
+          <li class="start-step">
+            <span class="start-num" aria-hidden="true">3</span>
+            <p class="font-semibold">Vos dépenses variables</p>
+            <p class="text-sm text-muted">Courses, sorties : un plafond par mois, puis le réel.</p>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm mt-auto"
+              (click)="actions.newEnvelope(month(), takenCategories())"
+            >
+              <ff-icon name="plus" [size]="15" />Dépense variable
+            </button>
+          </li>
+        </ol>
+      </section>
+    }
+
+    <section class="kpis" data-tour="month-summary" aria-labelledby="mon-summary">
+      <h3 id="mon-summary" class="sr-only-text">Synthèse de {{ monthTitle() }}</h3>
+      <div class="card kpi">
+        <p class="kpi-label">Solde du compte<ff-help-tip label="Solde du compte" [text]="help.balance" /></p>
+        <p class="kpi-value" [class.text-danger]="(s.account?.balance ?? 0) < 0">
+          {{ money(s.account?.balance) }}
+        </p>
+        <div class="kpi-foot">
+          <span class="kpi-sub">Aujourd’hui</span>
+          @if (s.account; as account) {
+            <button type="button" class="btn btn-ghost btn-sm kpi-action" (click)="actions.reconcile(account)">
+              Corriger
+            </button>
+          }
+        </div>
+      </div>
+      <div class="card kpi">
+        <p class="kpi-label">Revenus</p>
+        <p class="kpi-value text-success">{{ money(s.totals.incomeActual) }}</p>
+        <p class="kpi-sub">reçus sur {{ money(s.totals.incomePlanned) }} prévus</p>
+      </div>
+      <div class="card kpi">
+        <p class="kpi-label">Dépenses</p>
+        <p class="kpi-value">{{ money(s.totals.expensesActual) }}</p>
+        <p class="kpi-sub">payées sur {{ money(s.totals.expensesPlanned) }} prévues</p>
+      </div>
+      <div class="card kpi">
+        <p class="kpi-label">Épargne<ff-help-tip label="Épargne" [text]="help.savings" /></p>
+        <p class="kpi-value" [class.text-danger]="s.totals.savingsActual < 0">
+          {{ money(s.totals.savingsActual) }}
+        </p>
+        <p class="kpi-sub">réelle · prévue {{ money(s.totals.savingsPlanned) }}</p>
+        @if (savings(); as p) {
+          <span
+            class="gauge mt-2"
+            role="meter"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            [attr.aria-valuenow]="p.percent"
+            [attr.aria-valuetext]="p.percent + ' % de l’objectif d’épargne'"
+            aria-label="Objectif d’épargne atteint"
+          >
+            <span class="gauge-fill" [attr.data-tone]="p.reached ? 'ok' : 'warn'" [style.width.%]="p.percent"></span>
+          </span>
+        }
+        <div class="kpi-foot">
+          <span class="kpi-sub">
+            @if (s.savingsTarget !== null && s.savingsTarget > 0) {
+              Objectif {{ money(s.savingsTarget) }}
+            } @else {
+              Aucun objectif
+            }
+          </span>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm kpi-action"
+            aria-label="Modifier l’objectif d’épargne du mois"
+            (click)="actions.editSavingsTarget(month())"
+          >
+            <ff-icon name="target" [size]="14" />Objectif
+          </button>
+        </div>
+      </div>
+    </section>
+
+    @if (future()) {
+      <p class="note mb-4">
+        <ff-icon name="info" [size]="16" class="flex-none mt-0.5" />
+        <span
+          >Mois à venir : préparez les montants prévus (ce mois seulement ou à partir de ce mois). Le réel se
+          saisira le moment venu.</span
+        >
+      </p>
+    }
+
+    <!-- Revenus -->
+    <section class="card sheet-section" data-tour="month-income" aria-labelledby="mon-income">
+      <header class="sec-head">
+        <div class="sec-title">
+          <span class="sec-icon sec-icon-income" aria-hidden="true"><ff-icon name="trending-up" [size]="17" /></span>
+          <h3 id="mon-income">Revenus</h3>
+          <ff-help-tip label="Revenus" [text]="help.incomes" />
+        </div>
+        <p class="sec-total">
+          Reçu <strong>{{ money(s.totals.incomeActual) }}</strong> sur {{ money(s.totals.incomePlanned) }}
+          prévus
+        </p>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="actions.planIncome(month())">
+          <ff-icon name="plus" [size]="15" />Revenu prévu
+        </button>
+      </header>
+      @if (s.incomes.length) {
+        <ff-sheet-rows
+          [rows]="s.incomes"
+          kind="income"
+          [month]="s.month"
+          [period]="period()"
+          [caption]="'Revenus de ' + monthTitle()"
+        />
+      } @else {
+        <p class="sec-empty">
+          Aucun revenu prévu ce mois-ci. Ajoutez votre salaire une fois : il sera repris chaque mois.
+        </p>
+      }
+    </section>
+
+    <!-- Dépenses fixes -->
+    <section class="card sheet-section" data-tour="month-fixed" aria-labelledby="mon-fixed">
+      <header class="sec-head">
+        <div class="sec-title">
+          <span class="sec-icon" aria-hidden="true"><ff-icon name="house" [size]="17" /></span>
+          <h3 id="mon-fixed">Dépenses fixes</h3>
+          <ff-help-tip label="Dépenses fixes" [text]="help.fixed" />
+        </div>
+        <p class="sec-total">
+          Payé <strong>{{ money(s.totals.fixedActual) }}</strong> sur {{ money(s.totals.fixedPlanned) }} prévus
+        </p>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="actions.newFixedCharge(month())">
+          <ff-icon name="plus" [size]="15" />Dépense fixe
+        </button>
+      </header>
+      @if (s.fixed.length) {
+        <ff-sheet-rows
+          [rows]="s.fixed"
+          kind="fixed"
+          [month]="s.month"
+          [period]="period()"
+          [caption]="'Dépenses fixes de ' + monthTitle()"
+        />
+      } @else {
+        <p class="sec-empty">
+          Aucune dépense fixe. Ajoutez le loyer, le téléphone ou l’abonnement de transport : ils rempliront
+          chaque mois.
+        </p>
+      }
+    </section>
+
+    <!-- Dépenses variables -->
+    <section class="card sheet-section" data-tour="month-variable" aria-labelledby="mon-variable">
+      <header class="sec-head">
+        <div class="sec-title">
+          <span class="sec-icon" aria-hidden="true"><ff-icon name="cart" [size]="17" /></span>
+          <h3 id="mon-variable">Dépenses variables</h3>
+          <ff-help-tip label="Dépenses variables" [text]="help.variable" />
+        </div>
+        <p class="sec-total">
+          Dépensé <strong>{{ money(s.totals.variableActual) }}</strong> sur {{ money(s.totals.variablePlanned) }}
+          de plafond
+        </p>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          (click)="actions.newEnvelope(month(), takenCategories())"
+        >
+          <ff-icon name="plus" [size]="15" />Dépense variable
+        </button>
+      </header>
+      @if (s.variable.length) {
+        <ff-envelope-rows
+          [rows]="s.variable"
+          [month]="s.month"
+          [period]="period()"
+          [caption]="'Dépenses variables de ' + monthTitle()"
+        />
+      } @else {
+        <p class="sec-empty">
+          Aucune dépense variable plafonnée. Fixez par exemple 300 € de courses par mois : la feuille compte vos
+          dépenses et vous prévient en cas de dépassement.
+        </p>
+      }
+    </section>
+
+    <!-- Autres dépenses -->
+    <section class="card sheet-section" data-tour="month-others" aria-labelledby="mon-others">
+      <header class="sec-head">
+        <div class="sec-title">
+          <span class="sec-icon" aria-hidden="true"><ff-icon name="receipt" [size]="17" /></span>
+          <h3 id="mon-others">Autres dépenses</h3>
+          <ff-help-tip label="Autres dépenses" [text]="help.others" />
+        </div>
+        <p class="sec-total">
+          Total <strong>{{ money(s.totals.othersActual) }}</strong>
+        </p>
+        @if (!future()) {
+          <button type="button" class="btn btn-secondary btn-sm" (click)="addOther()">
+            <ff-icon name="plus" [size]="15" />Dépense ponctuelle
+          </button>
+        }
+      </header>
+      @if (s.others.length) {
+        <div class="divide-y divide-[var(--line)]">
+          @for (op of s.others; track op.id ?? $index) {
+            <ff-operation-row [op]="op" [showDate]="true" />
+          }
+        </div>
+      } @else {
+        <p class="sec-empty">
+          @if (future()) {
+            Les dépenses ponctuelles se saisissent quand elles ont lieu.
+          } @else {
+            Aucune autre dépense ce mois-ci.
+          }
+        </p>
+      }
+    </section>
+
+    <!-- Épargne du mois -->
+    <section class="card sheet-section" aria-labelledby="mon-savings">
+      <header class="sec-head">
+        <div class="sec-title">
+          <span class="sec-icon sec-icon-income" aria-hidden="true"><ff-icon name="piggy-bank" [size]="17" /></span>
+          <h3 id="mon-savings">Épargne du mois</h3>
+          <ff-help-tip label="Épargne" [text]="help.savings" />
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="actions.editSavingsTarget(month())">
+          <ff-icon name="target" [size]="15" />Objectif d’épargne
+        </button>
+      </header>
+      <table class="balance-table">
+        <caption class="sr-only-text">
+          Bilan prévu et réel de {{ monthTitle() }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col"><span class="sr-only-text">Poste</span></th>
+            <th scope="col">Prévu</th>
+            <th scope="col">Réel</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Revenus</th>
+            <td>{{ money(s.totals.incomePlanned) }}</td>
+            <td>{{ money(s.totals.incomeActual) }}</td>
+          </tr>
+          <tr>
+            <th scope="row">− Dépenses fixes</th>
+            <td>{{ money(s.totals.fixedPlanned) }}</td>
+            <td>{{ money(s.totals.fixedActual) }}</td>
+          </tr>
+          <tr>
+            <th scope="row">− Dépenses variables</th>
+            <td>{{ money(s.totals.variablePlanned) }}</td>
+            <td>{{ money(s.totals.variableActual) }}</td>
+          </tr>
+          <tr>
+            <th scope="row">− Autres dépenses</th>
+            <td><span class="text-muted" aria-hidden="true">—</span><span class="sr-only-text">Non prévu</span></td>
+            <td>{{ money(s.totals.othersActual) }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">= Épargne</th>
+            <td [class.text-danger]="s.totals.savingsPlanned < 0">{{ money(s.totals.savingsPlanned) }}</td>
+            <td [class.text-danger]="s.totals.savingsActual < 0" [class.text-success]="savings()?.reached">
+              {{ money(s.totals.savingsActual) }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <p class="savings-verdict">
+        @if (savings(); as p) {
+          @if (p.reached) {
+            <ff-icon name="circle-check" [size]="16" class="text-success flex-none mt-0.5" />
+            <span>Objectif de {{ money(s.savingsTarget) }} atteint ce mois-ci.</span>
+          } @else {
+            <ff-icon name="target" [size]="16" class="text-muted flex-none mt-0.5" />
+            <span
+              >Objectif : {{ money(s.savingsTarget) }} — il manque {{ money(p.missing) }} à l’épargne réelle
+              ({{ p.percent }} %).</span
+            >
+          }
+        } @else {
+          <ff-icon name="target" [size]="16" class="text-muted flex-none mt-0.5" />
+          <span>Aucun objectif d’épargne pour ce mois : fixez-en un pour suivre votre progression.</span>
+        }
+      </p>
+    </section>
+  </div>
+}

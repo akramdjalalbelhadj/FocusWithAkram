@@ -20,6 +20,8 @@ export class FinanceReferenceStore {
   readonly error = signal(false);
 
   readonly activeAccounts = computed(() => this.accounts().filter((a) => !a.archived));
+  /** Le compte unique, qui represente tout l'argent (null tant que le solde de depart n'est pas saisi). */
+  readonly account = computed(() => this.activeAccounts()[0] ?? this.accounts()[0] ?? null);
   /** Categories actives, chaque racine avec ses sous-categories actives. */
   readonly activeCategories = computed(() =>
     this.categories()

@@ -1,0 +1,339 @@
+/* Tableaux de la feuille du mois (revenus, depenses fixes, depenses variables). Sous 640 px, chaque ligne devient
+   une carte empilee : aucune barre de defilement horizontale. */
+:host {
+  display: block;
+}
+
+.sheet-scroll {
+  overflow-x: auto;
+}
+
+.sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet-table thead th {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sheet-table tbody th,
+.sheet-table tbody td {
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.sheet-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.sheet-table .c-num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.th-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05rem;
+}
+
+.sheet-table .c-label {
+  min-width: 9rem;
+  text-align: left;
+  font-weight: inherit;
+}
+
+.sheet-table .c-date,
+.sheet-table .c-status {
+  white-space: nowrap;
+}
+
+.sheet-table .c-date {
+  color: var(--muted);
+}
+
+.sheet-table .c-menu {
+  width: 1%;
+  padding-right: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-title {
+  display: block;
+  color: var(--fg);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.row-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.3rem;
+  margin-top: 0.1rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.row-sub > span:not(.badge) + span:not(.badge)::before {
+  content: '· ';
+}
+
+.row-comment {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-style: italic;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.record-btn {
+  min-height: 1.85rem;
+}
+
+tr.is-skipped .c-planned,
+tr.is-skipped .row-title {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+tr.is-late .c-date {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Depense variable au-dela du plafond : ligne en avertissement. */
+tr.is-over > * {
+  background: var(--warning-soft);
+}
+
+tr.is-over > :first-child {
+  box-shadow: inset 3px 0 var(--warning);
+}
+
+.sheet-table .c-bar {
+  min-width: 7.5rem;
+}
+
+.env-gauge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gauge {
+  display: block;
+  flex: 1;
+  min-width: 3.5rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--success);
+}
+
+.gauge-fill[data-tone='warn'] {
+  background: var(--q3-accent);
+}
+
+.gauge-fill[data-tone='over'] {
+  background: var(--danger);
+}
+
+.gauge-pct {
+  min-width: 2.75rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sheet-table .c-comment {
+  min-width: 8rem;
+  max-width: 16rem;
+}
+
+.comment-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.explain-btn {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+  white-space: normal;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.explain-btn:hover {
+  background: color-mix(in srgb, var(--warning) 16%, var(--surface));
+}
+
+@media (max-width: 639px) {
+  .sheet-scroll {
+    overflow: visible;
+  }
+
+  .sheet-table,
+  .sheet-table tbody {
+    display: block;
+  }
+
+  .sheet-table thead {
+    display: none;
+  }
+
+  .sheet-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    gap: 0.4rem 0.75rem;
+    align-items: start;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .sheet-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .sheet-table tbody tr > * {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .sheet-table tbody .c-num {
+    text-align: left;
+  }
+
+  .sheet-table [data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .sheet-table .c-label {
+    grid-area: label;
+    min-width: 0;
+  }
+
+  .sheet-table .c-menu {
+    grid-area: menu;
+    width: auto;
+  }
+
+  .rows-table tbody tr {
+    grid-template-areas:
+      'label label label menu'
+      'planned actual diff diff'
+      'date status status status';
+  }
+
+  .rows-table .c-planned {
+    grid-area: planned;
+  }
+
+  .rows-table .c-actual {
+    grid-area: actual;
+  }
+
+  .rows-table .c-diff {
+    grid-area: diff;
+  }
+
+  .rows-table .c-date {
+    grid-area: date;
+    align-self: center;
+  }
+
+  .rows-table .c-status {
+    grid-area: status;
+    align-self: center;
+  }
+
+  .env-table tbody tr {
+    grid-template-areas:
+      'label label label menu'
+      'cap spent rest rest'
+      'bar bar bar bar'
+      'comment comment comment comment';
+  }
+
+  .env-table .c-cap {
+    grid-area: cap;
+  }
+
+  .env-table .c-spent {
+    grid-area: spent;
+  }
+
+  .env-table .c-rest {
+    grid-area: rest;
+  }
+
+  .env-table .c-bar {
+    grid-area: bar;
+    min-width: 0;
+  }
+
+  .env-table .c-comment {
+    grid-area: comment;
+  }
+
+  .env-table tbody tr > .c-comment.is-empty {
+    display: none;
+  }
+
+  /* Ligne en depassement : la carte entiere est teintee. */
+  .sheet-table tbody tr.is-over {
+    margin: 0 -0.5rem;
+    padding: 0.75rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--warning-soft);
+    box-shadow: inset 3px 0 var(--warning);
+  }
+
+  tr.is-over > *,
+  tr.is-over > :first-child {
+    background: transparent;
+    box-shadow: none;
+  }
+}

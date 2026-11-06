@@ -66,7 +66,7 @@ class InsightIT extends IntegrationTest {
     }
 
     @Test
-    void alertsAreDerivedFromBudgetSchedulesForecastGoalsAndLoans() throws Exception {
+    void alertsAreDerivedFromBudgetSchedulesForecastAndGoals() throws Exception {
         String courant = account("Courant", "CURRENT", "1000");
         String loisirs = category("Loisirs", null);
         send(put(API + "/preferences"), """
@@ -88,24 +88,20 @@ class InsightIT extends IntegrationTest {
         send(post(API + "/goals"), """
                 {"name":"Velo","estimatedPrice":5000,"targetDate":"2026-11-15","important":true}""")
                 .andExpect(status().isCreated());
-        send(post(API + "/loans"), """
-                {"person":"Nadia","direction":"BORROWED","amount":100,"startDate":"2026-09-01","dueDate":"2026-10-01",
-                 "recordDisbursement":false}""").andExpect(status().isCreated());
 
         String alerts = read(API + "/alerts");
         assertThat((List<String>) JsonPath.read(alerts, "$[*].code")).containsExactlyInAnyOrder("BUDGET_OVER",
-                "INCOME_LATE", "EXPENSES_OVERDUE", "DUE_SOON", "RESERVE_BREACH", "GOAL_NOT_FEASIBLE",
-                "LOAN_OVERDUE_BORROWED");
+                "INCOME_LATE", "EXPENSES_OVERDUE", "DUE_SOON", "RESERVE_BREACH", "GOAL_NOT_FEASIBLE");
         // Gravite decroissante : les alertes « danger » d'abord, l'information en dernier.
         assertThat((List<String>) JsonPath.read(alerts, "$[*].severity")).containsExactly("DANGER", "DANGER", "DANGER",
-                "DANGER", "DANGER", "WARNING", "INFO");
+                "DANGER", "WARNING", "INFO");
         assertThat(first(alerts, "$[?(@.code=='BUDGET_OVER')].amount")).isEqualByComparingTo("20");
         assertThat((List<Integer>) JsonPath.read(alerts, "$[?(@.code=='BUDGET_OVER')].count")).containsExactly(120);
         assertThat((List<String>) JsonPath.read(alerts, "$[?(@.code=='DUE_SOON')].label")).containsExactly("Loyer");
         assertThat((List<String>) JsonPath.read(alerts, "$[?(@.code=='INCOME_LATE')].date")).containsExactly("2026-10-20");
-        // 880 + 2000 (paie en retard, comptee aujourd'hui) - 50 - 100 (emprunt echu) = 2730, puis - 500 le 03/11.
+        // 880 + 2000 (paie en retard, comptee aujourd'hui) - 50 = 2830, puis - 500 le 03/11.
         assertThat((List<String>) JsonPath.read(alerts, "$[?(@.code=='RESERVE_BREACH')].date")).containsExactly("2026-10-30");
-        assertThat(first(alerts, "$[?(@.code=='RESERVE_BREACH')].amount")).isEqualByComparingTo("2230");
+        assertThat(first(alerts, "$[?(@.code=='RESERVE_BREACH')].amount")).isEqualByComparingTo("2330");
         assertThat((List<String>) JsonPath.read(alerts, "$[?(@.code=='GOAL_NOT_FEASIBLE')].label")).containsExactly("Velo");
     }
 
@@ -119,7 +115,6 @@ class InsightIT extends IntegrationTest {
     @Test
     void statisticsSummariseCompleteMonthsByCategory() throws Exception {
         String courant = account("Courant", "CURRENT", "1000");
-        String epargne = account("Livret", "SAVINGS", "0");
         String courses = category("Courses", null);
         String supermarche = category("Supermarche", courses);
         String loisirs = category("Loisirs", null);
@@ -142,16 +137,12 @@ class InsightIT extends IntegrationTest {
         operation("""
                 {"accountId":"%s","type":"PURCHASE_REFUND","status":"COMPLETED","date":"2026-10-07","amount":50,
                  "label":"Retour jeu","categoryId":"%s","refundOfId":"%s"}""".formatted(courant, loisirs, jeu));
-        operation("""
-                {"accountId":"%s","targetAccountId":"%s","type":"TRANSFER","status":"COMPLETED","date":"2026-10-10",
-                 "amount":400,"label":"Epargne"}""".formatted(courant, epargne));
+        send(put(API + "/budget/2026-10"), """
+                {"variableCap":150,"savingsTarget":500}""").andExpect(status().isOk());
         String watch = id(send(post(API + "/goals"), """
                 {"name":"Montre","categoryId":"%s","estimatedPrice":400,"targetDate":"2026-11-15"}""".formatted(hightech)));
         send(post(API + "/goals/" + watch + "/purchase"), """
                 {"amount":380,"date":"2026-10-30","accountId":"%s"}""".formatted(courant)).andExpect(status().isOk());
-        String loan = id(send(post(API + "/loans"), """
-                {"person":"Sami","direction":"LENT","amount":100,"startDate":"2026-09-01","recordDisbursement":false}"""));
-        send(post(API + "/loans/" + loan + "/write-off"), "{\"reason\":null}").andExpect(status().isOk());
 
         String s = read(API + "/statistics");
         assertThat((String) JsonPath.read(s, "$.from")).isEqualTo("2025-11");
@@ -161,13 +152,19 @@ class InsightIT extends IntegrationTest {
         assertThat(amount(s, "$.totals.incomeReceived")).isEqualByComparingTo("4000");
         assertThat(amount(s, "$.totals.expensesPaid")).isEqualByComparingTo("930");
         assertThat(amount(s, "$.totals.goalPurchasesPaid")).isEqualByComparingTo("380");
-        assertThat(amount(s, "$.totals.savedToSavings")).isEqualByComparingTo("400");
-        assertThat(amount(s, "$.totals.unspent")).isEqualByComparingTo("2670");
+        // Epargne de la periode : ce qui reste des revenus apres les depenses.
+        assertThat(amount(s, "$.totals.savedToSavings")).isEqualByComparingTo("0");
+        assertThat(amount(s, "$.totals.unspent")).isEqualByComparingTo("3070");
         assertThat(amount(s, "$.totals.averageIncome")).isEqualByComparingTo("333.33");
         assertThat(amount(s, "$.totals.averageExpenses")).isEqualByComparingTo("77.50");
-        assertThat((Integer) JsonPath.read(s, "$.totals.savingsRate")).isEqualTo(10);
+        assertThat((Integer) JsonPath.read(s, "$.totals.savingsRate")).isEqualTo(77);
         assertThat(amount(s, "$.months[11].expensesPaid")).isEqualByComparingTo("630");
         assertThat(amount(s, "$.months[10].incomeReceived")).isEqualByComparingTo("2000");
+        // Seuil et objectif du mois : octobre depasse son plafond variable (250 pour 150), septembre n'en a pas.
+        assertThat(amount(s, "$.months[11].variableCap")).isEqualByComparingTo("150");
+        assertThat(amount(s, "$.months[11].variablePaid")).isEqualByComparingTo("250");
+        assertThat(amount(s, "$.months[11].savingsTarget")).isEqualByComparingTo("500");
+        assertThat((Object) JsonPath.read(s, "$.months[10].variableCap")).isNull();
 
         assertThat((List<String>) JsonPath.read(s, "$.categories[*].name")).containsExactly("Courses", "High-tech", "Loisirs");
         assertThat((List<Integer>) JsonPath.read(s, "$.categories[*].percent")).containsExactly(54, 41, 5);
@@ -178,8 +175,6 @@ class InsightIT extends IntegrationTest {
         assertThat((List<String>) JsonPath.read(s, "$.topExpenses[*].label")).containsExactly("Montre", "Plein", "Marche",
                 "Jeu");
         assertThat(amount(s, "$.purchases[0].variance")).isEqualByComparingTo("-20");
-        assertThat(amount(s, "$.writtenOffLent")).isEqualByComparingTo("100");
-        assertThat(amount(s, "$.writtenOffBorrowed")).isEqualByComparingTo("0");
 
         mvc.perform(get(API + "/statistics").param("from", "2026-10").param("to", "2026-01"))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_PERIOD"));

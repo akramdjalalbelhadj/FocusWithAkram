@@ -2,10 +2,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  AmountChange,
   BudgetBody,
   BudgetView,
   CategoryBody,
   CreateAccountBody,
+  Envelope,
+  EnvelopeBody,
+  EnvelopeRow,
+  MonthSheet,
   FinanceAccount,
   FinanceCategory,
   FinanceOverview,
@@ -16,8 +21,6 @@ import {
   GoalFeasibility,
   FinanceAlert,
   FinanceStatistics,
-  Loan,
-  LoanBody,
   SimulationBody,
   SimulationResult,
   Operation,
@@ -101,6 +104,10 @@ export class FinanceApi {
     return this.http.get<Operation[]>(`${BASE}/operations/duplicates`, { params });
   }
 
+  operation(id: string): Observable<Operation> {
+    return this.http.get<Operation>(`${BASE}/operations/${id}`);
+  }
+
   createOperation(body: OperationBody): Observable<Operation> {
     return this.http.post<Operation>(`${BASE}/operations`, body);
   }
@@ -143,11 +150,35 @@ export class FinanceApi {
     return this.http.post<Schedule>(`${BASE}/schedules/${id}/${action}`, {});
   }
 
-  completeOccurrence(scheduleId: string, due: string, amount: number, date: string): Observable<Operation> {
-    return this.http.post<Operation>(`${BASE}/schedules/${scheduleId}/occurrences/${due}/complete`, {
-      amount,
-      date,
-    });
+  /**
+   * Realise une echeance (montant et date reels, commentaire facultatif). Accepte aussi une echeance deja
+   * realisee : le reel est mis a jour, le prevu conserve.
+   */
+  completeOccurrence(
+    scheduleId: string,
+    due: string,
+    amount: number,
+    date: string,
+    comment?: string | null,
+  ): Observable<Operation> {
+    const body: { amount: number; date: string; comment?: string | null } = { amount, date };
+    if (comment !== undefined) body.comment = comment;
+    return this.http.post<Operation>(`${BASE}/schedules/${scheduleId}/occurrences/${due}/complete`, body);
+  }
+
+  /** Annule l'enregistrement d'une echeance (realisee, sautee ou ajustee) : elle redevient prevue. */
+  resetOccurrence(scheduleId: string, due: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/schedules/${scheduleId}/occurrences/${due}`);
+  }
+
+  /** Nouveau montant a partir d'un mois (cree ou remplace la version de ce mois). */
+  changeScheduleAmount(id: string, change: AmountChange): Observable<Schedule> {
+    return this.http.put<Schedule>(`${BASE}/schedules/${id}/amount`, change);
+  }
+
+  /** Supprime la version de montant d'un mois (pas la premiere). */
+  deleteScheduleAmount(id: string, fromMonth: string): Observable<Schedule> {
+    return this.http.delete<Schedule>(`${BASE}/schedules/${id}/amount/${fromMonth}`);
   }
 
   skipOccurrence(scheduleId: string, due: string): Observable<Operation> {
@@ -159,6 +190,52 @@ export class FinanceApi {
       amount,
       date,
     });
+  }
+
+  // ---- Feuille du mois et dépenses variables plafonnées (enveloppes) ----
+
+  /** Feuille d'un mois (AAAA-MM) : revenus, depenses fixes, depenses variables, autres depenses et totaux. */
+  monthSheet(month: string): Observable<MonthSheet> {
+    return this.http.get<MonthSheet>(`${BASE}/months/${month}/sheet`);
+  }
+
+  envelopes(): Observable<Envelope[]> {
+    return this.http.get<Envelope[]>(`${BASE}/envelopes`);
+  }
+
+  createEnvelope(body: EnvelopeBody): Observable<Envelope> {
+    return this.http.post<Envelope>(`${BASE}/envelopes`, body);
+  }
+
+  updateEnvelope(id: string, body: { label: string; position: number }): Observable<Envelope> {
+    return this.http.put<Envelope>(`${BASE}/envelopes/${id}`, body);
+  }
+
+  /** Nouveau plafond a partir d'un mois. */
+  changeEnvelopeAmount(id: string, change: AmountChange): Observable<Envelope> {
+    return this.http.put<Envelope>(`${BASE}/envelopes/${id}/amount`, change);
+  }
+
+  /** Plus de plafond apres ce mois (AAAA-MM). */
+  endEnvelope(id: string, lastMonth: string): Observable<Envelope> {
+    return this.http.post<Envelope>(`${BASE}/envelopes/${id}/end`, { lastMonth });
+  }
+
+  /** Supprime l'enveloppe ; les operations restent. */
+  deleteEnvelope(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/envelopes/${id}`);
+  }
+
+  /** Commentaire du mois (vide : supprime). */
+  envelopeComment(id: string, month: string, comment: string): Observable<EnvelopeRow> {
+    return this.http.put<EnvelopeRow>(`${BASE}/envelopes/${id}/months/${month}/comment`, { comment });
+  }
+
+  /** Total depense du mois : cree ou met a jour une operation de total pour que le depense egale `amount`. */
+  envelopeActual(id: string, month: string, amount: number, comment?: string | null): Observable<EnvelopeRow> {
+    const body: { amount: number; comment?: string | null } = { amount };
+    if (comment !== undefined) body.comment = comment;
+    return this.http.put<EnvelopeRow>(`${BASE}/envelopes/${id}/months/${month}/actual`, body);
   }
 
   // ---- Budget et préférences ----
@@ -226,32 +303,6 @@ export class FinanceApi {
   moveGoal(id: string, important: boolean, urgent: boolean, position: number): Observable<Goal> {
     return this.http.put<Goal>(`${BASE}/goals/${id}/position`, { important, urgent, position });
   }
-  // ---- Prêts et emprunts ----
-
-  loans(): Observable<Loan[]> {
-    return this.http.get<Loan[]>(`${BASE}/loans`);
-  }
-
-  createLoan(body: LoanBody): Observable<Loan> {
-    return this.http.post<Loan>(`${BASE}/loans`, body);
-  }
-
-  updateLoan(id: string, body: { person: string; dueDate: string | null; notes: string | null }): Observable<Loan> {
-    return this.http.put<Loan>(`${BASE}/loans/${id}`, body);
-  }
-
-  repayLoan(id: string, amount: number, date: string, accountId: string): Observable<Loan> {
-    return this.http.post<Loan>(`${BASE}/loans/${id}/repayments`, { amount, date, accountId });
-  }
-
-  writeOffLoan(id: string, reason: string | null): Observable<Loan> {
-    return this.http.post<Loan>(`${BASE}/loans/${id}/write-off`, { reason });
-  }
-
-  cancelLoan(id: string): Observable<Loan> {
-    return this.http.post<Loan>(`${BASE}/loans/${id}/cancel`, {});
-  }
-
   // ---- Analyses ----
 
   alerts(): Observable<FinanceAlert[]> {

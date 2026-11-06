@@ -90,11 +90,6 @@ public class Operation {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
-    /** Pret ou emprunt dont cette operation est le versement ou un remboursement. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "loan_id")
-    private Loan loan;
-
     /** Objectif d'achat dont cette depense est l'achat reel (hors plafond variable, decision D4). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "goal_id")
@@ -154,8 +149,8 @@ public class Operation {
         }
         OperationType t = d.type();
         Direction dir = switch (t) {
-            case INCOME, PURCHASE_REFUND, LOAN_COLLECTED, LOAN_TAKEN -> Direction.CREDIT;
-            case EXPENSE, TRANSFER, LOAN_GIVEN, LOAN_REPAID -> Direction.DEBIT;
+            case INCOME, PURCHASE_REFUND -> Direction.CREDIT;
+            case EXPENSE, TRANSFER -> Direction.DEBIT;
             case OPENING_BALANCE, ADJUSTMENT -> {
                 if (d.direction() == null) {
                     throw ApiException.rule("INVALID_OPERATION", "Le sens du solde ou de la correction est obligatoire.");
@@ -164,10 +159,14 @@ public class Operation {
             }
         };
         boolean needsCategory = t == OperationType.EXPENSE || t == OperationType.PURCHASE_REFUND;
-        if (needsCategory != (d.category() != null)) {
-            throw ApiException.rule("INVALID_OPERATION", needsCategory
-                    ? "Une depense ou un remboursement d'achat doit avoir une categorie."
-                    : "Seules les depenses et les remboursements d'achats ont une categorie.");
+        // Categorie : obligatoire pour une depense ou un remboursement d'achat, facultative pour un revenu.
+        if (needsCategory && d.category() == null) {
+            throw ApiException.rule("INVALID_OPERATION",
+                    "Une depense ou un remboursement d'achat doit avoir une categorie.");
+        }
+        if (!needsCategory && t != OperationType.INCOME && d.category() != null) {
+            throw ApiException.rule("INVALID_OPERATION",
+                    "Seuls les depenses, les revenus et les remboursements d'achats ont une categorie.");
         }
         if ((t == OperationType.INCOME) != (d.incomeKind() != null)) {
             throw ApiException.rule("INVALID_OPERATION", t == OperationType.INCOME
@@ -189,9 +188,6 @@ public class Operation {
         }
         if (d.refundOf() != null && (t != OperationType.PURCHASE_REFUND || d.refundOf().getType() != OperationType.EXPENSE)) {
             throw ApiException.rule("INVALID_OPERATION", "Un remboursement d'achat ne peut se rattacher qu'a une depense.");
-        }
-        if (loan != null && !t.isLoanMovement()) {
-            throw ApiException.rule("INVALID_OPERATION", "Un mouvement de pret garde son type de mouvement de pret.");
         }
         if (schedule != null && t != schedule.getType()) {
             throw ApiException.rule("INVALID_OPERATION", "L'echeance d'un echeancier garde le type de son echeancier.");
@@ -223,14 +219,6 @@ public class Operation {
         }
         schedule = s;
         dueDate = due;
-    }
-
-    /** Rattache un mouvement de pret (versement ou remboursement) a son pret. */
-    public void linkLoan(Loan l) {
-        if (l == null || !type.isLoanMovement()) {
-            throw ApiException.rule("INVALID_OPERATION", "Seul un mouvement de pret se rattache a un pret.");
-        }
-        loan = l;
     }
 
     /** Rattache une depense a l'objectif d'achat qu'elle realise. */
@@ -267,27 +255,33 @@ public class Operation {
     }
 
     /**
-     * Realise une echeance d'echeancier (prevue ou sautee) : montant attendu conserve, montant et date reels.
+     * Realise une echeance d'echeancier (prevue, ajustee ou sautee), ou corrige le reel d'une echeance deja realisee :
+     * montant et date reels, commentaire facultatif (conserve dans la description, vide : efface). Le montant prevu
+     * est conserve : celui de l'echeance enregistree, ou celui deja retenu pour une echeance realisee.
      */
-    public void settleOccurrence(BigDecimal expected, BigDecimal actualAmount, LocalDate actualDate, Instant now) {
+    public void settleOccurrence(BigDecimal actualAmount, LocalDate actualDate, String comment, Instant now) {
         if (schedule == null) {
             throw ApiException.rule("INVALID_OPERATION", "Cette operation n'est pas une echeance.");
-        }
-        if (status == OperationStatus.COMPLETED) {
-            throw ApiException.rule("OCCURRENCE_ALREADY_RECORDED", "Cette echeance est deja realisee.");
         }
         if (actualDate == null) {
             throw ApiException.rule("INVALID_OPERATION", "La date reelle est obligatoire.");
         }
-        amount = Money.positive(actualAmount, "Le montant reel");
+        BigDecimal actual = Money.positive(actualAmount, "Le montant reel");
+        BigDecimal expected = status != OperationStatus.COMPLETED ? amount
+                : plannedAmount != null ? plannedAmount : schedule.amountOn(dueDate);
         plannedAmount = Money.positive(expected, "Le montant prevu");
+        amount = actual;
         date = actualDate;
         status = OperationStatus.COMPLETED;
+        description = text(comment);
         updatedAt = now;
     }
 
-    /** Ajuste une echeance encore prevue (montant ou date differents pour cette fois). */
-    public void adjustOccurrence(BigDecimal newAmount, LocalDate newDate, Instant now) {
+    /**
+     * Ajuste une echeance encore prevue (montant ou date differents pour cette fois), avec un commentaire facultatif
+     * (conserve dans la description, vide : efface).
+     */
+    public void adjustOccurrence(BigDecimal newAmount, LocalDate newDate, String comment, Instant now) {
         if (schedule == null || status != OperationStatus.PLANNED) {
             throw ApiException.rule("OCCURRENCE_NOT_PLANNED", "Seule une echeance encore prevue peut etre ajustee.");
         }
@@ -296,7 +290,12 @@ public class Operation {
         }
         amount = Money.positive(newAmount, "Le montant");
         date = newDate;
+        description = text(comment);
         updatedAt = now;
+    }
+
+    private static String text(String raw) {
+        return raw == null || raw.isBlank() ? null : raw.strip();
     }
 
     /** Annule l'operation : elle reste dans l'historique mais n'a plus aucun effet. */
@@ -346,7 +345,6 @@ public class Operation {
     public LocalDate getDueDate() { return dueDate; }
     public boolean isVirtual() { return virtual; }
     public Goal getGoal() { return goal; }
-    public Loan getLoan() { return loan; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

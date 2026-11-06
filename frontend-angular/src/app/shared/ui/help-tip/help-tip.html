@@ -1,0 +1,29 @@
+<button
+  #button
+  type="button"
+  class="help-tip-btn"
+  [attr.aria-label]="'Aide : ' + label()"
+  [attr.aria-expanded]="open()"
+  [attr.aria-describedby]="id"
+  (click)="onClick()"
+  (mouseenter)="onEnter()"
+  (mouseleave)="onLeave()"
+  (focus)="onFocus()"
+  (blur)="onBlur()"
+  (keydown.escape)="onEscape($event)"
+>
+  <ff-icon name="help" [size]="15" />
+</button>
+<span
+  role="tooltip"
+  class="help-tip-bubble"
+  [id]="id"
+  [class.help-tip-open]="open()"
+  [style.left.px]="position().left"
+  [style.width.px]="position().width"
+  [style.top.px]="position().top"
+  [style.bottom.px]="position().bottom"
+  (mouseenter)="onEnter()"
+  (mouseleave)="onLeave()"
+  >{{ text() }}</span
+>

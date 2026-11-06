@@ -8,7 +8,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom, map } from 'rxjs';
 import { FinanceApi } from '../../../../core/api/finance.api';
 import {
   Operation,
@@ -21,10 +23,12 @@ import { SettingsStore } from '../../../../core/services/settings.store';
 import { debounced } from '../../../../core/util/debounced';
 import { parseAmount } from '../../../../core/util/money';
 import { addDays, longDate } from '../../../../core/util/time';
+import { HelpTipComponent } from '../../../../shared/ui/help-tip/help-tip';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { EmptyComponent, ErrorComponent, SkeletonComponent } from '../../../../shared/ui/states';
 import { OperationRowComponent } from '../../components/operation-row/operation-row';
 import { OPERATION_TYPE_LABEL } from '../../finance-labels';
+import { FinanceSchedulesPage } from '../schedules/schedules.page';
 import { FinanceActions } from '../../services/finance-actions.service';
 import { FinanceReferenceStore } from '../../services/finance-reference.store';
 
@@ -33,10 +37,21 @@ type Nature = '' | 'essential' | 'variable' | 'exceptional';
 
 const PAGE_SIZE = 50;
 
-/** Historique des operations : filtres combinables, regroupement par jour, chargement par pages. */
+/**
+ * Operations : historique (filtres combinables, regroupement par jour, chargement par pages) ou revenus et charges
+ * recurrents (echeancier). L'affichage choisi est dans l'adresse (`?vue=recurrents`).
+ */
 @Component({
   selector: 'ff-finance-operations',
-  imports: [IconComponent, EmptyComponent, ErrorComponent, SkeletonComponent, OperationRowComponent],
+  imports: [
+    IconComponent,
+    HelpTipComponent,
+    EmptyComponent,
+    ErrorComponent,
+    SkeletonComponent,
+    OperationRowComponent,
+    FinanceSchedulesPage,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './operations.page.html',
 })
@@ -47,7 +62,18 @@ export class FinanceOperationsPage {
   protected readonly actions = inject(FinanceActions);
   private readonly today = inject(SettingsStore).today();
 
-  protected readonly typeOptions = Object.entries(OPERATION_TYPE_LABEL) as [OperationType, string][];
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  protected readonly view = toSignal(
+    this.route.queryParamMap.pipe(map((p) => (p.get('vue') === 'recurrents' ? 'recurring' : 'history'))),
+    { initialValue: 'history' as 'history' | 'recurring' },
+  );
+  /** Filtres peu utilises (statut, categorie, nature, montants), replies par defaut. */
+  protected readonly moreFilters = signal(false);
+  /** Les virements n'existent plus (un seul compte) ; les anciens restent filtrables s'il y en a. */
+  protected readonly typeOptions = (Object.entries(OPERATION_TYPE_LABEL) as [OperationType, string][]).filter(
+    ([t]) => t !== 'TRANSFER',
+  );
   protected readonly period = signal<Period>('month');
   protected readonly from = signal('');
   protected readonly to = signal('');
@@ -121,6 +147,14 @@ export class FinanceOperationsPage {
       untracked(() => void this.load(query, true));
     });
     inject(DestroyRef).onDestroy(() => this.seq++);
+  }
+
+  protected setView(view: 'history' | 'recurring'): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { vue: view === 'recurring' ? 'recurrents' : null },
+      replaceUrl: true,
+    });
   }
 
   protected loadMore(): void {

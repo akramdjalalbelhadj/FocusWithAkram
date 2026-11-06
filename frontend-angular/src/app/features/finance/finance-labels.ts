@@ -28,17 +28,12 @@ export const OPERATION_TYPE_LABEL: Record<OperationType, string> = {
   TRANSFER: 'Virement',
   OPENING_BALANCE: 'Solde initial',
   ADJUSTMENT: 'Correction du solde',
-  LOAN_GIVEN: 'Prêt accordé',
-  LOAN_COLLECTED: 'Remboursement reçu',
-  LOAN_TAKEN: 'Emprunt reçu',
-  LOAN_REPAID: 'Remboursement versé',
 };
 
 /** Types saisis directement (le solde initial et les corrections naissent du compte). */
 export const ENTRY_TYPES: { value: OperationType; label: string; icon: string }[] = [
   { value: 'EXPENSE', label: 'Dépense', icon: 'receipt' },
   { value: 'INCOME', label: 'Revenu', icon: 'trending-up' },
-  { value: 'TRANSFER', label: 'Virement', icon: 'transfer' },
   { value: 'PURCHASE_REFUND', label: 'Remboursement d’achat', icon: 'restore' },
 ];
 

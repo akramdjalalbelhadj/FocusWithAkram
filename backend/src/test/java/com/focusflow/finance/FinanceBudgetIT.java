@@ -93,11 +93,21 @@ class FinanceBudgetIT extends IntegrationTest {
         assertThat(amount(october, "$.totals.incomeReceived")).isEqualByComparingTo("2150");
         assertThat((Integer) JsonPath.read(october, "$.incomes.length()")).isEqualTo(1);
 
-        // Une echeance ne se paie pas deux fois.
+        // Une echeance ne se paie pas deux fois : la ressaisir corrige le reel, le prevu est conserve.
         send(post(API + "/schedules/" + salary + "/occurrences/2026-10-28/complete"), """
-                {"amount":2150,"date":"2026-10-30"}""")
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.code").value("OCCURRENCE_ALREADY_RECORDED"));
+                {"amount":2100,"date":"2026-10-30","comment":"Absence"}""")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.amount").value(2100))
+                .andExpect(jsonPath("$.plannedAmount").value(2200))
+                .andExpect(jsonPath("$.description").value("Absence"));
+        assertThat(balance(courant)).isEqualByComparingTo("3100");
+        assertThat((Integer) JsonPath.read(budget("2026-10"), "$.incomes.length()")).isEqualTo(1);
+        // Annuler la saisie : l'echeance redevient prevue.
+        mvc.perform(delete(API + "/schedules/" + salary + "/occurrences/2026-10-28")).andExpect(status().isNoContent());
+        assertThat(balance(courant)).isEqualByComparingTo("1000");
+        assertThat((Boolean) JsonPath.read(budget("2026-10"), "$.incomes[0].virtual")).isTrue();
+        send(post(API + "/schedules/" + salary + "/occurrences/2026-10-28/complete"), """
+                {"amount":2150,"date":"2026-10-30"}""").andExpect(status().isOk());
         assertThat(balance(courant)).isEqualByComparingTo("3150");
         // La prevision des mois suivants reutilise le salaire prevu.
         assertThat(amount(budget("2026-11"), "$.totals.incomeExpected")).isEqualByComparingTo("2200");
@@ -191,6 +201,22 @@ class FinanceBudgetIT extends IntegrationTest {
         assertThat(amount(body, "$.monthlyEquivalent")).isEqualByComparingTo("150");
         assertThat(amount(budget("2027-01"), "$.totals.expensesPlanned")).isEqualByComparingTo("150");
         assertThat(amount(budget("2027-02"), "$.totals.expensesPlanned")).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void nextDueDateSkipsAnOccurrenceAlreadyPaid() throws Exception {
+        String courant = account();
+        String logement = category("Logement");
+        String loyer = schedule("""
+                {"label":"Loyer","type":"EXPENSE","kind":"BILL","accountId":"%s","categoryId":"%s",
+                 "amount":350,"essential":true,"frequency":"MONTHLY","startDate":"2026-10-30"}""".formatted(courant, logement));
+        mvc.perform(get(API + "/schedules"))
+                .andExpect(jsonPath("$[?(@.id=='" + loyer + "')].nextDueDate").value(org.hamcrest.Matchers.contains("2026-10-30")));
+        send(post(API + "/schedules/" + loyer + "/occurrences/2026-10-30/complete"), """
+                {"amount":350,"date":"2026-10-30"}""").andExpect(status().isOk());
+        // Le loyer du mois est paye : la prochaine echeance attendue est celle du mois suivant.
+        mvc.perform(get(API + "/schedules"))
+                .andExpect(jsonPath("$[?(@.id=='" + loyer + "')].nextDueDate").value(org.hamcrest.Matchers.contains("2026-11-30")));
     }
 
     @Test

@@ -1,12 +1,15 @@
 package com.focusflow.finance;
 
 import com.focusflow.common.exception.ApiException;
+import com.focusflow.finance.dto.AmountChange;
+import com.focusflow.finance.dto.AmountVersion;
 import com.focusflow.finance.dto.OccurrenceRequest;
 import com.focusflow.finance.dto.ScheduleRequest;
 import com.focusflow.finance.dto.ScheduleResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -130,7 +133,10 @@ public class ScheduleService {
         return dates.today().minusDays(OVERDUE_LOOKBACK_DAYS);
     }
 
-    /** Realise l'echeance (salaire recu, abonnement paye) avec le montant et la date reels ; le prevu est conserve. */
+    /**
+     * Realise l'echeance (salaire recu, abonnement paye) avec le montant et la date reels et un commentaire
+     * facultatif ; le prevu est conserve. Une echeance deja realisee est corrigee (nouveau reel, meme prevu).
+     */
     @Transactional
     public UUID completeOccurrence(UUID scheduleId, LocalDate due, OccurrenceRequest request) {
         if (request.date().isAfter(dates.today())) {
@@ -140,8 +146,18 @@ public class ScheduleService {
         Schedule s = find(scheduleId);
         Instant now = Instant.now(clock);
         Operation o = occurrence(s, due, now);
-        o.settleOccurrence(s.getAmount(), request.amount(), request.date(), now);
+        o.settleOccurrence(request.amount(), request.date(), request.comment(), now);
         return operations.save(o).getId();
+    }
+
+    /**
+     * Annule l'enregistrement de l'echeance (realisee, sautee ou ajustee) : l'operation liee est supprimee et
+     * l'echeance redevient prevue, au montant de l'echeancier. Sans enregistrement, rien ne change.
+     */
+    @Transactional
+    public void resetOccurrence(UUID scheduleId, LocalDate due) {
+        Schedule s = find(scheduleId);
+        operations.findByScheduleIdAndDueDate(s.getId(), due).ifPresent(operations::delete);
     }
 
     /** Saute l'echeance (mois sans salaire, abonnement non renouvele ce mois-ci) : elle n'est plus attendue. */
@@ -152,7 +168,7 @@ public class ScheduleService {
         Operation o = occurrence(s, due, now);
         if (o.getStatus() == OperationStatus.COMPLETED) {
             throw ApiException.rule("OCCURRENCE_ALREADY_RECORDED",
-                    "Cette echeance est deja realisee : annulez l'operation correspondante si elle n'a pas eu lieu.");
+                    "Cette echeance est deja realisee : annulez d'abord la saisie si elle n'a pas eu lieu.");
         }
         if (o.getStatus() == OperationStatus.PLANNED) {
             o.cancel(now);
@@ -166,8 +182,23 @@ public class ScheduleService {
         Schedule s = find(scheduleId);
         Instant now = Instant.now(clock);
         Operation o = occurrence(s, due, now);
-        o.adjustOccurrence(request.amount(), request.date(), now);
+        o.adjustOccurrence(request.amount(), request.date(), request.comment(), now);
         return operations.save(o).getId();
+    }
+
+    /**
+     * Change le montant a partir d'un mois (le mois de la premiere echeance modifie le montant de base) ; les mois
+     * precedents et les echeances deja enregistrees gardent leur montant.
+     */
+    @Transactional
+    public void changeAmount(UUID id, AmountChange change) {
+        find(id).changeAmount(change.fromMonth(), change.amount(), Instant.now(clock));
+    }
+
+    /** Supprime le changement de montant d'un mois (pas le montant de la premiere echeance). */
+    @Transactional
+    public void removeAmount(UUID id, YearMonth from) {
+        find(id).removeAmount(from, Instant.now(clock));
     }
 
     /** Operation enregistree de l'echeance, ou nouvelle operation prevue liee si l'echeance n'est pas encore enregistree. */
@@ -177,7 +208,7 @@ public class ScheduleService {
                 throw ApiException.rule("INVALID_OCCURRENCE", "Cette date n'est pas une echeance de « " + s.getLabel() + " ».");
             }
             Operation o = Operation.create(new Operation.Draft(s.getAccount(), null, s.getType(), OperationStatus.PLANNED,
-                    null, due, s.getAmount(), s.getCategory(), s.getIncomeKind(), s.getLabel(), null, s.isEssential(),
+                    null, due, s.amountOn(due), s.getCategory(), s.getIncomeKind(), s.getLabel(), null, s.isEssential(),
                     false, null), now);
             o.linkOccurrence(s, due);
             return o;
@@ -220,11 +251,29 @@ public class ScheduleService {
         };
     }
 
+    /**
+     * Prochaine echeance encore attendue a partir d'aujourd'hui : une echeance deja realisee ou sautee (le loyer du mois
+     * paye en avance) n'est plus « la prochaine ».
+     */
+    private LocalDate nextOpenDueDate(Schedule s, LocalDate today) {
+        LocalDate due = s.nextDueDate(today);
+        for (int i = 0; due != null && i < 24; i++) {
+            boolean recorded = operations.findByScheduleIdAndDueDate(s.getId(), due)
+                    .filter(o -> o.getStatus() != OperationStatus.PLANNED).isPresent();
+            if (!recorded) {
+                return due;
+            }
+            due = s.nextDueDate(due.plusDays(1));
+        }
+        return due;
+    }
+
     private ScheduleResponse toResponse(Schedule s, LocalDate today) {
         return new ScheduleResponse(s.getId(), s.getLabel(), s.getType(), s.getKind(), FinanceMapper.ref(s.getAccount()),
                 FinanceMapper.ref(s.getCategory()), s.getIncomeKind(), s.getAmount(), s.isEssential(), s.getFrequency(),
-                s.getIntervalCount(), s.getStartDate(), s.getEndDate(), s.getStatus(), s.getNotes(), s.nextDueDate(today),
-                s.monthlyEquivalent(), s.annualEquivalent(),
-                operations.existsByScheduleId(s.getId()));
+                s.getIntervalCount(), s.getStartDate(), s.getEndDate(), s.getStatus(), s.getNotes(), nextOpenDueDate(s, today),
+                s.monthlyEquivalent(today), s.annualEquivalent(today),
+                operations.existsByScheduleId(s.getId()),
+                s.amountTimeline().entrySet().stream().map(e -> new AmountVersion(e.getKey(), e.getValue())).toList());
     }
 }

@@ -1,0 +1,105 @@
+/* Au-dessus de l'en-tete collant et de la navigation mobile, sous les dialogues CDK. */
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+}
+
+.tour-dim {
+  position: absolute;
+  inset: 0;
+  background: rgb(8 10 20 / 0.6);
+}
+
+/* Projecteur : la cible reste visible, entouree d'un contour, le reste de l'ecran est assombri. */
+.tour-spot {
+  position: fixed;
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 0 0 3px var(--brand),
+    0 0 0 9999px rgb(8 10 20 / 0.6);
+  pointer-events: none;
+}
+
+.tour-bubble {
+  position: fixed;
+  z-index: 901;
+  width: min(22rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow-lg);
+  outline: none;
+}
+
+.tour-bubble:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}
+
+/* Centree sans transformation (l'animation d'apparition en utilise une). */
+.tour-center {
+  inset: 0;
+  height: fit-content;
+  margin: auto;
+}
+
+/* Telephone : la bulle occupe le bas de l'ecran, au-dessus de la navigation mobile. */
+.tour-sheet {
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  width: auto;
+  max-height: 50dvh;
+}
+
+.tour-progress {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tour-title {
+  margin-top: 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.tour-text {
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.tour-bar {
+  height: 4px;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.tour-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+  transition: width 0.2s ease;
+}
+
+.tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.tour-actions .btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

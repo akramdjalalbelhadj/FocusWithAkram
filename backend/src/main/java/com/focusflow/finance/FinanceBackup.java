@@ -3,9 +3,11 @@ package com.focusflow.finance;
 import com.focusflow.common.ExistingIds;
 import com.focusflow.finance.dto.FinanceBackupData;
 import com.focusflow.finance.dto.FinanceBackupData.AccountData;
+import com.focusflow.finance.dto.FinanceBackupData.AmountData;
 import com.focusflow.finance.dto.FinanceBackupData.BudgetData;
+import com.focusflow.finance.dto.FinanceBackupData.EnvelopeData;
+import com.focusflow.finance.dto.FinanceBackupData.EnvelopeMonthData;
 import com.focusflow.finance.dto.FinanceBackupData.GoalData;
-import com.focusflow.finance.dto.FinanceBackupData.LoanData;
 import com.focusflow.finance.dto.FinanceBackupData.CategoryData;
 import com.focusflow.finance.dto.FinanceBackupData.OperationData;
 import com.focusflow.finance.dto.FinanceBackupData.PreferencesData;
@@ -14,6 +16,7 @@ import com.focusflow.finance.dto.FinanceImportSummary;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,10 +32,20 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Export et import de la section financiere de la sauvegarde. Chaque element est valide avant ecriture (memes
  * invariants que la saisie) : un element invalide est signale sans interrompre les autres. Les doublons sont
- * ignores (meme identifiant) ; un compte ou une categorie de meme nom est reutilise.
+ * ignores (meme identifiant) ; une categorie de meme nom est reutilisee.
+ *
+ * <p>Un seul compte (lot 13) : tous les comptes d'une sauvegarde se rattachent au compte unique, cree au besoin ; le
+ * solde initial d'un compte supplementaire devient une correction, les virements entre comptes sont ignores et les
+ * mouvements de prets d'anciennes sauvegardes deviennent des depenses ou revenus de la categorie « Prets ».
+ *
+ * <p>Format v5 : montants dates des echeanciers et depenses variables plafonnees (plafonds dates, commentaires et
+ * operations de total du mois). Les enveloppes sont importees apres les operations pour retrouver leurs totaux.
  */
 @Component
 public class FinanceBackup {
+
+    /** Libelle d'une correction issue du solde initial d'un compte fusionne (comme la migration V8). */
+    static final String MERGED_OPENING_LABEL = "Solde de départ — ";
 
     private final AccountRepository accounts;
     private final CategoryRepository categories;
@@ -40,23 +53,25 @@ public class FinanceBackup {
     private final ScheduleRepository schedules;
     private final MonthlyBudgetRepository budgets;
     private final GoalRepository goals;
-    private final LoanRepository loans;
     private final FinancePreferencesRepository preferences;
+    private final EnvelopeRepository envelopes;
+    private final EnvelopeMonthRepository envelopeMonths;
     private final FinanceDates dates;
     private final Clock clock;
 
     public FinanceBackup(AccountRepository accounts, CategoryRepository categories, OperationRepository operations,
                          ScheduleRepository schedules, MonthlyBudgetRepository budgets, GoalRepository goals,
-                         LoanRepository loans,
-                         FinancePreferencesRepository preferences, FinanceDates dates, Clock clock) {
+                         FinancePreferencesRepository preferences, EnvelopeRepository envelopes,
+                         EnvelopeMonthRepository envelopeMonths, FinanceDates dates, Clock clock) {
         this.accounts = accounts;
         this.categories = categories;
         this.operations = operations;
         this.schedules = schedules;
         this.budgets = budgets;
         this.goals = goals;
-        this.loans = loans;
         this.preferences = preferences;
+        this.envelopes = envelopes;
+        this.envelopeMonths = envelopeMonths;
         this.dates = dates;
         this.clock = clock;
     }
@@ -77,7 +92,9 @@ public class FinanceBackup {
                         .map(s -> new ScheduleData(s.getId(), s.getLabel(), s.getType(), s.getKind(), s.getAccount().getId(),
                                 s.getCategory() == null ? null : s.getCategory().getId(), s.getIncomeKind(), s.getAmount(),
                                 s.isEssential(), s.getFrequency(), s.getIntervalCount(), s.getStartDate(), s.getEndDate(),
-                                s.getStatus(), s.getNotes(), s.getCreatedAt(), s.getUpdatedAt()))
+                                s.getStatus(), s.getNotes(), s.getCreatedAt(), s.getUpdatedAt(),
+                                s.getAmountVersions().entrySet().stream()
+                                        .map(v -> new AmountData(YearMonth.from(v.getKey()), v.getValue())).toList()))
                         .toList(),
                 goals.findAllOrdered().stream()
                         .map(g -> new GoalData(g.getId(), g.getName(), g.getCategory() == null ? null : g.getCategory().getId(),
@@ -85,21 +102,15 @@ public class FinanceBackup {
                                 g.isUrgent(), g.getStatus(), g.getReservedAmount(), g.isFundedBySavings(), g.getPosition(),
                                 g.getNotes(), g.getCreatedAt(), g.getUpdatedAt()))
                         .toList(),
-                loans.findAllOrdered().stream()
-                        .map(l -> new LoanData(l.getId(), l.getPerson(), l.getDirection(), l.getPrincipal(), l.getStartDate(),
-                                l.getDueDate(), l.getNotes(), l.getWrittenOffAmount(), l.getWrittenOffDate(),
-                                l.getWrittenOffReason(), l.isCancelled(), l.getCreatedAt(), l.getUpdatedAt()))
-                        .toList(),
                 operations.findAllForBackup().stream()
                         .map(o -> new OperationData(o.getId(), o.getAccount().getId(),
-                                o.getTargetAccount() == null ? null : o.getTargetAccount().getId(), o.getType(),
+                                o.getTargetAccount() == null ? null : o.getTargetAccount().getId(), o.getType().name(),
                                 o.getStatus(), o.getDirection(), o.getDate(), o.getAmount(), o.getPlannedAmount(),
                                 o.getCategory() == null ? null : o.getCategory().getId(), o.getIncomeKind(), o.getLabel(),
                                 o.getDescription(), o.isEssential(), o.isExceptional(),
                                 o.getRefundOf() == null ? null : o.getRefundOf().getId(), o.getCreatedAt(), o.getUpdatedAt(),
                                 o.getSchedule() == null ? null : o.getSchedule().getId(), o.getDueDate(),
-                                o.getGoal() == null ? null : o.getGoal().getId(),
-                                o.getLoan() == null ? null : o.getLoan().getId()))
+                                o.getGoal() == null ? null : o.getGoal().getId()))
                         .toList(),
                 budgets.findAllByOrderByMonthAsc().stream()
                         .map(b -> new BudgetData(b.getMonth(), b.getVariableCap(), b.getSavingsTarget()))
@@ -107,51 +118,72 @@ public class FinanceBackup {
                 preferences.findById(FinancePreferences.SINGLETON_ID)
                         .map(p -> new PreferencesData(p.getSafetyReserve(), p.getSavingsFloor(), p.getDefaultVariableCap(),
                                 p.getDefaultSavingsTarget(), p.getWarningPercent()))
-                        .orElse(null));
+                        .orElse(null),
+                exportEnvelopes());
+    }
+
+    private List<EnvelopeData> exportEnvelopes() {
+        Map<UUID, List<EnvelopeMonthData>> monthsByEnvelope = new HashMap<>();
+        for (EnvelopeMonth m : envelopeMonths.findAllByOrderByMonthAsc()) {
+            monthsByEnvelope.computeIfAbsent(m.getEnvelopeId(), k -> new ArrayList<>())
+                    .add(new EnvelopeMonthData(m.getMonth(), m.getComment(), m.getTotalOperationId()));
+        }
+        return envelopes.findAllOrdered().stream()
+                .map(e -> new EnvelopeData(e.getId(), e.getCategory().getId(), e.getLabel(), e.getPosition(),
+                        e.getStartMonth(), e.getEndMonth(),
+                        e.amountTimeline().entrySet().stream().map(v -> new AmountData(v.getKey(), v.getValue())).toList(),
+                        monthsByEnvelope.getOrDefault(e.getId(), List.of()), e.getCreatedAt(), e.getUpdatedAt()))
+                .toList();
     }
 
     /** Doit etre appele dans la transaction de l'import global. */
     @Transactional
     public FinanceImportSummary importData(FinanceBackupData data, Consumer<String> errors) {
         Instant now = Instant.now(clock);
-        int[] counts = new int[13];
+        int[] counts = new int[11];
         Map<UUID, Account> accountMap = importAccounts(nullToEmpty(data.accounts()), now, counts, errors);
         Map<UUID, Category> categoryMap = importCategories(nullToEmpty(data.categories()), now, counts, errors);
         Map<UUID, Schedule> scheduleMap = importSchedules(nullToEmpty(data.schedules()), accountMap, categoryMap, now,
                 counts, errors);
         Map<UUID, Goal> goalMap = importGoals(nullToEmpty(data.goals()), categoryMap, now, counts, errors);
-        Map<UUID, Loan> loanMap = importLoans(nullToEmpty(data.loans()), now, counts, errors);
-        importOperations(nullToEmpty(data.operations()), accountMap, categoryMap, scheduleMap, goalMap, loanMap, now,
-                counts, errors);
+        Map<UUID, String> accountNames = new HashMap<>();
+        nullToEmpty(data.accounts()).forEach(a -> {
+            if (a.id() != null && a.name() != null && !a.name().isBlank()) accountNames.put(a.id(), a.name().strip());
+        });
+        importOperations(nullToEmpty(data.operations()), accountMap, accountNames, categoryMap, scheduleMap, goalMap,
+                now, counts, errors);
+        importEnvelopes(nullToEmpty(data.envelopes()), categoryMap, now, errors);
         importBudgets(nullToEmpty(data.budgets()), counts, errors);
         boolean preferencesRestored = data.preferences() != null && importPreferences(data.preferences(), errors);
         return new FinanceImportSummary(counts[0], counts[1], counts[2], counts[3], counts[4], counts[5], counts[6],
-                counts[7], counts[8], preferencesRestored, counts[9], counts[10], counts[11], counts[12]);
+                counts[7], counts[8], preferencesRestored, counts[9], counts[10]);
     }
 
+    /**
+     * Rattache chaque compte de la sauvegarde au compte unique. Sans compte en base, il est cree d'apres le compte
+     * courant actif de la sauvegarde (ou son premier compte).
+     */
     private Map<UUID, Account> importAccounts(List<AccountData> list, Instant now, int[] counts, Consumer<String> errors) {
         Map<UUID, Account> map = new HashMap<>();
-        for (AccountData d : list) {
+        Account single = accounts.findAll().stream()
+                .min(Comparator.comparing(Account::isArchived).thenComparing(Account::getCreatedAt)).orElse(null);
+        List<AccountData> ordered = new ArrayList<>(list);
+        ordered.sort(Comparator.comparing((AccountData d) -> Boolean.TRUE.equals(d.archived()))
+                .thenComparing(d -> d.type() != AccountType.CURRENT));
+        for (AccountData d : ordered) {
             try {
-                String name = d.name() == null ? "" : d.name().strip();
-                if (name.isEmpty() || name.length() > 80 || d.type() == null) {
-                    throw new IllegalArgumentException("nom (80 caracteres maximum) et type obligatoires.");
-                }
-                Account existing = d.id() == null ? null : accounts.findById(d.id()).orElse(null);
-                boolean archived = Boolean.TRUE.equals(d.archived());
-                if (existing == null && !archived) {
-                    existing = accounts.findAll().stream()
-                            .filter(a -> !a.isArchived() && a.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
-                }
-                if (existing != null) {
-                    if (d.id() != null) map.put(d.id(), existing);
+                if (single == null) {
+                    String name = d.name() == null ? "" : d.name().strip();
+                    if (name.isEmpty() || name.length() > 80) {
+                        throw new IllegalArgumentException("nom obligatoire (80 caracteres maximum).");
+                    }
+                    single = accounts.save(Account.restored(d.id(), name, AccountType.CURRENT, false, 0,
+                            d.createdAt() != null ? d.createdAt() : now));
+                    counts[0]++;
+                } else {
                     counts[1]++;
-                    continue;
                 }
-                Account a = accounts.save(Account.restored(d.id(), name, d.type(), archived,
-                        d.position() == null ? 0 : d.position(), d.createdAt() != null ? d.createdAt() : now));
-                if (d.id() != null) map.put(d.id(), a);
-                counts[0]++;
+                if (d.id() != null) map.put(d.id(), single);
             } catch (RuntimeException e) {
                 errors.accept("Compte '" + d.name() + "' : " + e.getMessage());
             }
@@ -229,6 +261,14 @@ public class FinanceBackup {
                                 d.notes()), d.status(), d.createdAt() != null ? d.createdAt() : now, d.updatedAt()));
                 // La date de fin est restauree telle quelle (y compris une resiliation avant la premiere echeance).
                 s.restoreEndDate(d.endDate());
+                for (AmountData v : nullToEmpty(d.amounts())) {
+                    try {
+                        s.restoreAmount(v.fromMonth(), v.amount());
+                    } catch (RuntimeException e) {
+                        errors.accept("Echeancier '" + d.label() + "', montant de " + v.fromMonth() + " ignore : "
+                                + e.getMessage());
+                    }
+                }
                 if (d.id() != null) map.put(d.id(), s);
                 counts[6]++;
             } catch (RuntimeException e) {
@@ -269,30 +309,6 @@ public class FinanceBackup {
                 counts[9]++;
             } catch (RuntimeException e) {
                 errors.accept("Objectif '" + d.name() + "' : " + e.getMessage());
-            }
-        }
-        return map;
-    }
-
-    private Map<UUID, Loan> importLoans(List<LoanData> list, Instant now, int[] counts, Consumer<String> errors) {
-        Map<UUID, Loan> map = new HashMap<>();
-        for (LoanData d : list) {
-            try {
-                if (d.id() != null) {
-                    Loan existing = loans.findById(d.id()).orElse(null);
-                    if (existing != null) {
-                        map.put(d.id(), existing);
-                        counts[12]++;
-                        continue;
-                    }
-                }
-                Loan l = loans.save(Loan.restored(d.id(), d.person(), d.direction(), d.principal(), d.startDate(),
-                        d.dueDate(), d.notes(), d.writtenOffAmount(), d.writtenOffDate(), d.writtenOffReason(),
-                        Boolean.TRUE.equals(d.cancelled()), d.createdAt() != null ? d.createdAt() : now, d.updatedAt()));
-                if (d.id() != null) map.put(d.id(), l);
-                counts[11]++;
-            } catch (RuntimeException e) {
-                errors.accept("Pret '" + d.person() + "' : " + e.getMessage());
             }
         }
         return map;
@@ -348,9 +364,10 @@ public class FinanceBackup {
         return v;
     }
 
-    private void importOperations(List<OperationData> list, Map<UUID, Account> accountMap, Map<UUID, Category> categoryMap,
-                                  Map<UUID, Schedule> scheduleMap, Map<UUID, Goal> goalMap, Map<UUID, Loan> loanMap,
-                                  Instant now, int[] counts, Consumer<String> errors) {
+    private void importOperations(List<OperationData> list, Map<UUID, Account> accountMap, Map<UUID, String> accountNames,
+                                  Map<UUID, Category> categoryMap, Map<UUID, Schedule> scheduleMap,
+                                  Map<UUID, Goal> goalMap, Instant now, int[] counts, Consumer<String> errors) {
+        Category[] loansCategory = {null};
         Map<UUID, Operation> imported = new HashMap<>();
         Set<UUID> seen = new HashSet<>();
         // Identifiants deja en base, lus d'avance par lots (voir ExistingIds).
@@ -364,11 +381,48 @@ public class FinanceBackup {
                     counts[5]++;
                     continue;
                 }
+                if ("TRANSFER".equals(d.type())) {
+                    // Virement entre deux comptes devenus un seul : sans effet sur le solde total.
+                    counts[5]++;
+                    continue;
+                }
                 Account account = resolveAccount(d.accountId(), accountMap);
-                Account target = d.targetAccountId() == null ? null : resolveAccount(d.targetAccountId(), accountMap);
                 Category category = d.categoryId() == null ? null
                         : categoryMap.containsKey(d.categoryId()) ? categoryMap.get(d.categoryId())
                         : categories.findById(d.categoryId()).orElseThrow(() -> new IllegalArgumentException("categorie introuvable."));
+                OperationType type;
+                IncomeKind incomeKind = d.incomeKind();
+                switch (d.type() == null ? "" : d.type()) {
+                    case "LOAN_GIVEN", "LOAN_REPAID" -> {
+                        type = OperationType.EXPENSE;
+                        category = loansCategory(loansCategory, now);
+                        incomeKind = null;
+                    }
+                    case "LOAN_COLLECTED", "LOAN_TAKEN" -> {
+                        type = OperationType.INCOME;
+                        category = loansCategory(loansCategory, now);
+                        incomeKind = IncomeKind.OTHER;
+                    }
+                    default -> {
+                        try {
+                            type = OperationType.valueOf(d.type());
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("type d'operation inconnu : " + d.type() + ".");
+                        }
+                    }
+                }
+                String label = d.label();
+                if (type == OperationType.OPENING_BALANCE
+                        && operations.existsByAccountIdAndType(account.getId(), OperationType.OPENING_BALANCE)) {
+                    // Solde initial d'un compte fusionne : il s'ajoute au compte unique comme correction, nommee
+                    // d'apres le compte de la sauvegarde (comme la migration V8).
+                    type = OperationType.ADJUSTMENT;
+                    String accountName = accountNames.get(d.accountId());
+                    if (accountName != null) {
+                        label = MERGED_OPENING_LABEL + accountName;
+                        if (label.length() > 120) label = label.substring(0, 120);
+                    }
+                }
                 Operation refundOf = d.refundOfId() == null ? null
                         : imported.containsKey(d.refundOfId()) ? imported.get(d.refundOfId())
                         : operations.findById(d.refundOfId()).orElse(null);
@@ -382,24 +436,12 @@ public class FinanceBackup {
                         || operations.findByScheduleIdAndDueDate(schedule.getId(), d.dueDate()).isPresent())) {
                     throw new IllegalArgumentException("echeance absente ou deja enregistree.");
                 }
-                if (d.type() == OperationType.OPENING_BALANCE
-                        && operations.existsByAccountIdAndType(account.getId(), OperationType.OPENING_BALANCE)) {
-                    throw new IllegalArgumentException("le compte '" + account.getName() + "' a deja un solde initial.");
-                }
-                Operation o = Operation.restored(d.id(), new Operation.Draft(account, target, d.type(), d.status(),
-                                d.direction(), d.date(), d.amount(), category, d.incomeKind(), d.label(), d.description(),
+                Operation o = Operation.restored(d.id(), new Operation.Draft(account, null, type, d.status(),
+                                d.direction(), d.date(), d.amount(), category, incomeKind, label, d.description(),
                                 Boolean.TRUE.equals(d.essential()), Boolean.TRUE.equals(d.exceptional()), refundOf),
                         d.plannedAmount(), d.createdAt() != null ? d.createdAt() : now, d.updatedAt());
                 if (schedule != null) {
                     o.linkOccurrence(schedule, d.dueDate());
-                }
-                if (d.type() != null && d.type().isLoanMovement()) {
-                    Loan loan = d.loanId() == null ? null
-                            : loanMap.containsKey(d.loanId()) ? loanMap.get(d.loanId()) : loans.findById(d.loanId()).orElse(null);
-                    if (loan == null) {
-                        throw new IllegalArgumentException("pret introuvable pour ce mouvement.");
-                    }
-                    o.linkLoan(loan);
                 }
                 if (d.goalId() != null) {
                     Goal goal = goalMap.containsKey(d.goalId()) ? goalMap.get(d.goalId()) : goals.findById(d.goalId()).orElse(null);
@@ -414,14 +456,75 @@ public class FinanceBackup {
         }
     }
 
-    private Account resolveAccount(UUID id, Map<UUID, Account> accountMap) {
-        if (id == null) {
-            throw new IllegalArgumentException("compte manquant.");
+    /**
+     * Depenses variables plafonnees, apres les operations : une enveloppe deja presente (meme identifiant) est ignoree,
+     * une categorie deja suivie est signalee. Le suivi mensuel ne reprend une operation de total que si elle existe.
+     */
+    private void importEnvelopes(List<EnvelopeData> list, Map<UUID, Category> categoryMap, Instant now,
+                                 Consumer<String> errors) {
+        Set<UUID> usedTotals = new HashSet<>();
+        for (EnvelopeData d : list) {
+            try {
+                if (d.id() != null && envelopes.existsById(d.id())) {
+                    continue;
+                }
+                Category category = d.categoryId() == null ? null
+                        : categoryMap.containsKey(d.categoryId()) ? categoryMap.get(d.categoryId())
+                        : categories.findById(d.categoryId()).orElse(null);
+                if (category == null) {
+                    throw new IllegalArgumentException("categorie introuvable.");
+                }
+                if (envelopes.existsByCategoryId(category.getId())) {
+                    throw new IllegalArgumentException("la categorie « " + category.getName()
+                            + " » a deja une depense variable plafonnee.");
+                }
+                Map<YearMonth, BigDecimal> caps = new HashMap<>();
+                for (AmountData v : nullToEmpty(d.amounts())) {
+                    if (v.fromMonth() != null) caps.put(v.fromMonth(), v.amount());
+                }
+                Envelope e = envelopes.save(Envelope.restored(d.id(), category, d.label(),
+                        d.position() == null ? 0 : d.position(), d.startMonth(), d.endMonth(), caps,
+                        d.createdAt() != null ? d.createdAt() : now, d.updatedAt()));
+                for (EnvelopeMonthData m : nullToEmpty(d.months())) {
+                    if (m.month() == null) continue;
+                    UUID total = m.totalOperationId();
+                    if (total != null && (!usedTotals.add(total) || !operations.existsById(total)
+                            || envelopeMonths.existsByTotalOperationId(total))) {
+                        total = null;
+                    }
+                    EnvelopeMonth tracking = new EnvelopeMonth(e.getId(), m.month());
+                    tracking.setComment(m.comment());
+                    tracking.setTotalOperationId(total);
+                    if (!tracking.isEmpty()) envelopeMonths.save(tracking);
+                }
+            } catch (RuntimeException ex) {
+                errors.accept("Depense variable '" + d.label() + "' : " + ex.getMessage());
+            }
         }
-        if (accountMap.containsKey(id)) {
+    }
+
+    /** Categorie racine « Prets », reutilisee ou creee une fois pour les mouvements de prets d'anciennes sauvegardes. */
+    private Category loansCategory(Category[] cache, Instant now) {
+        if (cache[0] == null) {
+            List<Category> all = categories.findAll();
+            cache[0] = all.stream()
+                    .filter(c -> c.getParent() == null && !c.isArchived()
+                            && (c.getName().equalsIgnoreCase("Prêts") || c.getName().equalsIgnoreCase("Prets")))
+                    .findFirst()
+                    .orElseGet(() -> categories.save(Category.restored(null, null, "Prêts", "hand-coins", "#0d9488",
+                            (int) all.stream().filter(c -> c.getParent() == null).count(), false, now)));
+        }
+        return cache[0];
+    }
+
+    /** Compte unique : celui de la sauvegarde s'il est connu, sinon le compte deja en base. */
+    private Account resolveAccount(UUID id, Map<UUID, Account> accountMap) {
+        if (id != null && accountMap.containsKey(id)) {
             return accountMap.get(id);
         }
-        return accounts.findById(id).orElseThrow(() -> new IllegalArgumentException("compte introuvable."));
+        return accounts.findAll().stream()
+                .min(Comparator.comparing(Account::isArchived).thenComparing(Account::getCreatedAt))
+                .orElseThrow(() -> new IllegalArgumentException("aucun compte : saisissez d'abord votre solde."));
     }
 
     private static <T> List<T> nullToEmpty(List<T> list) {

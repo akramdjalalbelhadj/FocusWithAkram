@@ -28,11 +28,9 @@ export class PurchaseDialogComponent {
   protected readonly money = formatMoney;
   protected readonly amount = signal(amountInput(this.goal.estimatedPrice));
   protected readonly date = signal(this.today);
-  protected readonly accountId = signal(
-    this.store.activeAccounts().find((a) => a.type !== 'SAVINGS')?.id ?? '',
-  );
+  /** Compte unique, debite de l'achat. */
+  protected readonly accountId = computed(() => this.store.account()?.id ?? '');
   protected readonly categoryId = signal(this.goal.category?.id ?? '');
-  protected readonly accounts = computed(() => this.store.activeAccounts());
   protected readonly categories = computed(() => this.store.activeCategories());
   protected readonly saving = signal(false);
   protected readonly error = signal('');
@@ -41,7 +39,7 @@ export class PurchaseDialogComponent {
     const amount = parseAmount(this.amount());
     if (amount === null || amount <= 0) return this.error.set('Saisissez le prix réellement payé.');
     if (!this.date() || this.date() > this.today) return this.error.set('La date d’achat ne peut pas être future.');
-    if (!this.accountId()) return this.error.set('Choisissez le compte débité.');
+    if (!this.accountId()) return this.error.set('Saisissez d’abord le solde de votre compte.');
     if (!this.categoryId()) return this.error.set('Choisissez la catégorie de la dépense.');
     this.saving.set(true);
     try {

@@ -30,16 +30,14 @@ public class FinanceOverviewService {
     private final OperationRepository operations;
     private final ScheduleService schedules;
     private final BudgetService budgets;
-    private final LoanService loans;
     private final FinanceDates dates;
 
     public FinanceOverviewService(AccountService accounts, OperationRepository operations, ScheduleService schedules,
-                                  BudgetService budgets, LoanService loans, FinanceDates dates) {
+                                  BudgetService budgets, FinanceDates dates) {
         this.accounts = accounts;
         this.operations = operations;
         this.schedules = schedules;
         this.budgets = budgets;
-        this.loans = loans;
         this.dates = dates;
     }
 
@@ -66,9 +64,8 @@ public class FinanceOverviewService {
                 .sorted(Comparator.comparing(Operation::getDate))
                 .map(o -> FinanceMapper.toResponse(o, today)).toList();
         int overdue = (int) upcoming.stream().filter(OperationResponse::overdue).count();
-        BigDecimal[] outstanding = loans.outstanding();
         return new FinanceOverview(m, today, all, available, savings, totals, byCategory(plan), upcoming, overdue,
-                budgets.gauge(m, totals), budgets.preferences().getSafetyReserve(), outstanding[0], outstanding[1]);
+                budgets.gauge(m, totals), budgets.preferences().getSafetyReserve());
     }
 
     /** Bilan d'un ensemble d'operations ; voir {@link MonthTotals} pour la definition de chaque montant. */
@@ -119,8 +116,8 @@ public class FinanceOverviewService {
                         if (fromSavings && !toSavings) saved = saved.subtract(o.getAmount());
                     }
                 }
-                case OPENING_BALANCE, ADJUSTMENT, LOAN_GIVEN, LOAN_COLLECTED, LOAN_TAKEN, LOAN_REPAID -> {
-                    // Ni revenu ni depense : soldes initiaux, corrections et mouvements de prets.
+                case OPENING_BALANCE, ADJUSTMENT -> {
+                    // Ni revenu ni depense : soldes initiaux et corrections.
                 }
             }
         }

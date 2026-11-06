@@ -3,28 +3,41 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 import { FinanceApi } from '../../../core/api/finance.api';
 import {
+  Envelope,
+  EnvelopeRow,
   FinanceAccount,
   FinanceCategory,
   FinancePreferences,
   Goal,
-  Loan,
-  LoanDirection,
   Operation,
   OperationBody,
   Schedule,
   ScheduleKind,
+  SheetRow,
 } from '../../../core/api/models';
 import { RefreshService } from '../../../core/services/refresh.service';
 import { SettingsStore } from '../../../core/services/settings.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { formatMoney } from '../../../core/util/money';
+import { longDate } from '../../../core/util/time';
 import { ConfirmData, ConfirmDialogComponent } from '../../../shared/ui/dialogs';
+import { MONTH_HELP } from '../month-help';
+import { actualDefaultDate, expenseDefaultDate, monthLabel } from '../month-utils';
 import { AccountDialogComponent } from '../components/account-dialog/account-dialog';
+import {
+  ActualDialogComponent,
+  ActualDialogData,
+} from '../components/actual-dialog/actual-dialog';
+import {
+  AmountChangeDialogComponent,
+  AmountChangeDialogData,
+} from '../components/amount-change-dialog/amount-change-dialog';
+import { EnvelopeDialogComponent } from '../components/envelope-dialog/envelope-dialog';
+import { FixedChargeDialogComponent } from '../components/fixed-charge-dialog/fixed-charge-dialog';
 import { BudgetDialogComponent, BudgetDialogData } from '../components/budget-dialog/budget-dialog';
 import { DateDialogComponent, DateDialogData } from '../components/date-dialog/date-dialog';
 import { GoalDialogComponent } from '../components/goal-dialog/goal-dialog';
-import { LoanDialogComponent } from '../components/loan-dialog/loan-dialog';
-import { RepaymentDialogComponent } from '../components/repayment-dialog/repayment-dialog';
+import { IncomePlanDialogComponent } from '../components/income-plan-dialog/income-plan-dialog';
 import { PurchaseDialogComponent } from '../components/purchase-dialog/purchase-dialog';
 import { ScheduleDialogComponent } from '../components/schedule-dialog/schedule-dialog';
 import {
@@ -187,29 +200,6 @@ export class FinanceActions {
     );
   }
 
-  async toggleArchiveAccount(account: FinanceAccount): Promise<boolean> {
-    return this.run(
-      () =>
-        this.api.updateAccount(account.id, {
-          name: account.name,
-          type: account.type,
-          archived: !account.archived,
-          position: account.position,
-        }),
-      account.archived ? 'Compte réactivé.' : 'Compte archivé.',
-    );
-  }
-
-  async deleteAccount(account: FinanceAccount): Promise<boolean> {
-    const ok = await this.confirm({
-      title: 'Supprimer le compte ?',
-      message: `« ${account.name} » n’a aucune opération : il sera définitivement supprimé.`,
-      confirmLabel: 'Supprimer',
-      danger: true,
-    });
-    return ok && this.run(() => this.api.deleteAccount(account.id), 'Compte supprimé.');
-  }
-
   async editCategory(data: CategoryDialogData): Promise<boolean> {
     const ok = await firstValueFrom(
       this.dialog.open<boolean>(CategoryDialogComponent, { data, backdropClass: 'ff-backdrop' })
@@ -283,8 +273,19 @@ export class FinanceActions {
     const ok = await firstValueFrom(
       this.dialog.open<boolean>(BudgetDialogComponent, { data, backdropClass: 'ff-backdrop' }).closed,
     );
-    if (ok) this.done('Budget enregistré.');
+    if (ok) this.done('Objectif d’épargne enregistré.');
     return !!ok;
+  }
+
+  /** Objectif d'epargne du mois (AAAA-MM), depuis la feuille du mois. */
+  async editSavingsTarget(month: string): Promise<boolean> {
+    try {
+      const budget = await firstValueFrom(this.api.budget(month));
+      return this.editBudget({ month, monthTitle: monthLabel(month), budget });
+    } catch (e) {
+      this.toast.errorFrom(e);
+      return false;
+    }
   }
 
   savePreferences(body: FinancePreferences): Promise<boolean> {
@@ -378,51 +379,312 @@ export class FinanceActions {
     }
   }
 
-  // ---- Prêts et emprunts ----
+  // ---- Revenu prévu ----
 
-  async editLoan(loan: Loan | null, direction?: LoanDirection): Promise<boolean> {
-    const ok = await firstValueFrom(
-      this.dialog.open<boolean>(LoanDialogComponent, {
-        data: { loan, direction },
+  /** Revenu attendu pour un mois, ou chaque mois sur une période (échéancier mensuel). */
+  async planIncome(month?: string): Promise<boolean> {
+    const message = await firstValueFrom(
+      this.dialog.open<string>(IncomePlanDialogComponent, {
+        data: { month: month ?? this.settings.today().slice(0, 7) },
         backdropClass: 'ff-backdrop',
       }).closed,
     );
-    if (ok) this.done(loan ? 'Prêt modifié.' : 'Prêt enregistré.');
-    return !!ok;
+    if (message) this.done(message);
+    return !!message;
   }
 
-  async repayLoan(loan: Loan): Promise<boolean> {
-    const ok = await firstValueFrom(
-      this.dialog.open<boolean>(RepaymentDialogComponent, { data: loan, backdropClass: 'ff-backdrop' })
+  // ---- Feuille du mois : revenus et dépenses fixes ----
+
+  /** Depense fixe (loyer, telephone, transport) : echeancier mensuel indispensable a partir d'un mois. */
+  async newFixedCharge(month: string): Promise<boolean> {
+    const message = await firstValueFrom(
+      this.dialog.open<string>(FixedChargeDialogComponent, { data: { month }, backdropClass: 'ff-backdrop' })
         .closed,
     );
-    if (ok) this.done('Remboursement enregistré.');
-    return !!ok;
+    if (message) this.done(message);
+    return !!message;
   }
 
-  /** Abandon explicite du reste dû : aucun mouvement d'argent, le prêt est clos. */
-  async writeOffLoan(loan: Loan): Promise<boolean> {
-    const result = await this.askAmount({
-      title: loan.direction === 'LENT' ? 'Abandonner le reste dû ?' : 'Dette remise ?',
-      message: `${loan.person} : ${formatMoney(loan.remaining)} ne ${loan.direction === 'LENT' ? 'vous seront' : 'seront'} plus ${loan.direction === 'LENT' ? 'remboursés' : 'à rembourser'}. Aucun argent ne bouge ; le prêt est clos et reste dans l’historique.`,
-      amountLabel: 'Montant régularisé',
-      amount: loan.remaining,
-      readonlyAmount: true,
-      withNote: true,
-      confirmLabel: 'Régulariser',
+  /**
+   * Saisit ou corrige le reel d'une ligne (montant, date, commentaire facultatif). Le prevu est conserve. Une
+   * operation ponctuelle passe par les dialogues habituels.
+   */
+  async recordActual(row: SheetRow, income: boolean): Promise<boolean> {
+    if (!row.scheduleId || !row.dueDate) {
+      const op = await this.fetchOperation(row.operationId);
+      if (!op) return false;
+      return op.status === 'PLANNED' ? this.complete(op) : this.editOperation(op);
+    }
+    const scheduleId = row.scheduleId;
+    const due = row.dueDate;
+    const today = this.settings.today();
+    const verb = income ? 'reçu' : 'payé';
+    const ok = await this.openActual({
+      title: row.status === 'DONE' ? `Modifier le montant ${verb}` : income ? 'Montant reçu' : 'Montant payé',
+      message: `${row.label} — prévu ${formatMoney(row.planned)} le ${longDate(due)}.`,
+      help: { label: 'Réel', text: MONTH_HELP.actual },
+      amount: row.actual ?? row.planned,
+      amountLabel: `Montant ${verb}`,
+      date: actualDefaultDate(row.date, today),
+      dateLabel: income ? 'Reçu le' : 'Payé le',
+      maxDate: today,
+      comment: row.comment,
+      commentLabel: 'Commentaire',
+      commentPlaceholder: income ? 'Ex. absence de deux jours, prime incluse…' : 'Ex. régularisation, hausse du tarif…',
+      hint: 'Le montant prévu est conservé : l’écart s’affiche dans le tableau.',
+      confirmLabel: 'Enregistrer',
+      save: (v) => this.api.completeOccurrence(scheduleId, due, v.amount ?? 0, v.date ?? today, v.comment),
     });
-    if (!result) return false;
-    return this.run(() => this.api.writeOffLoan(loan.id, result.note), 'Prêt régularisé.');
+    if (ok) this.done(income ? `Montant reçu enregistré : ${row.label}.` : `Paiement enregistré : ${row.label}.`);
+    return ok;
   }
 
-  async cancelLoan(loan: Loan): Promise<boolean> {
+  /** « Ce mois seulement » : montant et date prevus pour ce mois, sans toucher aux autres mois. */
+  async adjustThisMonth(row: SheetRow): Promise<boolean> {
+    if (!row.scheduleId || !row.dueDate) return false;
+    const scheduleId = row.scheduleId;
+    const due = row.dueDate;
+    const ok = await this.openActual({
+      title: 'Ce mois seulement',
+      help: { label: 'Ce mois seulement', text: MONTH_HELP.thisMonthOnly },
+      message: `${row.label} : montant prévu pour ${monthLabel(due.slice(0, 7))} uniquement. Les autres mois ne changent pas.`,
+      amount: row.planned,
+      amountLabel: 'Montant prévu ce mois-ci',
+      date: row.date,
+      dateLabel: 'Date prévue',
+      confirmLabel: 'Enregistrer',
+      save: (v) => this.api.adjustOccurrence(scheduleId, due, v.amount ?? 0, v.date ?? row.date),
+    });
+    if (ok) this.done(`Montant de ${monthLabel(due.slice(0, 7))} modifié : ${row.label}.`);
+    return ok;
+  }
+
+  /** « À partir de ce mois » : nouveau montant pour ce mois et les suivants ; les mois precedents ne changent pas. */
+  async changeAmountFrom(row: SheetRow, month: string): Promise<boolean> {
+    const schedule = await this.fetchSchedule(row.scheduleId);
+    if (!schedule) return false;
+    return this.openAmountChange({
+      target: 'schedule',
+      id: schedule.id,
+      label: schedule.label,
+      month,
+      current: row.planned,
+      versions: schedule.amounts ?? [],
+      baseAmount: schedule.amount,
+      minMonth: schedule.startDate.slice(0, 7),
+    });
+  }
+
+  /** « Pas reçu / pas payé ce mois » : l'echeance du mois est sautee, les autres mois continuent. */
+  async skipRow(row: SheetRow, income: boolean): Promise<boolean> {
+    if (!row.scheduleId || !row.dueDate) return false;
+    const scheduleId = row.scheduleId;
+    const due = row.dueDate;
     const ok = await this.confirm({
-      title: 'Annuler ce prêt ?',
-      message: `Pour un prêt saisi par erreur : le prêt de ${formatMoney(loan.principal)} (${loan.person}) et ses remboursements sont annulés et n’ont plus d’effet sur les soldes.`,
-      confirmLabel: 'Annuler le prêt',
+      title: income ? 'Pas reçu ce mois-ci ?' : 'Pas payé ce mois-ci ?',
+      message: `« ${row.label} » de ${monthLabel(due.slice(0, 7))} ne sera plus attendu et sort des totaux du mois. Les autres mois ne changent pas ; « Annuler la saisie » le rétablit.`,
+      confirmLabel: income ? 'Pas reçu ce mois' : 'Pas payé ce mois',
+    });
+    return (
+      ok &&
+      this.run(
+        () => this.api.skipOccurrence(scheduleId, due),
+        `« ${row.label} » retiré de ${monthLabel(due.slice(0, 7))}.`,
+      )
+    );
+  }
+
+  /** Annule l'enregistrement de l'echeance (reel, saut ou ajustement) : la ligne redevient prevue. */
+  async resetRow(row: SheetRow, income: boolean): Promise<boolean> {
+    if (!row.scheduleId || !row.dueDate) return false;
+    const scheduleId = row.scheduleId;
+    const due = row.dueDate;
+    const verb = income ? 'reçu' : 'payé';
+    const message =
+      row.status === 'DONE'
+        ? `Le montant ${verb} (${formatMoney(row.actual)}) est effacé : « ${row.label} » redevient prévu pour ce mois.`
+        : row.status === 'SKIPPED'
+          ? `« ${row.label} » est de nouveau attendu ce mois-ci.`
+          : `« ${row.label} » reprend son montant habituel ce mois-ci.`;
+    const ok = await this.confirm({
+      title: row.status === 'DONE' ? 'Annuler la saisie ?' : 'Revenir au montant prévu ?',
+      message,
+      confirmLabel: row.status === 'DONE' ? 'Annuler la saisie' : 'Rétablir',
+    });
+    return (
+      ok &&
+      this.run(() => this.api.resetOccurrence(scheduleId, due), `« ${row.label} » est de nouveau prévu ce mois-ci.`)
+    );
+  }
+
+  /** Modifier ou arreter le revenu ou la depense fixe (echeancier complet). */
+  async editRowSchedule(row: SheetRow): Promise<boolean> {
+    const schedule = await this.fetchSchedule(row.scheduleId);
+    return !!schedule && this.editSchedule(schedule);
+  }
+
+  /** Modifier une operation ponctuelle de la feuille. */
+  async editRowOperation(row: SheetRow): Promise<boolean> {
+    const op = await this.fetchOperation(row.operationId);
+    return !!op && this.editOperation(op);
+  }
+
+  /** Supprimer une operation ponctuelle de la feuille. */
+  async deleteRowOperation(row: SheetRow): Promise<boolean> {
+    const op = await this.fetchOperation(row.operationId);
+    return !!op && this.delete(op);
+  }
+
+  // ---- Feuille du mois : dépenses variables plafonnées ----
+
+  async newEnvelope(month: string, takenCategoryIds: string[] = []): Promise<boolean> {
+    const message = await firstValueFrom(
+      this.dialog.open<string>(EnvelopeDialogComponent, {
+        data: { month, takenCategoryIds },
+        backdropClass: 'ff-backdrop',
+      }).closed,
+    );
+    if (message) this.done(message);
+    return !!message;
+  }
+
+  /** Une depense de la categorie, payee, datee dans le mois affiche. */
+  addEnvelopeExpense(row: EnvelopeRow, month: string): Promise<boolean> {
+    return this.newOperation({
+      type: 'EXPENSE',
+      status: 'COMPLETED',
+      categoryId: row.category.id,
+      date: expenseDefaultDate(month, this.settings.today()),
+    });
+  }
+
+  /** Total depense du mois : une operation de total complete les depenses deja saisies. */
+  async envelopeTotal(row: EnvelopeRow, month: string): Promise<boolean> {
+    const ok = await this.openActual({
+      title: 'Total du mois',
+      message: `${row.label} — plafond de ${formatMoney(row.cap)} en ${monthLabel(month)}. Indiquez le total dépensé : les dépenses déjà saisies restent comptées, une opération de total complète la différence.`,
+      amount: row.spent,
+      amountLabel: 'Total dépensé ce mois-ci',
+      allowZero: true,
+      comment: row.comment,
+      commentLabel: 'Commentaire',
+      commentPlaceholder: 'Ex. invités, fêtes de fin d’année…',
+      commentRequiredAbove: row.cap,
+      confirmLabel: 'Enregistrer',
+      save: (v) => this.api.envelopeActual(row.envelopeId, month, v.amount ?? 0, v.comment),
+    });
+    if (ok) this.done(`Total de ${monthLabel(month)} enregistré : ${row.label}.`);
+    return ok;
+  }
+
+  /** Commentaire du mois ; obligatoire en cas de depassement (vide sinon : supprime). */
+  async envelopeComment(row: EnvelopeRow, month: string): Promise<boolean> {
+    const over = row.exceeded;
+    const ok = await this.openActual({
+      title: over ? 'Expliquer le dépassement' : 'Commentaire du mois',
+      message: over
+        ? `${row.label} : ${formatMoney(row.spent)} dépensés pour un plafond de ${formatMoney(row.cap)} en ${monthLabel(month)} (${formatMoney(-row.remaining)} de plus). Expliquez-le en quelques mots.`
+        : `${row.label} — ${monthLabel(month)}.`,
+      comment: row.comment,
+      commentLabel: over ? 'Explication' : 'Commentaire',
+      commentPlaceholder: over ? 'Ex. invités, courses de fêtes…' : '',
+      commentRequired: over,
+      confirmLabel: 'Enregistrer',
+      save: (v) => this.api.envelopeComment(row.envelopeId, month, v.comment ?? ''),
+    });
+    if (ok) this.done('Commentaire enregistré.');
+    return ok;
+  }
+
+  /** Nouveau plafond a partir d'un mois ; les mois precedents gardent le leur. */
+  async changeEnvelopeCapFrom(row: EnvelopeRow, month: string): Promise<boolean> {
+    const envelope = await this.fetchEnvelope(row.envelopeId);
+    if (!envelope) return false;
+    return this.openAmountChange({
+      target: 'envelope',
+      id: envelope.id,
+      label: envelope.label,
+      month,
+      current: row.cap,
+      versions: envelope.amounts ?? [],
+      minMonth: envelope.startMonth,
+    });
+  }
+
+  /** Plus de plafond apres le mois affiche ; les mois precedents et les depenses restent. */
+  async stopEnvelope(row: EnvelopeRow, month: string): Promise<boolean> {
+    const ok = await this.confirm({
+      title: 'Arrêter cette dépense variable ?',
+      message: `« ${row.label} » n’aura plus de plafond après ${monthLabel(month)}. Les mois précédents et les dépenses déjà saisies sont conservés.`,
+      confirmLabel: 'Arrêter',
+    });
+    return (
+      ok &&
+      this.run(
+        () => this.api.endEnvelope(row.envelopeId, month),
+        `« ${row.label} » : plus de plafond après ${monthLabel(month)}.`,
+      )
+    );
+  }
+
+  async deleteEnvelope(row: EnvelopeRow): Promise<boolean> {
+    const ok = await this.confirm({
+      title: 'Supprimer cette dépense variable ?',
+      message: `Le plafond « ${row.label} » disparaît de tous les mois. Les dépenses saisies restent dans l’historique. Pour ne plus la suivre à partir d’un mois, préférez « Arrêter après ce mois ».`,
+      confirmLabel: 'Supprimer',
       danger: true,
     });
-    return ok && this.run(() => this.api.cancelLoan(loan.id), 'Prêt annulé.');
+    return ok && this.run(() => this.api.deleteEnvelope(row.envelopeId), 'Dépense variable supprimée.');
+  }
+
+  private async openActual(data: ActualDialogData): Promise<boolean> {
+    return !!(await firstValueFrom(
+      this.dialog.open<boolean>(ActualDialogComponent, { data, backdropClass: 'ff-backdrop' }).closed,
+    ));
+  }
+
+  private async openAmountChange(data: AmountChangeDialogData): Promise<boolean> {
+    const message = await firstValueFrom(
+      this.dialog.open<string>(AmountChangeDialogComponent, { data, backdropClass: 'ff-backdrop' }).closed,
+    );
+    if (message) this.done(message);
+    return !!message;
+  }
+
+  private async fetchSchedule(id: string | null): Promise<Schedule | null> {
+    if (!id) return null;
+    return this.fetch(
+      async () => (await firstValueFrom(this.api.schedules())).find((s) => s.id === id),
+      'Échéancier introuvable : il a peut-être été supprimé.',
+    );
+  }
+
+  private async fetchEnvelope(id: string): Promise<Envelope | null> {
+    return this.fetch(
+      async () => (await firstValueFrom(this.api.envelopes())).find((e) => e.id === id),
+      'Dépense variable introuvable : elle a peut-être été supprimée.',
+    );
+  }
+
+  private async fetchOperation(id: string | null): Promise<Operation | null> {
+    if (!id) return null;
+    return this.fetch(() => firstValueFrom(this.api.operation(id)), 'Opération introuvable.');
+  }
+
+  /** Relit un element avant de l'ouvrir dans un dialogue ; signale une absence ou une erreur. */
+  private async fetch<T>(load: () => Promise<T | undefined>, missing: string): Promise<T | null> {
+    try {
+      const value = await load();
+      if (value === undefined) {
+        this.toast.error(missing);
+        this.refresh.bump();
+        return null;
+      }
+      return value;
+    } catch (e) {
+      this.toast.errorFrom(e);
+      return null;
+    }
   }
 
   private async openOperation(data: OperationDialogData, success: string): Promise<boolean> {

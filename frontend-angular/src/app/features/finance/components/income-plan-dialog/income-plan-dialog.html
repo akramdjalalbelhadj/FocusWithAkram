@@ -1,0 +1,140 @@
+<form
+  class="card w-[min(32rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="inc-title"
+>
+  <div class="flex items-center gap-1 mb-1">
+    <h2 id="inc-title" class="text-lg font-bold">Revenu prévu</h2>
+    <ff-help-tip label="Revenu prévu" [text]="help.incomes" />
+  </div>
+  <p class="text-sm text-muted">
+    Saisissez-le une fois : il apparaîtra dans chaque mois concerné. Vous indiquerez ensuite le montant
+    réellement reçu.
+  </p>
+  <div class="space-y-4 mt-4">
+    <div class="grid sm:grid-cols-[1fr_10rem] gap-3">
+      <div>
+        <label class="field-label" for="inc-label">Libellé</label>
+        <input id="inc-label" class="input" formControlName="label" maxlength="120" autocomplete="off" />
+      </div>
+      <div>
+        <label class="field-label" for="inc-amount">Montant</label>
+        <div class="relative">
+          <input
+            id="inc-amount"
+            class="input pr-8 text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="amount"
+            placeholder="0,00"
+            cdkFocusInitial
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <label class="field-label" for="inc-kind">Origine</label>
+      <select id="inc-kind" class="input" formControlName="incomeKind">
+        @for (k of incomeKinds; track k.value) {
+          <option [value]="k.value">{{ k.label }}</option>
+        }
+      </select>
+    </div>
+
+    <fieldset>
+      <legend class="field-label">Quand ?</legend>
+      <div class="segmented">
+        <label
+          class="segmented-item cursor-pointer has-[:focus-visible]:outline-2"
+          [class.bg-brand-soft]="mode() === 'once'"
+          [class.text-brand]="mode() === 'once'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="mode" value="once" />Un seul mois
+        </label>
+        <label
+          class="segmented-item cursor-pointer has-[:focus-visible]:outline-2"
+          [class.bg-brand-soft]="mode() === 'monthly'"
+          [class.text-brand]="mode() === 'monthly'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="mode" value="monthly" />Chaque mois
+        </label>
+      </div>
+    </fieldset>
+
+    @if (mode() === 'once') {
+      <div class="grid grid-cols-[minmax(0,1fr)_6rem] gap-3">
+        <div>
+          <label class="field-label" for="inc-month">Mois</label>
+          <input id="inc-month" type="month" class="input" formControlName="from" placeholder="AAAA-MM" />
+        </div>
+        <div>
+          <label class="field-label" for="inc-day">Jour</label>
+          <input
+            id="inc-day"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="31"
+            class="input"
+            formControlName="day"
+            aria-describedby="inc-day-hint"
+          />
+        </div>
+      </div>
+    } @else {
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="field-label" for="inc-from">De</label>
+          <input id="inc-from" type="month" class="input" formControlName="from" placeholder="AAAA-MM" />
+        </div>
+        <div>
+          <label class="field-label" for="inc-to">À (facultatif)</label>
+          <input
+            id="inc-to"
+            type="month"
+            class="input"
+            formControlName="to"
+            placeholder="AAAA-MM"
+            aria-describedby="inc-to-hint"
+          />
+        </div>
+      </div>
+      <p id="inc-to-hint" class="field-hint !mt-1">Laissez « À » vide si le revenu continue sans date de fin.</p>
+      <div class="max-w-40">
+        <label class="field-label" for="inc-day">Jour du mois</label>
+        <input
+          id="inc-day"
+          type="number"
+          inputmode="numeric"
+          min="1"
+          max="31"
+          class="input"
+          formControlName="day"
+          aria-describedby="inc-day-hint"
+        />
+      </div>
+    }
+    <p id="inc-day-hint" class="field-hint !mt-1">
+      De 1 à 31 ; pour un mois plus court, le dernier jour du mois est utilisé.
+    </p>
+
+    @if (summary()) {
+      <p class="rounded-xl bg-brand-soft text-sm p-3 flex items-start gap-2" aria-live="polite">
+        <ff-icon name="calendar-check" [size]="16" class="text-brand mt-0.5 flex-none" />
+        <span>{{ summary() }}</span>
+      </p>
+    }
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      <ff-icon name="check" [size]="16" />Enregistrer
+    </button>
+  </div>
+</form>

@@ -258,6 +258,40 @@ h4 {
     background-position: right 0.65rem center;
   }
 
+  /* Choix d'un affichage parmi deux ou trois (onglets compacts dans une page). */
+  .segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md, 0.75rem);
+    background: var(--surface);
+    max-width: 100%;
+  }
+  .segmented-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-sm, 0.5rem);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .segmented-item:hover {
+    color: var(--fg);
+    background: var(--surface-2);
+  }
+  .segmented-item[aria-pressed='true'] {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+  .segmented-item:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+
   .badge {
     display: inline-flex;
     align-items: center;

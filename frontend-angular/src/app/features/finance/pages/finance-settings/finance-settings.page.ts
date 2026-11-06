@@ -6,29 +6,37 @@ import { FinanceApi } from '../../../../core/api/finance.api';
 import { FinanceCategory } from '../../../../core/api/models';
 import { Loader } from '../../../../core/util/loader';
 import { amountInput, formatMoney, parseAmount } from '../../../../core/util/money';
+import { HelpTipComponent } from '../../../../shared/ui/help-tip/help-tip';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
-import { ACCOUNT_TYPE_LABEL, ACCOUNT_TYPES } from '../../finance-labels';
+import { FinanceTourService } from '../../components/finance-tour/finance-tour.service';
 import { FinanceActions } from '../../services/finance-actions.service';
 import { FinanceReferenceStore } from '../../services/finance-reference.store';
 
-/** Gestion des comptes et des categories (creation, modification, archivage, suppression si inutilises). */
+/**
+ * Reglages du module : le compte unique (nom, correction du solde), la visite guidee a revoir, les preferences et les
+ * categories (creation, modification, archivage, suppression si inutilisees).
+ */
 @Component({
   selector: 'ff-finance-settings',
-  imports: [IconComponent, CdkMenuTrigger, CdkMenu, CdkMenuItem, NgTemplateOutlet, FormsModule],
+  imports: [
+    IconComponent,
+    HelpTipComponent,
+    CdkMenuTrigger,
+    CdkMenu,
+    CdkMenuItem,
+    NgTemplateOutlet,
+    FormsModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './finance-settings.page.html',
 })
 export class FinanceSettingsPage {
   protected readonly store = inject(FinanceReferenceStore);
   protected readonly actions = inject(FinanceActions);
+  protected readonly tour = inject(FinanceTourService);
   protected readonly money = formatMoney;
-  protected readonly typeLabel = ACCOUNT_TYPE_LABEL;
-  protected readonly typeIcon = Object.fromEntries(ACCOUNT_TYPES.map((t) => [t.value, t.icon]));
   protected readonly showArchived = signal(false);
 
-  protected readonly accounts = computed(() =>
-    this.store.accounts().filter((a) => this.showArchived() || !a.archived),
-  );
   protected readonly categories = computed(() =>
     this.store
       .categories()
@@ -44,7 +52,10 @@ export class FinanceSettingsPage {
     return c.operationCount === 0 && c.children.length === 0;
   }
 
-  /** Preferences financieres, editees comme textes (saisie a la francaise) puis validees a l'enregistrement. */
+  /**
+   * Preferences financieres, editees comme textes (saisie a la francaise) puis validees a l'enregistrement. Le
+   * plancher d'epargne (ancien compte d'epargne) n'est plus saisi : sa valeur est conservee telle quelle.
+   */
   private readonly api = inject(FinanceApi);
   protected readonly prefs = new Loader(() => this.api.preferences());
   protected readonly reserve = signal('');

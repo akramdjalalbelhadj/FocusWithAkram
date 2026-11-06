@@ -1,0 +1,136 @@
+<form
+  class="card w-[min(32rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="fix-title"
+>
+  <div class="flex items-center gap-1 mb-1">
+    <h2 id="fix-title" class="text-lg font-bold">Dépense fixe</h2>
+    <ff-help-tip label="Dépense fixe" [text]="help.fixed" />
+  </div>
+  <p class="text-sm text-muted">
+    Loyer, téléphone, abonnement de transport… Saisie une fois, elle remplit la feuille de chaque mois.
+  </p>
+  <div class="space-y-4 mt-4">
+    <fieldset>
+      <legend class="field-label">Type</legend>
+      <div class="segmented">
+        <label
+          class="segmented-item cursor-pointer has-[:focus-visible]:outline-2"
+          [class.bg-brand-soft]="kind() === 'BILL'"
+          [class.text-brand]="kind() === 'BILL'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="kind" value="BILL" /><ff-icon
+            name="receipt"
+            [size]="15"
+          />Charge
+        </label>
+        <label
+          class="segmented-item cursor-pointer has-[:focus-visible]:outline-2"
+          [class.bg-brand-soft]="kind() === 'SUBSCRIPTION'"
+          [class.text-brand]="kind() === 'SUBSCRIPTION'"
+        >
+          <input type="radio" class="sr-only-text" formControlName="kind" value="SUBSCRIPTION" /><ff-icon
+            name="repeat"
+            [size]="15"
+          />Abonnement
+        </label>
+      </div>
+    </fieldset>
+    <div class="grid sm:grid-cols-[1fr_10rem] gap-3">
+      <div>
+        <label class="field-label" for="fix-label">Libellé</label>
+        <input
+          id="fix-label"
+          class="input"
+          formControlName="label"
+          maxlength="120"
+          autocomplete="off"
+          placeholder="Loyer, forfait mobile, Navigo…"
+          cdkFocusInitial
+        />
+      </div>
+      <div>
+        <label class="field-label" for="fix-amount">Montant</label>
+        <div class="relative">
+          <input
+            id="fix-amount"
+            class="input pr-8 text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="amount"
+            placeholder="0,00"
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-[1fr_7rem] gap-3">
+      <div>
+        <label class="field-label" for="fix-cat">Catégorie</label>
+        <select id="fix-cat" class="input" formControlName="categoryId" aria-required="true">
+          <option value="" disabled>Choisir…</option>
+          @for (c of categories(); track c.id) {
+            <optgroup [label]="c.name">
+              <option [value]="c.id">{{ c.name }} (général)</option>
+              @for (s of c.children; track s.id) {
+                <option [value]="s.id">{{ s.name }}</option>
+              }
+            </optgroup>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="fix-day">Jour du mois</label>
+        <input
+          id="fix-day"
+          type="number"
+          inputmode="numeric"
+          min="1"
+          max="31"
+          class="input"
+          formControlName="day"
+          aria-describedby="fix-day-hint"
+        />
+      </div>
+    </div>
+    <p id="fix-day-hint" class="field-hint !mt-1">
+      Jour du prélèvement, de 1 à 31 ; pour un mois plus court, le dernier jour du mois est utilisé.
+    </p>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" for="fix-from">À partir de</label>
+        <input id="fix-from" type="month" class="input" formControlName="from" placeholder="AAAA-MM" />
+      </div>
+      <div>
+        <label class="field-label" for="fix-to">Jusqu’à (facultatif)</label>
+        <input
+          id="fix-to"
+          type="month"
+          class="input"
+          formControlName="to"
+          placeholder="AAAA-MM"
+          aria-describedby="fix-to-hint"
+        />
+      </div>
+    </div>
+    <p id="fix-to-hint" class="field-hint !mt-1">Laissez vide si la dépense continue sans date de fin.</p>
+
+    @if (summary()) {
+      <p class="rounded-xl bg-brand-soft text-sm p-3 flex items-start gap-2" aria-live="polite">
+        <ff-icon name="calendar-check" [size]="16" class="text-brand mt-0.5 flex-none" />
+        <span>{{ summary() }}</span>
+      </p>
+    }
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      <ff-icon name="check" [size]="16" />Ajouter
+    </button>
+  </div>
+</form>

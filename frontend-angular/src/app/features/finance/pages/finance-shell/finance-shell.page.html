@@ -3,21 +3,41 @@
     <h1 class="page-title">
       <span class="page-icon"><ff-icon name="wallet" [size]="24" /></span>Mes achats
     </h1>
-    <p class="page-sub">Votre argent réel, vos dépenses et vos prévisions, au même endroit.</p>
+    <p class="page-sub">Votre mois, vos dépenses et vos projets d’achat, au même endroit.</p>
   </div>
-  @if (!needsSetup() && store.loaded()) {
-    <div class="flex gap-2">
-      <button type="button" class="btn btn-secondary" (click)="actions.newOperation()">
-        <ff-icon name="plus" />Opération
-      </button>
+  @if (!needsSetup() && store.loaded() && !store.error()) {
+    <div class="flex items-center gap-2">
       <button
         type="button"
         class="btn btn-primary"
-        title="Saisie rapide (touche E)"
+        title="Saisir une dépense (touche E)"
+        aria-keyshortcuts="E"
+        data-tour="quick-expense"
         (click)="actions.quickExpense()"
       >
         <ff-icon name="receipt" />Dépense
       </button>
+      <button
+        type="button"
+        class="btn btn-secondary btn-icon"
+        title="Visite guidée"
+        aria-label="Visite guidée"
+        data-tour="tour-button"
+        [attr.aria-busy]="tour.starting() || null"
+        (click)="tour.start()"
+      >
+        <ff-icon name="help" />
+      </button>
+      <a
+        routerLink="settings"
+        routerLinkActive="fin-settings-active"
+        ariaCurrentWhenActive="page"
+        class="btn btn-ghost btn-icon"
+        title="Réglages"
+        aria-label="Réglages de Mes achats"
+        data-tour="settings-link"
+        ><ff-icon name="settings"
+      /></a>
     </div>
   }
 </header>
@@ -31,18 +51,19 @@
     <span class="grid place-items-center size-12 rounded-2xl bg-brand-soft text-brand mb-4">
       <ff-icon name="piggy-bank" [size]="26" />
     </span>
-    <h2 id="fin-setup" class="text-xl font-bold">Commencez par votre solde actuel</h2>
+    <h2 id="fin-setup" class="text-xl font-bold">
+      Combien avez-vous aujourd’hui, tout compris (banque, épargne, espèces) ?
+    </h2>
     <p class="text-muted mt-2">
-      Indiquez l’argent dont vous disposez réellement aujourd’hui sur votre compte principal : c’est
-      le point de départ de tous les calculs. Vous pourrez ajouter un compte d’épargne ou des espèces
-      ensuite, et corriger un écart à tout moment.
+      Additionnez votre compte en banque, votre épargne et vos espèces : ce total est le point de
+      départ de Mes achats. Si plus tard il ne correspond plus, vous le corrigerez en un clic.
     </p>
     <button type="button" class="btn btn-primary mt-5" (click)="actions.editAccount(null)">
-      <ff-icon name="plus" />Créer mon premier compte
+      <ff-icon name="wallet" />Saisir mon total
     </button>
   </section>
 } @else {
-  <nav class="fin-tabs" aria-label="Sections de Mes achats">
+  <nav class="fin-tabs" aria-label="Sections de Mes achats" data-tour="finance-tabs">
     @for (t of tabs; track t.path) {
       <a
         [routerLink]="t.path"
@@ -54,4 +75,5 @@
     }
   </nav>
   <router-outlet />
+  <ff-finance-tour />
 }

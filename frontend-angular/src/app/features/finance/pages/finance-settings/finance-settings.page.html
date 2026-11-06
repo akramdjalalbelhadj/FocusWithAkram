@@ -1,4 +1,5 @@
-<div class="flex justify-end mb-3">
+<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+  <p class="text-sm text-muted">Réglages : votre compte, vos préférences et vos catégories.</p>
   <label class="flex items-center gap-2 text-sm text-muted"
     ><input
       type="checkbox"
@@ -9,31 +10,91 @@
   >
 </div>
 
+@if (store.account(); as a) {
+  <section class="card p-5 mb-4" aria-labelledby="fs-account">
+    <div class="flex items-center gap-1 mb-2">
+      <h2 id="fs-account" class="section-title">Mon compte</h2>
+      <ff-help-tip
+        label="Mon compte"
+        text="Un seul compte représente tout votre argent : banque, épargne et espèces. L’épargne n’est pas un compte à part, c’est ce qui reste à la fin du mois."
+      />
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <span
+        class="grid place-items-center size-10 rounded-xl bg-brand-soft text-brand flex-none"
+        aria-hidden="true"
+        ><ff-icon name="wallet" [size]="18"
+      /></span>
+      <div class="flex-1 min-w-40">
+        <p class="font-semibold truncate">{{ a.name }}</p>
+        <p class="text-xs text-muted">Tout votre argent : banque, épargne et espèces</p>
+      </div>
+      <p class="text-xl font-bold tabular-nums" [class.text-danger]="a.balance < 0">
+        {{ money(a.balance) }}
+      </p>
+      <div class="flex gap-2">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="actions.reconcile(a)">
+          <ff-icon name="scale" [size]="14" />Corriger le solde
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="actions.editAccount(a)">
+          <ff-icon name="pencil" [size]="14" />Renommer
+        </button>
+      </div>
+    </div>
+    <p class="field-hint mt-2">
+      Le solde affiché diffère de votre banque ? « Corriger le solde » enregistre l’écart comme une
+      correction datée, visible dans l’historique.
+    </p>
+  </section>
+}
+
+<section class="card p-5 mb-4" aria-labelledby="fs-tour">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="min-w-0">
+      <h2 id="fs-tour" class="section-title mb-1">Visite guidée</h2>
+      <p class="text-sm text-muted">
+        Les onglets, la feuille du mois et la saisie rapide expliqués en quelques étapes.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="btn btn-secondary btn-sm"
+      [attr.aria-busy]="tour.starting() || null"
+      (click)="tour.start()"
+    >
+      <ff-icon name="help" [size]="14" />Revoir la visite guidée
+    </button>
+  </div>
+</section>
+
 <section class="card p-5 mb-4" aria-labelledby="fs-prefs">
-  <h2 id="fs-prefs" class="section-title">Préférences financières</h2>
-  <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 items-start" (ngSubmit)="savePreferences()">
+  <div class="flex items-center gap-1 mb-2">
+    <h2 id="fs-prefs" class="section-title">Préférences financières</h2>
+    <ff-help-tip
+      label="Préférences financières"
+      text="Valeurs utilisées par défaut chaque mois. Les plafonds et objectifs propres à un mois se règlent dans Mon mois."
+    />
+  </div>
+  <form class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-start" (ngSubmit)="savePreferences()">
     <div>
       <label class="field-label" for="fp-reserve">Réserve de sécurité</label>
       <input id="fp-reserve" name="reserve" class="input text-right tabular-nums" inputmode="decimal"
         [ngModel]="reserve()" (ngModelChange)="reserve.set($event)" />
-      <p class="field-hint">Solde disponible à ne jamais entamer dans les prévisions.</p>
-    </div>
-    <div>
-      <label class="field-label" for="fp-floor">Plancher d’épargne</label>
-      <input id="fp-floor" name="floor" class="input text-right tabular-nums" inputmode="decimal"
-        [ngModel]="floor()" (ngModelChange)="floor.set($event)" />
-      <p class="field-hint">Épargne minimale conservée si un achat est financé par l’épargne.</p>
+      <p class="field-hint">Montant à ne jamais entamer : un projet d’achat qui y toucherait est signalé.</p>
     </div>
     <div>
       <label class="field-label" for="fp-cap">Plafond variable par défaut</label>
       <input id="fp-cap" name="cap" class="input text-right tabular-nums" inputmode="decimal" placeholder="Aucun"
         [ngModel]="cap()" (ngModelChange)="cap.set($event)" />
-      <p class="field-hint">Repris chaque mois sauf budget propre au mois.</p>
+      <p class="field-hint">
+        Pour les mois sans plafond par dépense variable (courses, restaurants…) dans Mon mois.
+      </p>
     </div>
     <div>
       <label class="field-label" for="fp-target">Objectif d’épargne par défaut</label>
       <input id="fp-target" name="target" class="input text-right tabular-nums" inputmode="decimal" placeholder="Aucun"
         [ngModel]="target()" (ngModelChange)="target.set($event)" />
+      <p class="field-hint">Ce que vous voulez garder chaque mois (revenus − dépenses).</p>
     </div>
     <div>
       <label class="field-label" for="fp-warning">Alerte à (% du plafond)</label>
@@ -41,7 +102,7 @@
         [ngModel]="warning()" (ngModelChange)="warning.set($event)" />
       <p class="field-hint">Orange à partir de ce seuil, rouge au-delà du plafond.</p>
     </div>
-    <div class="sm:col-span-2 lg:col-span-5 flex items-center justify-end gap-3">
+    <div class="sm:col-span-2 lg:col-span-4 flex items-center justify-end gap-3">
       @if (prefsError()) {
         <p class="field-error !mt-0" role="alert">{{ prefsError() }}</p>
       }
@@ -50,79 +111,16 @@
   </form>
 </section>
 
-<div class="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-4 items-start">
-  <section class="card p-5" aria-labelledby="fs-accounts">
-    <div class="flex items-center justify-between gap-2 mb-2">
-      <h2 id="fs-accounts" class="section-title !mb-0">Comptes</h2>
-      <button type="button" class="btn btn-secondary btn-sm" (click)="actions.editAccount(null)">
-        <ff-icon name="plus" [size]="14" />Compte
-      </button>
-    </div>
-    <p class="text-sm text-muted mb-2">
-      Le solde disponible additionne les comptes courants et les espèces ; l’épargne est comptée à
-      part.
-    </p>
-    <ul class="divide-y divide-[var(--line)]">
-      @for (a of accounts(); track a.id) {
-        <li class="flex items-center gap-3 py-2.5" [class.opacity-60]="a.archived">
-          <span
-            class="grid place-items-center size-9 rounded-xl bg-surface-2 text-muted flex-none"
-            aria-hidden="true"
-            ><ff-icon [name]="typeIcon[a.type]" [size]="17"
-          /></span>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold truncate">
-              {{ a.name }}
-              @if (a.archived) {
-                <span class="badge ml-1">Archivé</span>
-              }
-            </p>
-            <p class="text-xs text-muted">{{ typeLabel[a.type] }}</p>
-          </div>
-          <p class="font-bold tabular-nums" [class.text-danger]="a.balance < 0">
-            {{ money(a.balance) }}
-          </p>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm btn-icon"
-            [attr.aria-label]="'Actions sur le compte ' + a.name"
-            [cdkMenuTriggerFor]="accountMenu"
-          >
-            <ff-icon name="more" />
-          </button>
-          <ng-template #accountMenu>
-            <div cdkMenu class="menu anim-pop" aria-label="Actions">
-              <button cdkMenuItem class="menu-item" (click)="actions.editAccount(a)">
-                <ff-icon name="pencil" [size]="16" />Renommer ou changer le type
-              </button>
-              @if (!a.archived) {
-                <button cdkMenuItem class="menu-item" (click)="actions.reconcile(a)">
-                  <ff-icon name="scale" [size]="16" />Corriger le solde
-                </button>
-              }
-              <button cdkMenuItem class="menu-item" (click)="actions.toggleArchiveAccount(a)">
-                <ff-icon name="archive" [size]="16" />{{ a.archived ? 'Réactiver' : 'Archiver' }}
-              </button>
-              @if (!a.hasOperations) {
-                <div class="menu-sep" role="separator"></div>
-                <button cdkMenuItem class="menu-item danger" (click)="actions.deleteAccount(a)">
-                  <ff-icon name="trash" [size]="16" />Supprimer
-                </button>
-              }
-            </div>
-          </ng-template>
-        </li>
-      }
-    </ul>
-    <p class="field-hint mt-2">
-      Un compte ne s’archive qu’avec un solde nul ; un compte qui a des opérations ne se supprime
-      pas.
-    </p>
-  </section>
-
+<div>
   <section class="card p-5" aria-labelledby="fs-categories">
     <div class="flex items-center justify-between gap-2 mb-2">
-      <h2 id="fs-categories" class="section-title !mb-0">Catégories de dépenses</h2>
+      <div class="flex items-center gap-1">
+        <h2 id="fs-categories" class="section-title !mb-0">Catégories</h2>
+        <ff-help-tip
+          label="Catégories"
+          text="Elles classent vos dépenses et vos revenus, et servent aux plafonds de Mon mois et aux analyses. Pour un prêt, utilisez « Prêts » : l’argent prêté est une dépense, son remboursement un revenu."
+        />
+      </div>
       <button
         type="button"
         class="btn btn-secondary btn-sm"
@@ -133,7 +131,8 @@
     </div>
     <p class="text-sm text-muted mb-2">
       Deux niveaux : catégorie et sous-catégorie. Une catégorie déjà utilisée s’archive pour ne pas
-      altérer l’historique.
+      altérer l’historique. Les prêts se suivent avec la catégorie « Prêts » : l’argent prêté est
+      une dépense, un remboursement reçu un revenu.
     </p>
     <ul class="space-y-2">
       @for (c of categories(); track c.id) {

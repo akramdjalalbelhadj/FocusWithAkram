@@ -21,7 +21,10 @@ interface Group {
   annual: number;
 }
 
-/** Echeancier : revenus reguliers, abonnements, charges et paiements en plusieurs fois. */
+/**
+ * Revenus et charges recurrents (vue de l'onglet Operations) : revenus reguliers, abonnements, charges et paiements en
+ * plusieurs fois. Leurs echeances remplissent la feuille de Mon mois.
+ */
 @Component({
   selector: 'ff-finance-schedules',
   imports: [

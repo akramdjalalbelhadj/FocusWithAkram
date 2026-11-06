@@ -9,11 +9,7 @@ export type OperationType =
   | "PURCHASE_REFUND"
   | "TRANSFER"
   | "OPENING_BALANCE"
-  | "ADJUSTMENT"
-  | "LOAN_GIVEN"
-  | "LOAN_COLLECTED"
-  | "LOAN_TAKEN"
-  | "LOAN_REPAID";
+  | "ADJUSTMENT";
 export type OperationStatus = "PLANNED" | "COMPLETED" | "CANCELLED";
 export type Direction = "CREDIT" | "DEBIT";
 export type IncomeKind = "SALARY" | "BONUS" | "GIFT" | "SIDE_ACTIVITY" | "OTHER";
@@ -21,9 +17,7 @@ export type ScheduleKind = "SALARY" | "SUBSCRIPTION" | "BILL" | "INSTALLMENT" | 
 export type Frequency = "WEEKLY" | "MONTHLY" | "YEARLY";
 export type ScheduleStatus = "ACTIVE" | "PAUSED" | "ENDED";
 export type BudgetState = "NONE" | "OK" | "WARNING" | "OVER";
-export type ValueSource = "MONTH" | "DEFAULT" | "NONE";
-export type LoanDirection = "LENT" | "BORROWED";
-export type LoanStatus = "OPEN" | "SETTLED" | "WRITTEN_OFF" | "CANCELLED";
+export type ValueSource = "ENVELOPES" | "MONTH" | "DEFAULT" | "NONE";
 export type GoalStatus = "CONSIDERED" | "PLANNED" | "POSTPONED" | "PURCHASED" | "ABANDONED";
 export type Verdict = "FEASIBLE" | "RISKY" | "NOT_FEASIBLE" | "UNKNOWN";
 export type GoalNote = "NO_ACCOUNT" | "NO_INCOME" | "NO_CAP" | "TARGET_PASSED" | "LATE_INCOME";
@@ -190,10 +184,6 @@ export interface FinanceOverview {
   overdueCount: number;
   budget: BudgetGauge;
   safetyReserve: number;
-  /** Restes dus des prêts accordés en cours. */
-  receivables: number;
-  /** Restes dus des emprunts en cours. */
-  debts: number;
 }
 
 /** Jauge du plafond variable : vert (OK), orange (WARNING, du seuil au plafond), rouge (OVER) ou NONE. */
@@ -235,6 +225,8 @@ export interface FinancePreferences {
   defaultVariableCap: number | null;
   defaultSavingsTarget: number | null;
   warningPercent: number;
+  /** Visite guidée de « Mes achats » terminée ou passée. En écriture, absent : inchangé. */
+  tutorialDone?: boolean;
 }
 
 export interface Schedule {
@@ -257,6 +249,8 @@ export interface Schedule {
   monthlyEquivalent: number;
   annualEquivalent: number;
   hasOperations: boolean;
+  /** Montants datés : chacun s'applique à partir de son mois (AAAA-MM), jusqu'à la version suivante. */
+  amounts: AmountVersion[];
 }
 
 export interface ScheduleBody {
@@ -290,8 +284,6 @@ export interface FinanceImportSummary {
   preferencesRestored: boolean;
   goalsCreated: number;
   goalsSkipped: number;
-  loansCreated: number;
-  loansSkipped: number;
 }
 
 /** Faisabilité d'un objectif calculée par la prévision de trésorerie (montants en euros). */
@@ -382,40 +374,6 @@ export interface Forecast {
   points: ForecastPoint[];
   lowest: ForecastPoint;
   goals: GoalFeasibility[];
-  /** Remboursements attendus de prêts accordés : non comptés (scénario favorable). */
-  expectedRepayments: number;
-}
-
-/** Prêt accordé ou emprunt, avec son état calculé par le serveur. */
-export interface Loan {
-  id: string;
-  person: string;
-  direction: LoanDirection;
-  principal: number;
-  startDate: string;
-  dueDate: string | null;
-  notes: string | null;
-  repaid: number;
-  writtenOffAmount: number;
-  writtenOffDate: string | null;
-  writtenOffReason: string | null;
-  remaining: number;
-  status: LoanStatus;
-  overdue: boolean;
-  movements: Operation[];
-  createdAt: string;
-}
-
-export interface LoanBody {
-  person: string;
-  direction: LoanDirection;
-  amount: number;
-  startDate: string;
-  dueDate: string | null;
-  accountId: string | null;
-  /** Faux : prêt antérieur au suivi, sans mouvement d'argent enregistré. */
-  recordDisbursement: boolean;
-  notes: string | null;
 }
 
 // ---- Analyses (lot 8) : alertes, statistiques, simulation ----
@@ -429,8 +387,8 @@ export type AlertCode =
   | "RESERVE_BREACH"
   | "GOAL_RISKY"
   | "GOAL_NOT_FEASIBLE"
-  | "LOAN_OVERDUE_LENT"
-  | "LOAN_OVERDUE_BORROWED";
+  /** Plafond d'une dépense variable dépassé ce mois-ci (`label` = enveloppe, `amount` = dépassement). */
+  | "ENVELOPE_OVER";
 export type AlertSeverity = "DANGER" | "WARNING" | "INFO";
 
 /** Alerte calculée par le serveur ; le texte est formulé par l'interface à partir du code. */
@@ -452,7 +410,12 @@ export interface MonthStat {
   variablePaid: number;
   goalPurchasesPaid: number;
   savedToSavings: number;
+  /** Épargne du mois : revenus reçus − dépenses payées. */
   unspent: number;
+  /** Plafond variable du mois (valeur du mois ou par défaut ; null si aucun). */
+  variableCap: number | null;
+  /** Objectif d'épargne du mois (valeur du mois ou par défaut ; null si aucun). */
+  savingsTarget: number | null;
 }
 
 export interface CategoryStat {
@@ -482,7 +445,7 @@ export interface FinanceStatistics {
     unspent: number;
     averageIncome: number;
     averageExpenses: number;
-    /** Épargne mise de côté / revenus reçus, en % (null sans revenu). */
+    /** Épargne (revenus − dépenses) / revenus reçus, en % (null sans revenu). */
     savingsRate: number | null;
   };
   categories: CategoryStat[];
@@ -495,8 +458,6 @@ export interface FinanceStatistics {
     actual: number;
     variance: number;
   }[];
-  writtenOffLent: number;
-  writtenOffBorrowed: number;
 }
 
 export interface SimulationBody {
@@ -513,4 +474,125 @@ export interface SimulationResult {
   baseline: Forecast;
   simulated: Forecast;
   extraGoalId: string | null;
+}
+
+// ---- Feuille du mois (lot 13) : voir docs/produit/mes-achats/feuille-du-mois.md ----
+
+/** Montant valable à partir d'un mois (AAAA-MM). */
+export interface AmountVersion {
+  fromMonth: string;
+  amount: number;
+}
+
+/** Changement de montant « à partir de ce mois » (échéancier ou plafond d'enveloppe). */
+export interface AmountChange {
+  fromMonth: string;
+  amount: number;
+}
+
+/** Réel d'une échéance : montant, date et commentaire facultatif. */
+export interface OccurrenceActual {
+  amount: number;
+  date: string;
+  comment?: string | null;
+}
+
+/** Dépense variable plafonnée chaque mois (« enveloppe »), liée à une catégorie. */
+export interface Envelope {
+  id: string;
+  label: string;
+  category: CategoryRef;
+  position: number;
+  /** Premier mois (AAAA-MM). */
+  startMonth: string;
+  /** Dernier mois (AAAA-MM), null : sans fin. */
+  endMonth: string | null;
+  amounts: AmountVersion[];
+  /** Plafond du mois en cours (null si l'enveloppe n'est pas active ce mois-ci). */
+  currentAmount: number | null;
+}
+
+export interface EnvelopeBody {
+  categoryId: string;
+  /** Par défaut : le nom de la catégorie. */
+  label?: string | null;
+  amount: number;
+  fromMonth: string;
+}
+
+export type SheetRowStatus = "PLANNED" | "LATE" | "DONE" | "SKIPPED";
+
+/** Ligne de revenu ou de dépense fixe : une échéance d'échéancier, ou une opération ponctuelle. */
+export interface SheetRow {
+  /** Clé stable pour l'affichage : `scheduleId/dueDate` ou identifiant de l'opération. */
+  key: string;
+  scheduleId: string | null;
+  dueDate: string | null;
+  operationId: string | null;
+  label: string;
+  category: CategoryRef | null;
+  incomeKind: IncomeKind | null;
+  /** Date de l'échéance, ou date réelle une fois réalisée. */
+  date: string;
+  /** Montant prévu pour ce mois (null pour une opération ponctuelle réalisée sans prévision). */
+  planned: number | null;
+  /** Montant réel (null tant que ce n'est pas réalisé). */
+  actual: number | null;
+  /** Réel − prévu (null si l'un manque). */
+  difference: number | null;
+  status: SheetRowStatus;
+  comment: string | null;
+  /** Prévu modifié pour ce mois seulement. */
+  adjusted: boolean;
+  essential: boolean;
+}
+
+export interface EnvelopeRow {
+  envelopeId: string;
+  label: string;
+  category: CategoryRef;
+  /** Plafond du mois. */
+  cap: number;
+  /** Dépensé du mois (net des remboursements d'achats). */
+  spent: number;
+  /** Plafond − dépensé (négatif en cas de dépassement). */
+  remaining: number;
+  exceeded: boolean;
+  comment: string | null;
+  /** Dépassement sans commentaire : la feuille demande une explication. */
+  commentRequired: boolean;
+  operationCount: number;
+}
+
+export interface MonthSheetTotals {
+  incomePlanned: number;
+  incomeActual: number;
+  fixedPlanned: number;
+  fixedActual: number;
+  variablePlanned: number;
+  variableActual: number;
+  othersActual: number;
+  expensesPlanned: number;
+  expensesActual: number;
+  savingsPlanned: number;
+  savingsActual: number;
+}
+
+/** Feuille d'un mois : prévu et réel, par section. */
+export interface MonthSheet {
+  /** Mois AAAA-MM. */
+  month: string;
+  today: string;
+  /** PAST, CURRENT ou FUTURE par rapport au mois d'aujourd'hui. */
+  period: "PAST" | "CURRENT" | "FUTURE";
+  /** Compte unique (null tant que le solde de départ n'est pas saisi). */
+  account: FinanceAccount | null;
+  incomes: SheetRow[];
+  fixed: SheetRow[];
+  variable: EnvelopeRow[];
+  /** Dépenses réalisées du mois hors dépenses fixes et hors enveloppes, de la plus récente à la plus ancienne. */
+  others: Operation[];
+  totals: MonthSheetTotals;
+  /** Objectif d'épargne du mois (valeur du mois ou par défaut ; null si aucun). */
+  savingsTarget: number | null;
 }

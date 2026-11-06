@@ -26,11 +26,14 @@ public class CategoryService {
 
     private final CategoryRepository categories;
     private final OperationRepository operations;
+    private final EnvelopeRepository envelopes;
     private final Clock clock;
 
-    public CategoryService(CategoryRepository categories, OperationRepository operations, Clock clock) {
+    public CategoryService(CategoryRepository categories, OperationRepository operations, EnvelopeRepository envelopes,
+                           Clock clock) {
         this.categories = categories;
         this.operations = operations;
+        this.envelopes = envelopes;
         this.clock = clock;
     }
 
@@ -106,6 +109,10 @@ public class CategoryService {
         if (operations.existsByCategoryIdIn(List.of(id))) {
             throw ApiException.conflict("CATEGORY_IN_USE",
                     "Des operations utilisent cette categorie : archivez-la pour la masquer sans perdre l'historique.");
+        }
+        if (envelopes.existsByCategoryId(id)) {
+            throw ApiException.conflict("CATEGORY_IN_USE",
+                    "Une depense variable plafonnee suit cette categorie : supprimez-la d'abord, ou archivez la categorie.");
         }
         categories.delete(c);
     }

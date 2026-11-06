@@ -63,9 +63,16 @@ public class AccountService {
         return accounts.findById(id).orElseThrow(() -> ApiException.notFound("Compte", id));
     }
 
-    /** Cree le compte et, si le solde initial n'est pas nul, l'operation de solde initial datee. */
+    /**
+     * Cree le compte unique et, si le solde initial n'est pas nul, l'operation de solde initial datee. Un seul compte
+     * represente tout l'argent (courant, epargne, especes) : un second compte est refuse.
+     */
     @Transactional
     public UUID create(CreateAccountRequest request) {
+        if (accounts.count() > 0) {
+            throw ApiException.conflict("SINGLE_ACCOUNT",
+                    "Un seul compte suffit : il represente tout votre argent. Corrigez son solde si besoin.");
+        }
         String name = cleanName(request.name());
         if (accounts.existsByNameIgnoreCaseAndArchivedFalse(name)) {
             throw ApiException.conflict("ACCOUNT_NAME_TAKEN", "Un compte actif porte deja ce nom.");

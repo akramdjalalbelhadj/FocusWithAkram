@@ -1,0 +1,26 @@
+<div class="mb-4">
+  <div class="segmented" role="group" aria-label="Affichage des analyses">
+    <button
+      type="button"
+      class="segmented-item"
+      [attr.aria-pressed]="view() === 'statistics'"
+      (click)="setView('statistics')"
+    >
+      <ff-icon name="chart" [size]="15" />Statistiques
+    </button>
+    <button
+      type="button"
+      class="segmented-item"
+      [attr.aria-pressed]="view() === 'calendar'"
+      (click)="setView('calendar')"
+    >
+      <ff-icon name="calendar-days" [size]="15" />Calendrier
+    </button>
+  </div>
+</div>
+
+@if (view() === 'calendar') {
+  <ff-finance-calendar />
+} @else {
+  <ff-finance-statistics />
+}

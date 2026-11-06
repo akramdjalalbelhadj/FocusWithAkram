@@ -16,6 +16,7 @@ import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,15 @@ public class FinanceStatisticsService {
     private static final int TOP_EXPENSES = 5;
 
     private final OperationRepository operations;
-    private final LoanService loans;
+    private final MonthlyBudgetRepository budgets;
+    private final BudgetService budgetService;
     private final FinanceDates dates;
 
-    public FinanceStatisticsService(OperationRepository operations, LoanService loans, FinanceDates dates) {
+    public FinanceStatisticsService(OperationRepository operations, MonthlyBudgetRepository budgets,
+                                    BudgetService budgetService, FinanceDates dates) {
         this.operations = operations;
-        this.loans = loans;
+        this.budgets = budgets;
+        this.budgetService = budgetService;
         this.dates = dates;
     }
 
@@ -57,19 +61,29 @@ public class FinanceStatisticsService {
         List<Operation> done = operations.findBetween(start.atDay(1), end.atEndOfMonth()).stream()
                 .filter(o -> o.getStatus() == OperationStatus.COMPLETED).toList();
 
+        // Plafond variable de chaque mois (enveloppes actives, sinon valeur du mois ou par defaut) et objectif
+        // d'epargne (valeur du mois, sinon valeur par defaut).
+        FinancePreferences prefs = budgetService.preferences();
+        Map<YearMonth, BudgetService.Cap> caps = budgetService.capsBetween(start, end);
+        Map<YearMonth, MonthlyBudget> byMonth = new HashMap<>();
+        budgets.findAllByOrderByMonthAsc().forEach(b -> byMonth.put(YearMonth.from(b.getMonth()), b));
         List<MonthStat> months = new ArrayList<>();
         for (YearMonth m = start; !m.isAfter(end); m = m.plusMonths(1)) {
             YearMonth month = m;
             MonthTotals t = FinanceOverviewService.totals(
                     done.stream().filter(o -> YearMonth.from(o.getDate()).equals(month)).toList());
+            MonthlyBudget b = byMonth.get(m);
+            BigDecimal cap = caps.get(m).amount();
+            BigDecimal target = b != null && b.getSavingsTarget() != null ? b.getSavingsTarget()
+                    : prefs.getDefaultSavingsTarget();
             months.add(new MonthStat(m, t.incomeReceived(), t.expensesPaid(), t.essentialPaid(), t.variablePaid(),
-                    t.goalPurchasesPaid(), t.savedToSavings(), t.unspent()));
+                    t.goalPurchasesPaid(), t.savedToSavings(), t.unspent(), cap, target));
         }
 
         MonthTotals all = FinanceOverviewService.totals(done);
         BigDecimal n = BigDecimal.valueOf(count);
         Integer savingsRate = all.incomeReceived().signum() <= 0 ? null
-                : all.savedToSavings().multiply(BigDecimal.valueOf(100))
+                : all.unspent().multiply(BigDecimal.valueOf(100))
                         .divide(all.incomeReceived(), 0, RoundingMode.HALF_UP).intValue();
         Totals totals = new Totals(all.incomeReceived(), all.expensesPaid(), all.essentialPaid(), all.variablePaid(),
                 all.goalPurchasesPaid(), all.exceptionalPaid(), all.refunds(), all.savedToSavings(), all.unspent(),
@@ -90,18 +104,7 @@ public class FinanceStatisticsService {
                         o.getAmount().subtract(o.getGoal().getEstimatedPrice())))
                 .toList();
 
-        BigDecimal writtenOffLent = Money.ZERO;
-        BigDecimal writtenOffBorrowed = Money.ZERO;
-        for (LoanService.LoanState s : loans.states()) {
-            Loan l = s.loan();
-            if (l.isCancelled() || l.getWrittenOffDate() == null) continue;
-            YearMonth m = YearMonth.from(l.getWrittenOffDate());
-            if (m.isBefore(start) || m.isAfter(end)) continue;
-            if (l.getDirection() == LoanDirection.LENT) writtenOffLent = writtenOffLent.add(l.getWrittenOffAmount());
-            else writtenOffBorrowed = writtenOffBorrowed.add(l.getWrittenOffAmount());
-        }
-        return new FinanceStatistics(start, end, months, totals, categories(done), top, purchases, writtenOffLent,
-                writtenOffBorrowed);
+        return new FinanceStatistics(start, end, months, totals, categories(done), top, purchases);
     }
 
     /** Depenses nettes par categorie racine puis sous-categorie ; les depenses d'une racine directe sont « general ». */

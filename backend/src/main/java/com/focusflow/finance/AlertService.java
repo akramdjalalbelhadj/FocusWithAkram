@@ -1,6 +1,7 @@
 package com.focusflow.finance;
 
 import com.focusflow.finance.dto.BudgetGauge;
+import com.focusflow.finance.dto.EnvelopeRow;
 import com.focusflow.finance.dto.FinanceAlert;
 import com.focusflow.finance.dto.ForecastPoint;
 import com.focusflow.finance.dto.ForecastResponse;
@@ -18,8 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Alertes du module (specification § 10), derivees a chaque lecture des calculs existants : budget, echeances,
- * prevision, faisabilite des objectifs et prets. Rien n'est stocke : une alerte disparait des que sa cause disparait.
+ * Alertes du module (specification § 10), derivees a chaque lecture des calculs existants : budget, depenses variables
+ * plafonnees, echeances, prevision et faisabilite des objectifs. Rien n'est stocke : une alerte disparait des que sa
+ * cause disparait.
  */
 @Service
 public class AlertService {
@@ -33,18 +35,18 @@ public class AlertService {
     private final OperationRepository operations;
     private final ScheduleService schedules;
     private final ForecastService forecast;
+    private final EnvelopeService envelopes;
     private final GoalRepository goals;
-    private final LoanService loans;
     private final FinanceDates dates;
 
     public AlertService(BudgetService budgets, OperationRepository operations, ScheduleService schedules,
-                        ForecastService forecast, GoalRepository goals, LoanService loans, FinanceDates dates) {
+                        ForecastService forecast, EnvelopeService envelopes, GoalRepository goals, FinanceDates dates) {
         this.budgets = budgets;
         this.operations = operations;
         this.schedules = schedules;
         this.forecast = forecast;
+        this.envelopes = envelopes;
         this.goals = goals;
-        this.loans = loans;
         this.dates = dates;
     }
 
@@ -62,6 +64,14 @@ public class AlertService {
         } else if ("WARNING".equals(gauge.state())) {
             alerts.add(new FinanceAlert("BUDGET_WARNING", "WARNING", null, null, gauge.remaining(), gauge.percent(),
                     null));
+        }
+
+        // Depenses variables plafonnees depassees ce mois-ci.
+        for (EnvelopeRow row : envelopes.ledger(month).rows()) {
+            if (row.exceeded()) {
+                alerts.add(new FinanceAlert("ENVELOPE_OVER", "WARNING", row.label(), null,
+                        row.spent().subtract(row.cap()), null, row.envelopeId()));
+            }
         }
 
         // Echeances : revenus en retard, depenses en retard, depenses des 7 prochains jours.
@@ -118,14 +128,6 @@ public class AlertService {
                 alerts.add(new FinanceAlert("GOAL_RISKY", "WARNING", goal.getName(), g.evaluatedDate(),
                         g.remainingToFund(), null, goal.getId()));
             }
-        }
-
-        // Prets et emprunts en retard.
-        for (LoanService.LoanState s : loans.states()) {
-            if (!s.overdue()) continue;
-            boolean lent = s.loan().getDirection() == LoanDirection.LENT;
-            alerts.add(new FinanceAlert(lent ? "LOAN_OVERDUE_LENT" : "LOAN_OVERDUE_BORROWED", lent ? "WARNING" : "DANGER",
-                    s.loan().getPerson(), s.loan().getDueDate(), s.remaining(), null, s.loan().getId()));
         }
 
         alerts.sort(Comparator.comparingInt((FinanceAlert a) -> SEVERITY_RANK.get(a.severity()))

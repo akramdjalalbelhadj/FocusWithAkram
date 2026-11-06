@@ -50,9 +50,6 @@
         <span class="badge" [class]="verdicts[f.verdict].badge"
           ><ff-icon [name]="verdicts[f.verdict].icon" [size]="11" />{{ verdicts[f.verdict].label }}</span
         >
-        @if (goal().fundedBySavings) {
-          <span class="badge"><ff-icon name="piggy-bank" [size]="11" />Épargne</span>
-        }
         @if (compact() && f.verdict === 'NOT_FEASIBLE' && f.feasibleDate) {
           <span class="text-xs text-muted">dès le {{ longDate(f.feasibleDate) }}</span>
         }

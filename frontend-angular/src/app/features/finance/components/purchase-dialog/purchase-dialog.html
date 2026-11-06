@@ -38,24 +38,6 @@
       </div>
     </div>
     <div>
-      <label class="field-label" for="pur-account">Compte débité</label>
-      <select
-        id="pur-account"
-        name="account"
-        class="input"
-        [ngModel]="accountId()"
-        (ngModelChange)="accountId.set($event)"
-      >
-        @for (a of accounts(); track a.id) {
-          <option [value]="a.id">{{ a.name }}</option>
-        }
-      </select>
-      <p class="field-hint">
-        Pour un achat financé par l’épargne, enregistrez d’abord le virement de l’épargne vers ce
-        compte.
-      </p>
-    </div>
-    <div>
       <label class="field-label" for="pur-cat">Catégorie</label>
       <select
         id="pur-cat"

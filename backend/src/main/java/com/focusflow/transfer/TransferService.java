@@ -161,7 +161,7 @@ public class TransferService {
     // ---- Import -------------------------------------------------------------------------------
 
     /**
-     * Importe une sauvegarde (version 1 a 4).
+     * Importe une sauvegarde (version 1 a 5).
      * <ul>
      *   <li>Les idees (v4) sont importees avant les taches afin que chaque tache retrouve son idee d'origine.</li>
      * </ul>

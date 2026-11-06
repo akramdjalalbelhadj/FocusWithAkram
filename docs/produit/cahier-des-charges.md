@@ -1,6 +1,6 @@
 # FocusWithAkram — cahier des charges
 
-Version documentaire du **3 novembre 2026**. État de livraison : [avancement fonctionnel](../suivi/avancement-fonctionnel.md). Critères de recette : [checklist](../suivi/checklist.md). Référence visuelle : [design](../technique/design.md).
+Version documentaire du **5 novembre 2026** (« Mes achats » simplifié, lot 13, validé le 6 novembre 2026). État de livraison : [avancement fonctionnel](../suivi/avancement-fonctionnel.md). Critères de recette : [checklist](../suivi/checklist.md). Référence visuelle : [design](../technique/design.md).
 
 ## 1. Contexte et vision
 
@@ -42,15 +42,17 @@ La cible est une personne gérant ses propres activités : études, projets pers
 | FWA-F016 | Paramètres généraux                 | Thème, fuseau, semaine, raccourcis et préférences de tâches ; conserver les réglages Pomodoro lors d’un enregistrement.        |
 | FWA-F017 | Recherche et commandes              | Rechercher tâches et projets ; ouvrir le détail ; accès clavier à la palette.                                                  |
 | FWA-F018 | Export et restauration              | Export CSV/JSON et sauvegarde complète ; aperçu d’import avant confirmation ; rapport des doublons et erreurs.                 |
-| FWA-F019 | Mes achats — socle financier        | Comptes, solde initial et corrections tracées ; opérations réalisées/prévues/annulées ; catégories sur deux niveaux ; historique filtré ; bilan du mois. Règles : [spécification](mes-achats/specification.md). |
-| FWA-F020 | Mes achats — budget et récurrences  | Revenus planifiés, abonnements, plafond variable et épargne mensuelle (spécification § 4.4 à § 5). |
-| FWA-F021 | Mes achats — achats prévus          | Objectifs d’achat, matrice dédiée, prévision de trésorerie et faisabilité (spécification § 6 à § 8). |
-| FWA-F022 | Mes achats — prêts                  | Prêts accordés et emprunts, remboursements partiels et régularisation (spécification § 4.8). |
-| FWA-F023 | Mes achats — analyses et alertes    | Tableau de bord financier, statistiques, alertes et simulations (spécification § 10 et § 12). |
+| FWA-F019 | Mes achats — socle financier        | **Compte unique** pour tout l’argent (banque, épargne, espèces) : solde de départ saisi au premier accès, renommage et corrections tracées, second compte refusé ; comptes existants fusionnés à la mise à jour et à l’import sans changer le solde total ; opérations réalisées/prévues/annulées ; catégories sur deux niveaux, facultatives pour un revenu ; historique filtré ; bilan du mois. Règles : [spécification](mes-achats/specification.md). |
+| FWA-F020 | Mes achats — budget et récurrences  | Revenus prévus pour un mois ou une période, abonnements et dépenses fixes ; montants qui changent à partir d’un mois ou pour ce mois seulement ; plafond variable (somme des dépenses variables plafonnées quand il y en a) ; épargne du mois (revenus reçus − dépenses payées) face à un objectif (spécification § 4.4 à § 5). |
+| FWA-F021 | Mes achats — projets d’achat        | Objectifs d’achat (onglet « Projets d’achat »), matrice dédiée, prévision de trésorerie et faisabilité, sans financement par l’épargne (spécification § 6 à § 8). |
+| FWA-F022 | Mes achats — prêts (remplacée)      | **Remplacée le 5 novembre 2026** (lot 13) : plus de suivi des prêts. Un prêt accordé ou un remboursement versé est une dépense de la catégorie « Prêts », un emprunt ou un remboursement reçu un revenu de cette catégorie ; couvert par FWA-F019 (spécification § 4.9). |
+| FWA-F023 | Mes achats — analyses et alertes    | Onglet « Analyses » : statistiques sur 3 à 24 mois avec, mois par mois, l’épargne, l’objectif atteint ou manqué et le plafond variable tenu ou dépassé ; calendrier ; alertes (dont dépense variable au-delà de son plafond, sans alerte de prêt) ; simulations (spécification § 10 et § 12). |
 | FWA-F024 | Notes & idées — espace d’idées      | Page dédiée : saisie rapide (titre seul), consultation, modification enregistrée automatiquement, suppression confirmée, recherche titre/contenu, filtres (catégorie, étiquette, favoris, avec/sans tâche) et tris ; données conservées après rechargement. Règles : § 4.5. |
 | FWA-F025 | Notes & idées — catégories          | Écran dédié : créer, renommer, colorer et supprimer une catégorie (nom unique) ; la suppression conserve les notes, sans catégorie. |
 | FWA-F026 | Notes & idées — éditeur             | Deux modes au choix, **Markdown avec aperçu** et **éditeur visuel**, sur le même contenu : titres, paragraphes, listes, cases à cocher. Mode par défaut dans les Paramètres, bascule depuis l’éditeur. |
 | FWA-F027 | Idée → tâches                       | Depuis une note, créer une ou plusieurs tâches avec le formulaire de tâche existant (titre, description, quadrant, échéance…) ; chaque tâche rejoint son quadrant et garde le lien vers l’idée ; doublon signalé avant création ; note conservée. |
+| FWA-F028 | Mes achats — feuille du mois        | Onglet « Mon mois » par défaut : revenus, dépenses fixes, dépenses variables plafonnées et autres dépenses du mois choisi, avec prévu, réel et écart. Revenus saisis une fois pour un mois ou une période, réel confirmé (éventuellement plus bas) ; dépenses fixes déjà remplies chaque mois, confirmées « payé » ; montant modifiable à partir d’un mois sans toucher aux mois précédents, ou pour ce mois seulement ; dépenses variables plafonnées avec dépensé, reste, total du mois saisissable et commentaire demandé en cas de dépassement ; épargne prévue et réelle face à l’objectif du mois. Navigation en quatre onglets (Mon mois, Opérations, Projets d’achat, Analyses) et ⚙ Réglages ; anciennes adresses redirigées. Règles : [feuille du mois](mes-achats/feuille-du-mois.md). |
+| FWA-F029 | Mes achats — aide intégrée          | Visite guidée ouverte à la première visite, avec Suivant, Précédent et Passer, non réaffichée une fois terminée ou passée (état enregistré côté serveur) et relançable par le bouton ? ; bulles d’aide à côté de chaque section et des notions (prévu, réel, plafond, épargne, « à partir de », « ce mois seulement »), utilisables au clavier et annoncées par les lecteurs d’écran. |
 
 ## 4. Règles métier
 
@@ -105,7 +107,7 @@ Décisions validées par le propriétaire le 3 novembre 2026.
 - **Plusieurs tâches par idée** ; une tâche provient d’au plus une idée. Le lien est conservé lorsque la tâche est terminée, archivée, restaurée ou dupliquée ; il disparaît si la tâche est supprimée.
 - **Doublon** : créer, depuis la même idée, une tâche dont le titre (sans tenir compte de la casse) est déjà celui d’une tâche issue de cette idée demande une confirmation explicite. Un double envoi du formulaire ne crée pas deux tâches.
 - **Suppression d’une idée** : refusée tant que des tâches en sont issues, avec un avertissement qui en donne la raison et le nombre de tâches. Une **suppression forcée** explicite reste possible : la note est supprimée, ses tâches sont **conservées** dans la matrice et perdent seulement le lien.
-- **Sauvegarde** : catégories, notes, lien tâche → idée et mode d’éditeur font partie de la sauvegarde complète (format v4) ; les formats v1 à v3 restent importables.
+- **Sauvegarde** : catégories, notes, lien tâche → idée et mode d’éditeur font partie de la sauvegarde complète (depuis le format v4) ; les formats antérieurs restent importables.
 
 ## 5. Exigences non fonctionnelles
 
@@ -144,10 +146,14 @@ Les mesures de volume disponibles utilisent 120 tâches supplémentaires de rece
 | Restaurer un fichier   | Sélectionner JSON → aperçu → confirmer                     | JSON invalide : message ; doublons : rapport ; ne pas annoncer une restauration intégrale des réglages.      |
 | Capturer une idée      | Notes & idées → saisir un titre → Entrée (ou raccourci I)  | Titre vide : refusé ; la note est développée plus tard dans l’éditeur.                                      |
 | Concrétiser une idée   | Ouvrir la note → Créer une tâche → choisir quadrant et échéance → confirmer, autant de fois que nécessaire | Titre déjà utilisé pour cette idée : confirmation ; suppression d’une idée avec tâches : refus expliqué ou suppression forcée. |
+| Suivre son mois        | Mes achats → Mon mois → confirmer revenus et dépenses fixes → ajouter les dépenses variables → lire l’épargne | Plafond dépassé : dépense acceptée, commentaire demandé ; total du mois plus bas que les dépenses déjà saisies, ou mois futur : refus expliqué. |
+| Changer un montant     | Dépense fixe ou revenu → nouveau montant à partir d’un mois | Facture exceptionnelle : « ce mois seulement » ; les mois précédents et les échéances déjà enregistrées gardent leur montant. |
 
 ## 7. Contraintes et hors périmètre
 
 Notes & idées : pas de pièces jointes, d’historique des versions d’une note, de partage ni de rattachement d’une note à un projet ; pas d’interface React tant que la phase v2 n’est pas reportée ; l’application Krimou n’importe pas encore le format v4.
+
+Mes achats (depuis le lot 13) : un seul compte, sans compte d’épargne séparé ni virement ; pas de suivi des prêts (reste dû, échéance, régularisation) ; pas d’interface React ni de portage des nouvelles règles dans Krimou avant la version stable Angular.
 
 Pas de comptes multiples, authentification, collaboration, délégation à une autre personne, tâches récurrentes, synchronisation cloud ou fonctionnement complet hors ligne. Aucun déploiement Internet sécurisé n’est livré. Le son et les notifications ne sont pas garantis lorsque le navigateur est fermé ou fortement suspendu.
 
@@ -163,6 +169,7 @@ Docker est fourni pour une composition locale Angular + API + PostgreSQL ; React
 | D     | Réglages Pomodoro regroupés dans Focus                            | Implémenté ; E2E ciblés disponibles               |
 | E     | Dossier documentaire et exploitation                              | Présente révision                                 |
 | F     | Notes & Brainstorming (API et Angular)                            | Implémenté le 3 novembre 2026 ; tests backend et recette navigateur (lot 11 de la [refonte v2](../suivi/refonte-v2.md)) ; React et Krimou à adapter |
+| G     | « Mes achats » simplifié : compte unique, prêts en catégorie, épargne du mois, feuille du mois, aide intégrée (API et Angular) | Livré et validé le 6 novembre 2026 (lot 13 de la [refonte v2](../suivi/refonte-v2.md)) ; recette humaine au lecteur d’écran et au toucher à faire |
 | Suite | Harmonisation CSS, recette humaine, Docker et restauration réelle | À planifier / à vérifier                          |
 
 Une exigence est clôturée après contrôle du code, résultat de test ou recette identifié, mise à jour documentaire et absence de blocage critique sur son parcours. Un état « partiel » reste visible dans la checklist.

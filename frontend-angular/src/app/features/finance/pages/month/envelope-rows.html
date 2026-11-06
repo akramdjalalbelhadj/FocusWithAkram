@@ -1,0 +1,129 @@
+<div class="sheet-scroll">
+  <table class="sheet-table env-table">
+    <caption class="sr-only-text">{{ caption() }}</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="c-label">Catégorie</th>
+        <th scope="col" class="c-num">
+          <span class="th-inner">Plafond<ff-help-tip label="Plafond" [text]="help.cap" /></span>
+        </th>
+        <th scope="col" class="c-num">
+          <span class="th-inner">Dépensé<ff-help-tip label="Dépensé" [text]="help.spent" /></span>
+        </th>
+        <th scope="col" class="c-num">
+          <span class="th-inner">Reste<ff-help-tip label="Reste" [text]="help.remaining" /></span>
+        </th>
+        <th scope="col" class="c-bar">Utilisé</th>
+        <th scope="col" class="c-comment">Commentaire</th>
+        <th scope="col" class="c-menu"><span class="sr-only-text">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.envelopeId) {
+        <tr [class.is-over]="row.exceeded">
+          <th scope="row" class="c-label">
+            <span class="row-title">
+              @if (row.exceeded) {
+                <ff-icon name="alert" [size]="14" class="text-warning inline-block align-[-2px] mr-1" />
+              }{{ row.label }}
+            </span>
+            <span class="row-sub">
+              <span>{{ count(row) }}</span>
+              @if (row.category.name !== row.label) {
+                <span>{{ row.category.name }}</span>
+              }
+            </span>
+          </th>
+          <td class="c-num c-cap" data-label="Plafond">{{ money(row.cap) }}</td>
+          <td class="c-num c-spent font-semibold" data-label="Dépensé">{{ money(row.spent) }}</td>
+          <td class="c-num c-rest" data-label="Reste" [class.text-danger]="row.remaining < 0">
+            {{ money(row.remaining) }}
+          </td>
+          <td class="c-bar">
+            <span class="env-gauge">
+              <span
+                class="gauge"
+                role="meter"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-valuenow]="fill(row)"
+                [attr.aria-valuetext]="percent(row) + ' % du plafond'"
+                [attr.aria-label]="'Part du plafond utilisée : ' + row.label"
+              >
+                <span class="gauge-fill" [attr.data-tone]="tone(row)" [style.width.%]="fill(row)"></span>
+              </span>
+              <span class="gauge-pct" aria-hidden="true">{{ percent(row) }} %</span>
+            </span>
+          </td>
+          <td class="c-comment" [class.is-empty]="!row.comment && !row.commentRequired" data-label="Commentaire">
+            @if (row.commentRequired) {
+              <button
+                type="button"
+                class="btn btn-sm explain-btn"
+                [attr.aria-label]="'Expliquez le dépassement : ' + row.label"
+                (click)="actions.envelopeComment(row, month())"
+              >
+                <ff-icon name="pencil" [size]="13" />Expliquez le dépassement
+              </button>
+            } @else if (row.comment) {
+              <span class="comment-text">{{ row.comment }}</span>
+            } @else {
+              <span class="text-muted">—</span>
+            }
+          </td>
+          <td class="c-menu">
+            <span class="inline-flex items-center">
+              @if (!future()) {
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm btn-icon"
+                  [attr.aria-label]="'Ajouter une dépense : ' + row.label"
+                  title="Ajouter une dépense"
+                  (click)="actions.addEnvelopeExpense(row, month())"
+                >
+                  <ff-icon name="plus" />
+                </button>
+              }
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm btn-icon"
+                [attr.aria-label]="'Actions sur « ' + row.label + ' »'"
+                [cdkMenuTriggerFor]="menu"
+              >
+                <ff-icon name="more" />
+              </button>
+            </span>
+            <ng-template #menu>
+              <div cdkMenu class="menu anim-pop" aria-label="Actions">
+                @if (!future()) {
+                  <button cdkMenuItem class="menu-item" (click)="actions.addEnvelopeExpense(row, month())">
+                    <ff-icon name="plus" [size]="16" />Ajouter une dépense
+                  </button>
+                  <button cdkMenuItem class="menu-item" (click)="actions.envelopeTotal(row, month())">
+                    <ff-icon name="receipt" [size]="16" />Saisir le total du mois
+                  </button>
+                }
+                <button cdkMenuItem class="menu-item" (click)="actions.envelopeComment(row, month())">
+                  <ff-icon name="file-text" [size]="16" />{{
+                    row.exceeded ? 'Expliquer le dépassement' : row.comment ? 'Modifier le commentaire' : 'Ajouter un commentaire'
+                  }}
+                </button>
+                <div class="menu-sep" role="separator"></div>
+                <button cdkMenuItem class="menu-item" (click)="actions.changeEnvelopeCapFrom(row, month())">
+                  <ff-icon name="calendar-days" [size]="16" />Changer le plafond à partir de ce mois…
+                </button>
+                <button cdkMenuItem class="menu-item" (click)="actions.stopEnvelope(row, month())">
+                  <ff-icon name="pause" [size]="16" />Arrêter après ce mois
+                </button>
+                <div class="menu-sep" role="separator"></div>
+                <button cdkMenuItem class="menu-item danger" (click)="actions.deleteEnvelope(row)">
+                  <ff-icon name="trash" [size]="16" />Supprimer
+                </button>
+              </div>
+            </ng-template>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

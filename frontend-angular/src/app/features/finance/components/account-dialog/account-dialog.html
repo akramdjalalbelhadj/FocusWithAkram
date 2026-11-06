@@ -4,58 +4,33 @@
   (ngSubmit)="submit()"
   role="dialog"
   aria-labelledby="acc-title"
+  aria-describedby="acc-desc"
 >
-  <h2 id="acc-title" class="text-lg font-bold mb-4">
-    {{ data ? 'Modifier le compte' : 'Nouveau compte' }}
+  <h2 id="acc-title" class="text-lg font-bold mb-1">
+    {{ data ? 'Renommer mon compte' : 'Mon argent aujourd’hui' }}
   </h2>
+  <p id="acc-desc" class="text-sm text-muted mb-4">
+    @if (data) {
+      Le nom n’apparaît que dans Mes achats.
+    } @else {
+      Un seul compte suffit : il représente tout votre argent (compte en banque, épargne et
+      espèces). Additionnez-les et saisissez le total.
+    }
+  </p>
   <div class="space-y-4">
-    <div>
-      <label class="field-label" for="acc-name">Nom</label>
-      <input
-        id="acc-name"
-        class="input"
-        formControlName="name"
-        maxlength="80"
-        placeholder="Compte courant, Livret A…"
-        cdkFocusInitial
-      />
-      @if (form.controls.name.touched && form.controls.name.invalid) {
-        <p class="field-error">Le nom est obligatoire.</p>
-      }
-    </div>
-    <fieldset>
-      <legend class="field-label">Type</legend>
-      <div class="grid grid-cols-3 gap-2" role="radiogroup">
-        @for (t of types; track t.value) {
-          <label
-            class="cursor-pointer rounded-xl border p-2.5 text-center text-sm font-semibold has-[:focus-visible]:outline-2 outline-offset-2"
-            [class]="
-              form.value.type === t.value
-                ? 'border-brand bg-brand-soft text-brand'
-                : 'border-line hover:bg-surface-2'
-            "
-          >
-            <input type="radio" class="sr-only-text" formControlName="type" [value]="t.value" />
-            <ff-icon [name]="t.icon" class="mx-auto mb-1" />{{ t.label }}
-          </label>
-        }
-      </div>
-      @if (form.value.type === 'SAVINGS') {
-        <p class="field-hint">L’épargne n’entre pas dans le solde disponible.</p>
-      }
-    </fieldset>
     @if (!data) {
       <div class="grid sm:grid-cols-2 gap-3">
         <div>
-          <label class="field-label" for="acc-opening">Solde actuel</label>
+          <label class="field-label" for="acc-opening">Total disponible</label>
           <div class="relative">
             <input
               id="acc-opening"
-              class="input pr-8 text-right tabular-nums"
+              class="input pr-8 text-right text-lg font-bold tabular-nums"
               inputmode="decimal"
               autocomplete="off"
               formControlName="opening"
               placeholder="0,00"
+              cdkFocusInitial
             />
             <span
               class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm"
@@ -76,10 +51,24 @@
         </div>
       </div>
       <p class="field-hint -mt-2">
-        Montant réellement disponible aujourd’hui : il sert de point de départ. Un écart ultérieur se
-        corrige par « Corriger le solde ».
+        C’est le point de départ de tous les calculs. Un écart plus tard se corrige par « Corriger
+        le solde ».
       </p>
     }
+    <div>
+      <label class="field-label" for="acc-name">Nom du compte</label>
+      <input
+        id="acc-name"
+        class="input"
+        formControlName="name"
+        maxlength="80"
+        placeholder="Mon compte"
+        [attr.cdkFocusInitial]="data ? '' : null"
+      />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <p class="field-error">Le nom est obligatoire.</p>
+      }
+    </div>
     @if (error()) {
       <p class="field-error" role="alert">{{ error() }}</p>
     }
@@ -87,7 +76,7 @@
   <div class="flex justify-end gap-2 mt-6">
     <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
     <button type="submit" class="btn btn-primary" [disabled]="saving()">
-      {{ data ? 'Enregistrer' : 'Créer le compte' }}
+      {{ data ? 'Enregistrer' : 'Commencer' }}
     </button>
   </div>
 </form>

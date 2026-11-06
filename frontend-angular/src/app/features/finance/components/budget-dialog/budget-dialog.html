@@ -4,32 +4,12 @@
   role="dialog"
   aria-labelledby="bud-title"
 >
-  <h2 id="bud-title" class="text-lg font-bold mb-1">Budget de {{ data.monthTitle }}</h2>
+  <h2 id="bud-title" class="text-lg font-bold mb-1">Objectif d’épargne — {{ data.monthTitle }}</h2>
   <p class="text-sm text-muted mb-4">
-    Laissez un champ vide pour reprendre la valeur par défaut définie dans Réglages.
+    Ce que vous aimeriez qu’il reste à la fin du mois. Laissez vide pour reprendre l’objectif par défaut
+    défini dans Réglages.
   </p>
   <div class="space-y-4">
-    <div>
-      <label class="field-label" for="bud-cap">Plafond des dépenses variables</label>
-      <div class="relative">
-        <input
-          id="bud-cap"
-          name="cap"
-          class="input pr-8 text-right tabular-nums"
-          inputmode="decimal"
-          autocomplete="off"
-          [placeholder]="data.budget.capSource === 'DEFAULT' ? money(data.budget.variableCap) + ' (défaut)' : 'Aucun'"
-          [ngModel]="cap()"
-          (ngModelChange)="cap.set($event); error.set('')"
-          cdkFocusInitial
-        />
-        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
-      </div>
-      <p class="field-hint">
-        Dépenses non indispensables du mois (restaurants, loisirs…). Un dépassement est signalé, jamais
-        bloqué.
-      </p>
-    </div>
     <div>
       <label class="field-label" for="bud-target">Objectif d’épargne du mois</label>
       <div class="relative">
@@ -46,9 +26,11 @@
           "
           [ngModel]="target()"
           (ngModelChange)="target.set($event); error.set('')"
+          cdkFocusInitial
         />
         <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
       </div>
+      <p class="field-hint">Épargne du mois = revenus reçus − dépenses payées.</p>
     </div>
     @if (error()) {
       <p class="field-error" role="alert">{{ error() }}</p>

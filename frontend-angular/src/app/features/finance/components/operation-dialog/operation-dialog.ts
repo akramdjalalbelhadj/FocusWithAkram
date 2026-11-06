@@ -1,13 +1,5 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -35,8 +27,9 @@ export interface OperationDialogData {
 }
 
 /**
- * Saisie d'une operation. Les regles (montant au centime, categorie obligatoire pour une depense, date d'une
- * operation realisee…) sont verifiees ici pour guider la saisie, puis par le serveur, qui fait foi.
+ * Saisie d'une operation sur le compte unique. Les regles (montant au centime, categorie obligatoire pour une depense,
+ * facultative pour un revenu, date d'une operation realisee…) sont verifiees ici pour guider la saisie, puis par le
+ * serveur, qui fait foi.
  */
 @Component({
   selector: 'ff-operation-dialog',
@@ -67,8 +60,6 @@ export class OperationDialogComponent {
     amount: [amountInput(this.op?.amount ?? this.preset.amount)],
     label: [this.op?.label ?? this.preset.label ?? ''],
     date: [this.op?.date ?? this.preset.date ?? this.today],
-    accountId: [this.op?.account.id ?? this.preset.accountId ?? ''],
-    targetAccountId: [this.op?.targetAccount?.id ?? this.preset.targetAccountId ?? ''],
     categoryId: [this.op?.category?.id ?? this.preset.categoryId ?? ''],
     incomeKind: [(this.op?.incomeKind ?? this.preset.incomeKind ?? 'SALARY') as IncomeKind],
     essential: [this.op?.essential ?? this.preset.essential ?? false],
@@ -80,17 +71,8 @@ export class OperationDialogComponent {
   protected readonly needsCategory = computed(
     () => this.type() === 'EXPENSE' || this.type() === 'PURCHASE_REFUND',
   );
-
-  protected readonly accounts = computed(() => {
-    const current = this.op?.account.id;
-    return this.store.accounts().filter((a) => !a.archived || a.id === current);
-  });
-  protected readonly targets = computed(() => {
-    const current = this.op?.targetAccount?.id;
-    return this.store
-      .accounts()
-      .filter((a) => (!a.archived || a.id === current) && a.id !== this.value().accountId);
-  });
+  /** Categorie facultative d'un revenu (par exemple « Prets » pour un remboursement recu). */
+  protected readonly hasCategory = computed(() => this.needsCategory() || this.type() === 'INCOME');
   protected readonly categories = computed(() => {
     const current = this.op?.category?.id;
     return this.store
@@ -112,13 +94,6 @@ export class OperationDialogComponent {
 
   constructor() {
     this.store.ensure();
-    // Compte propose par defaut : le premier compte courant ou especes, des que les comptes sont charges.
-    effect(() => {
-      const first = this.store.activeAccounts().find((a) => a.type !== 'SAVINGS');
-      if (first && !untracked(() => this.form.controls.accountId.value)) {
-        this.form.controls.accountId.setValue(first.id);
-      }
-    });
     // Toute modification invalide une confirmation de doublon deja donnee.
     this.form.valueChanges.subscribe(() => {
       this.confirmedDuplicates = false;
@@ -132,6 +107,16 @@ export class OperationDialogComponent {
     if (type !== 'EXPENSE') {
       this.form.patchValue({ essential: false, exceptional: false });
     }
+    // Une categorie de depense n'a pas de sens pour un revenu, et inversement : on repart de zero.
+    const category = this.store.category(this.form.controls.categoryId.value);
+    if (type === 'INCOME' && category && !this.isLoansCategory(category.id)) {
+      this.form.controls.categoryId.setValue('');
+    }
+  }
+
+  private isLoansCategory(id: string): boolean {
+    const root = this.store.categories().find((c) => c.id === id || c.children.some((s) => s.id === id));
+    return !!root && /^pr[eê]ts?$/i.test(root.name.trim());
   }
 
   protected async submit(): Promise<void> {
@@ -171,38 +156,32 @@ export class OperationDialogComponent {
     if (amount === null || amount <= 0) return fail('Saisissez un montant positif, au centime près (ex. 12,50).');
     if (!v.label.trim()) return fail('Le libellé est obligatoire.');
     if (!v.date) return fail('La date est obligatoire.');
-    if (!v.accountId) return fail('Choisissez un compte.');
+    const accountId = this.op?.account.id ?? this.store.account()?.id;
+    if (!accountId) return fail('Saisissez d’abord le solde de votre compte.');
     if (v.status === 'COMPLETED' && v.date > this.today) {
       return fail('Une opération réalisée ne peut pas être datée dans le futur : choisissez « Prévue ».');
     }
     if (this.needsCategory() && !v.categoryId) return fail('Choisissez une catégorie.');
-    if (v.type === 'TRANSFER' && (!v.targetAccountId || v.targetAccountId === v.accountId)) {
-      return fail('Choisissez un compte destinataire différent.');
-    }
     return {
-      accountId: v.accountId,
+      accountId,
       type: v.type,
       status: v.status,
       date: v.date,
       amount,
       label: v.label.trim(),
       description: v.description.trim() || null,
-      categoryId: this.needsCategory() ? v.categoryId : null,
+      categoryId: this.hasCategory() && v.categoryId ? v.categoryId : null,
       incomeKind: v.type === 'INCOME' ? v.incomeKind : null,
       essential: v.type === 'EXPENSE' && v.essential,
       exceptional: v.type === 'EXPENSE' && v.exceptional,
-      targetAccountId: v.type === 'TRANSFER' ? v.targetAccountId : null,
+      targetAccountId: null,
       refundOfId: v.type === 'PURCHASE_REFUND' ? this.refundOfId : null,
     };
   }
 
-  /** On ne verifie les doublons qu'a la creation, ou si le montant, la date ou le compte changent. */
+  /** On ne verifie les doublons qu'a la creation, ou si le montant ou la date changent. */
   private shouldCheckDuplicates(body: OperationBody): boolean {
     if (!this.op) return true;
-    return (
-      this.op.amount !== body.amount ||
-      this.op.date !== body.date ||
-      this.op.account.id !== body.accountId
-    );
+    return this.op.amount !== body.amount || this.op.date !== body.date;
   }
 }

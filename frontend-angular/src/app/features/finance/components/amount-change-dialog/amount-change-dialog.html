@@ -1,0 +1,104 @@
+<form
+  class="card w-[min(28rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="chg-title"
+>
+  <h2 id="chg-title" class="text-lg font-bold mb-1">
+    {{ isCap ? 'Changer le plafond' : 'Changer le montant' }} à partir d’un mois
+  </h2>
+  <p class="text-sm text-muted">
+    {{ data.label }} — {{ isCap ? 'plafond' : 'montant prévu' }} en {{ monthLabel(data.month) }} :
+    <strong class="text-fg tabular-nums">{{ money(data.current) }}</strong>
+  </p>
+  <div class="space-y-4 mt-4">
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="field-label" for="chg-amount">{{ isCap ? 'Nouveau plafond' : 'Nouveau montant' }}</label>
+        <div class="relative">
+          <input
+            id="chg-amount"
+            class="input pr-8 text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            name="amount"
+            placeholder="0,00"
+            [ngModel]="amount()"
+            (ngModelChange)="amount.set($event); error.set('')"
+            cdkFocusInitial
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm" aria-hidden="true"
+            >€</span
+          >
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center gap-1">
+          <label class="field-label !mb-0" for="chg-from">À partir de</label>
+          <ff-help-tip label="À partir de ce mois" [text]="help.fromMonth" />
+        </div>
+        <input
+          id="chg-from"
+          type="month"
+          class="input mt-1"
+          name="fromMonth"
+          placeholder="AAAA-MM"
+          [min]="data.minMonth ?? null"
+          [ngModel]="fromMonth()"
+          (ngModelChange)="fromMonth.set($event ?? ''); error.set('')"
+        />
+      </div>
+    </div>
+    @if (preview()) {
+      <p class="field-hint" aria-live="polite">{{ preview() }}</p>
+    }
+
+    <section aria-labelledby="chg-history">
+      <h3 id="chg-history" class="field-label flex items-center gap-1.5">
+        <ff-icon name="history" [size]="14" />Historique des montants
+      </h3>
+      @if (versions().length) {
+        <ul class="rounded-xl border border-line divide-y divide-[var(--line)] text-sm">
+          @for (v of versions(); track v.fromMonth) {
+            <li class="flex items-center gap-2 px-3 py-1.5 min-h-10">
+              <span class="flex-1 min-w-0">
+                {{ v.fromMonth === firstMonth() ? 'Depuis' : 'À partir de' }} {{ monthLabel(v.fromMonth) }}
+              </span>
+              <span class="font-semibold tabular-nums">{{ money(v.amount) }}</span>
+              @if (!isCap && v.fromMonth !== firstMonth()) {
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm btn-icon"
+                  [attr.aria-label]="'Retirer le montant à partir de ' + monthLabel(v.fromMonth)"
+                  title="Retirer ce changement"
+                  [disabled]="removing() !== null"
+                  (click)="remove(v)"
+                >
+                  <ff-icon name="trash" [size]="15" />
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="text-sm text-muted">
+          @if (data.baseAmount !== null && data.baseAmount !== undefined) {
+            Le même montant depuis le début : {{ money(data.baseAmount) }}.
+          } @else {
+            Aucun changement enregistré.
+          }
+        </p>
+      }
+    </section>
+
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      <ff-icon name="check" [size]="16" />Enregistrer
+    </button>
+  </div>
+</form>

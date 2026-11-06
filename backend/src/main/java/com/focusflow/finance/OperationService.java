@@ -79,10 +79,6 @@ public class OperationService {
     @Transactional
     public void update(UUID id, OperationRequest request) {
         Operation o = find(id);
-        if (o.getType().isLoanMovement()) {
-            throw ApiException.rule("OPERATION_NOT_EDITABLE",
-                    "Un mouvement de pret ne se modifie pas : supprimez-le puis saisissez-le de nouveau depuis le pret.");
-        }
         if (o.getType() == OperationType.OPENING_BALANCE || o.getType() == OperationType.ADJUSTMENT) {
             throw ApiException.rule("OPERATION_NOT_EDITABLE",
                     "Un solde initial ou une correction ne se modifie pas : saisissez une nouvelle correction du solde.");
@@ -131,9 +127,6 @@ public class OperationService {
         if (r.type() == OperationType.OPENING_BALANCE || r.type() == OperationType.ADJUSTMENT) {
             throw ApiException.rule("INVALID_OPERATION",
                     "Le solde initial et les corrections se saisissent depuis le compte concerne.");
-        }
-        if (r.type().isLoanMovement()) {
-            throw ApiException.rule("INVALID_OPERATION", "Les prets et leurs remboursements se saisissent depuis l'onglet Prets.");
         }
         if (r.status() == OperationStatus.COMPLETED) {
             requireNotFuture(r.date());

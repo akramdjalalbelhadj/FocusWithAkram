@@ -1,0 +1,299 @@
+:host {
+  display: block;
+}
+
+/* Navigation de mois */
+.month-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.month-title {
+  min-width: 9.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+/* Feuille d'un autre mois pendant le chargement du mois choisi */
+.month-body {
+  transition: opacity 0.15s;
+}
+
+.month-body.is-stale {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Pour bien demarrer */
+.start-steps {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .start-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.start-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 1rem 1rem 1rem 3.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.start-num {
+  position: absolute;
+  top: 0.9rem;
+  left: 1rem;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--brand-fg);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.start-step .btn {
+  margin-top: 0.4rem;
+}
+
+/* Indicateurs du mois */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  padding: 0.85rem 1rem;
+}
+
+.kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.kpi-value {
+  margin-top: 0.15rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .kpi-value {
+    font-size: 1.375rem;
+  }
+}
+
+.kpi-sub {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.kpi-action {
+  min-height: 1.75rem;
+  padding: 0 0.45rem;
+  margin-right: -0.45rem;
+  color: var(--brand);
+  gap: 0.3rem;
+}
+
+.gauge {
+  display: block;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--success);
+}
+
+.gauge-fill[data-tone='warn'] {
+  background: var(--q3-accent);
+}
+
+/* Information (mois a venir) */
+.note {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--info-soft);
+  color: var(--fg);
+  font-size: 0.875rem;
+}
+
+.note > ff-icon {
+  color: var(--info);
+}
+
+/* Sections de la feuille */
+.sheet-section {
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .sheet-section {
+    padding: 1.25rem;
+  }
+}
+
+.sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.sec-title {
+  display: flex;
+  flex: 1 1 12rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.sec-title h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.sec-title ff-help-tip {
+  margin-left: -0.3rem;
+}
+
+.sec-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--brand);
+}
+
+.sec-icon-income {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.sec-total {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sec-total strong {
+  color: var(--fg);
+}
+
+.sec-empty {
+  padding: 0.25rem 0 0.25rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Bilan : epargne prevue et reelle */
+.balance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-table th,
+.balance-table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.balance-table thead th {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.balance-table tbody th,
+.balance-table tfoot th {
+  text-align: left;
+  font-weight: 500;
+}
+
+.balance-table td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.balance-table tfoot th,
+.balance-table tfoot td {
+  border-bottom: 0;
+  border-top: 2px solid var(--line-strong);
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.savings-verdict {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}

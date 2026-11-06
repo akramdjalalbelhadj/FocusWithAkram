@@ -1,0 +1,91 @@
+<form
+  class="card w-[min(28rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="act-title"
+>
+  <div class="flex items-center gap-1 mb-1">
+    <h2 id="act-title" class="text-lg font-bold">{{ data.title }}</h2>
+    @if (data.help; as help) {
+      <ff-help-tip [label]="help.label" [text]="help.text" />
+    }
+  </div>
+  @if (data.message) {
+    <p class="text-sm text-muted">{{ data.message }}</p>
+  }
+  <div class="space-y-4 mt-4">
+    @if (hasAmount) {
+      <div>
+        <label class="field-label" for="act-amount">{{ data.amountLabel ?? 'Montant' }}</label>
+        <div class="relative">
+          <input
+            id="act-amount"
+            class="input pr-8 text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            name="amount"
+            placeholder="0,00"
+            [ngModel]="amount()"
+            (ngModelChange)="amount.set($event); error.set('')"
+            cdkFocusInitial
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm" aria-hidden="true"
+            >€</span
+          >
+        </div>
+      </div>
+    }
+    @if (hasDate) {
+      <div>
+        <label class="field-label" for="act-date">{{ data.dateLabel ?? 'Date' }}</label>
+        <input
+          id="act-date"
+          type="date"
+          class="input"
+          name="date"
+          [max]="data.maxDate ?? null"
+          [ngModel]="date()"
+          (ngModelChange)="date.set($event); error.set('')"
+        />
+      </div>
+    }
+    @if (hasComment) {
+      <div>
+        <label class="field-label" for="act-comment">
+          {{ data.commentLabel ?? 'Commentaire' }}{{ commentRequired() ? '' : ' (facultatif)' }}
+        </label>
+        <textarea
+          id="act-comment"
+          class="input"
+          name="comment"
+          rows="2"
+          maxlength="500"
+          [attr.cdkFocusInitial]="hasAmount ? null : ''"
+          [attr.aria-required]="commentRequired()"
+          [attr.aria-describedby]="overCap() ? 'act-over' : null"
+          [placeholder]="data.commentPlaceholder ?? ''"
+          [ngModel]="comment()"
+          (ngModelChange)="comment.set($event); error.set('')"
+        ></textarea>
+        @if (overCap()) {
+          <p id="act-over" class="field-hint flex items-center gap-1 text-warning">
+            <ff-icon name="alert" [size]="13" />Au-delà du plafond de {{ money(data.commentRequiredAbove) }} :
+            expliquez le dépassement.
+          </p>
+        }
+      </div>
+    }
+    @if (data.hint) {
+      <p class="field-hint">{{ data.hint }}</p>
+    }
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      <ff-icon name="check" [size]="16" />{{ data.confirmLabel }}
+    </button>
+  </div>
+</form>

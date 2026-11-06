@@ -1,9 +1,5 @@
-<div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-  <p class="text-sm text-muted max-w-2xl">
-    Salaire, abonnements, charges et paiements en plusieurs fois. Leurs échéances sont prévues : vous
-    confirmez chacune quand elle a lieu, ou la sautez pour un mois.
-  </p>
-  <div class="flex items-center gap-3">
+<div class="flex flex-wrap items-center justify-end gap-2 mb-4">
+  <div class="flex flex-wrap items-center gap-3">
     <label class="flex items-center gap-2 text-sm text-muted"
       ><input
         type="checkbox"
@@ -12,8 +8,11 @@
         (change)="showEnded.set($any($event.target).checked)"
       />Résiliés</label
     >
+    <button type="button" class="btn btn-secondary btn-sm" (click)="actions.planIncome()">
+      <ff-icon name="banknote" [size]="14" />Revenu prévu
+    </button>
     <button type="button" class="btn btn-primary btn-sm" (click)="actions.editSchedule(null)">
-      <ff-icon name="plus" [size]="14" />Échéancier
+      <ff-icon name="plus" [size]="14" />Charge ou abonnement
     </button>
   </div>
 </div>
@@ -26,12 +25,12 @@
   <div class="card">
     <ff-empty
       icon="repeat"
-      title="Aucun échéancier"
+      title="Rien de récurrent pour l’instant"
       hint="Commencez par votre salaire, puis vos abonnements et charges fixes."
     >
       <div class="flex flex-wrap justify-center gap-2 mt-2">
-        <button type="button" class="btn btn-primary btn-sm" (click)="actions.editSchedule(null, 'SALARY')">
-          Déclarer mon salaire
+        <button type="button" class="btn btn-primary btn-sm" (click)="actions.planIncome()">
+          Saisir mon revenu prévu
         </button>
         <button type="button" class="btn btn-secondary btn-sm" (click)="actions.editSchedule(null, 'SUBSCRIPTION')">
           Ajouter un abonnement
@@ -71,7 +70,6 @@
                   @if (s.category) {
                     · {{ s.category.rootId === s.category.id ? s.category.name : s.category.rootName + ' › ' + s.category.name }}
                   }
-                  · {{ s.account.name }}
                   @if (s.nextDueDate) {
                     · prochaine : {{ longDate(s.nextDueDate) }}
                   }

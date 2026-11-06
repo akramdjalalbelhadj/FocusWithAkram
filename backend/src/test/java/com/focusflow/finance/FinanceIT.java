@@ -99,12 +99,21 @@ class FinanceIT extends IntegrationTest {
     }
 
     @Test
-    void negativeOpeningBalanceIsAllowedAndZeroCreatesNoOperation() throws Exception {
+    void negativeOpeningBalanceIsAllowed() throws Exception {
         String decouvert = account("Decouvert", "CURRENT", "-20.50");
-        String vide = account("Especes", "CASH", "0");
         assertThat(balance(decouvert)).isEqualByComparingTo("-20.50");
+    }
+
+    @Test
+    void zeroOpeningCreatesNoOperationAndASecondAccountIsRefused() throws Exception {
+        String vide = account("Mon compte", "CURRENT", "0");
         assertThat(balance(vide)).isEqualByComparingTo("0");
         mvc.perform(get(API + "/operations").param("accountId", vide)).andExpect(jsonPath("$.totalItems").value(0));
+        // Un seul compte represente tout l'argent (courant, epargne, especes).
+        send(post(API + "/accounts"), """
+                {"name":"Livret","type":"SAVINGS","openingBalance":100}""")
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("SINGLE_ACCOUNT"));
+        assertThat(balance(vide)).isEqualByComparingTo("0");
     }
 
     @Test
@@ -137,23 +146,24 @@ class FinanceIT extends IntegrationTest {
     }
 
     @Test
-    void transferMovesMoneyWithoutBeingIncomeOrExpense() throws Exception {
+    void aLoanIsAnExpenseAndItsRepaymentAnIncomeOfTheLoansCategory() throws Exception {
         String courant = account("Courant", "CURRENT", "1000");
-        String epargne = account("Livret", "SAVINGS", "0");
-        operation("""
-                {"accountId":"%s","type":"TRANSFER","status":"COMPLETED","date":"2026-10-30","amount":300,
-                 "label":"Epargne du mois","targetAccountId":"%s"}""".formatted(courant, epargne));
+        String prets = category("Prêts", null);
+        expense(courant, prets, "200", "2026-10-05", "COMPLETED", false, false, "Pret a Sami");
+        String repayment = operation("""
+                {"accountId":"%s","type":"INCOME","status":"COMPLETED","date":"2026-10-20","amount":50,
+                 "label":"Remboursement de Sami","incomeKind":"OTHER","categoryId":"%s"}""".formatted(courant, prets));
+        mvc.perform(get(API + "/operations/" + repayment)).andExpect(jsonPath("$.category.name").value("Prêts"));
 
-        assertThat(balance(courant)).isEqualByComparingTo("700");
-        assertThat(balance(epargne)).isEqualByComparingTo("300");
+        assertThat(balance(courant)).isEqualByComparingTo("850");
         String o = overview();
-        assertThat(amount(o, "$.availableBalance")).isEqualByComparingTo("700");
-        assertThat(amount(o, "$.savingsBalance")).isEqualByComparingTo("300");
-        assertThat(amount(o, "$.totals.savedToSavings")).isEqualByComparingTo("300");
-        assertThat(amount(o, "$.totals.expensesPaid")).isEqualByComparingTo("0");
-        assertThat(amount(o, "$.totals.incomeReceived")).isEqualByComparingTo("0");
-        // Le compte cible voit le virement dans son historique.
-        mvc.perform(get(API + "/operations").param("accountId", epargne)).andExpect(jsonPath("$.totalItems").value(1));
+        assertThat(amount(o, "$.totals.expensesPaid")).isEqualByComparingTo("200");
+        assertThat(amount(o, "$.totals.incomeReceived")).isEqualByComparingTo("50");
+        // Un revenu sans categorie reste valide.
+        operation("""
+                {"accountId":"%s","type":"INCOME","status":"COMPLETED","date":"2026-10-21","amount":5,
+                 "label":"Cadeau","incomeKind":"GIFT"}""".formatted(courant));
+        assertThat(balance(courant)).isEqualByComparingTo("855");
     }
 
     @Test
@@ -221,7 +231,6 @@ class FinanceIT extends IntegrationTest {
     @Test
     void monthTotalsSeparateEssentialVariableExceptionalRefundsAndSavings() throws Exception {
         String courant = account("Courant", "CURRENT", "3000");
-        String livret = account("Livret", "SAVINGS", "0");
         String logement = category("Logement", null);
         String loyer = category("Loyer", logement);
         String restos = category("Restaurants", null);
@@ -237,9 +246,6 @@ class FinanceIT extends IntegrationTest {
         operation("""
                 {"accountId":"%s","type":"PURCHASE_REFUND","status":"COMPLETED","date":"2026-10-11","amount":30,
                  "label":"Remboursement diner","categoryId":"%s","refundOfId":"%s"}""".formatted(courant, restos, diner));
-        operation("""
-                {"accountId":"%s","type":"TRANSFER","status":"COMPLETED","date":"2026-10-29","amount":400,
-                 "label":"Epargne","targetAccountId":"%s"}""".formatted(courant, livret));
         // Hors du mois : ignore.
         expense(courant, restos, "999", "2026-09-30", "COMPLETED", false, false, "Septembre");
 
@@ -251,14 +257,15 @@ class FinanceIT extends IntegrationTest {
         assertThat(amount(o, "$.totals.exceptionalPaid")).isEqualByComparingTo("200");
         assertThat(amount(o, "$.totals.refunds")).isEqualByComparingTo("30");
         assertThat(amount(o, "$.totals.expensesPlanned")).isEqualByComparingTo("15");
-        assertThat(amount(o, "$.totals.savedToSavings")).isEqualByComparingTo("400");
-        assertThat(amount(o, "$.totals.unspent")).isEqualByComparingTo("1050"); // 2200 - 750 - 400
+        // L'epargne du mois est ce qui reste : revenus - depenses.
+        assertThat(amount(o, "$.totals.savedToSavings")).isEqualByComparingTo("0");
+        assertThat(amount(o, "$.totals.unspent")).isEqualByComparingTo("1450"); // 2200 - 750
         // Par categorie racine, nettes des remboursements, de la plus couteuse a la moins couteuse.
         assertThat((List<String>) JsonPath.read(o, "$.byCategory[*].name")).containsExactly("Logement", "Sante", "Restaurants");
         assertThat(amount(o, "$.byCategory[2].amount")).isEqualByComparingTo("50");
-        // Soldes : 3000 - 999 + 2200 - 500 - 80 - 200 + 30 - 400 = 3051 disponibles, 400 epargnes.
-        assertThat(amount(o, "$.availableBalance")).isEqualByComparingTo("3051");
-        assertThat(amount(o, "$.savingsBalance")).isEqualByComparingTo("400");
+        // Solde unique : 3000 - 999 + 2200 - 500 - 80 - 200 + 30 = 3451.
+        assertThat(amount(o, "$.availableBalance")).isEqualByComparingTo("3451");
+        assertThat(amount(o, "$.savingsBalance")).isEqualByComparingTo("0");
         assertThat((Integer) JsonPath.read(o, "$.upcoming.length()")).isEqualTo(1);
     }
 
@@ -353,17 +360,11 @@ class FinanceIT extends IntegrationTest {
     @Test
     void accountsWithMoneyOrHistoryAreProtected() throws Exception {
         String courant = account("Courant", "CURRENT", "50");
-        send(post(API + "/accounts"), """
-                {"name":"courant","type":"CASH"}""")
-                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ACCOUNT_NAME_TAKEN"));
         send(put(API + "/accounts/" + courant), """
                 {"name":"Courant","type":"CURRENT","archived":true,"position":0}""")
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("ACCOUNT_NOT_EMPTY"));
         mvc.perform(delete(API + "/accounts/" + courant))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ACCOUNT_IN_USE"));
-
-        String vide = account("Nouveau", "CASH", "0");
-        mvc.perform(delete(API + "/accounts/" + vide)).andExpect(status().isNoContent());
 
         // Un compte archive ne recoit plus de nouvelles operations.
         send(post(API + "/accounts/" + courant + "/reconcile"), """
@@ -394,7 +395,6 @@ class FinanceIT extends IntegrationTest {
     @Test
     void backupV3RoundTripRestoresFinanceWithoutDuplicates() throws Exception {
         String courant = account("Courant", "CURRENT", "1500");
-        String livret = account("Livret", "SAVINGS", "200");
         String restos = category("Restaurants", null);
         String cafes = category("Cafes", restos);
         String salary = operation("""
@@ -406,29 +406,24 @@ class FinanceIT extends IntegrationTest {
         operation("""
                 {"accountId":"%s","type":"PURCHASE_REFUND","status":"COMPLETED","date":"2026-10-11","amount":10,
                  "label":"Geste commercial","categoryId":"%s","refundOfId":"%s"}""".formatted(courant, cafes, diner));
-        operation("""
-                {"accountId":"%s","type":"TRANSFER","status":"COMPLETED","date":"2026-10-30","amount":300,
-                 "label":"Epargne","targetAccountId":"%s"}""".formatted(courant, livret));
         send(post(API + "/accounts/" + courant + "/reconcile"), """
                 {"actualBalance":3300}""").andExpect(status().isCreated());
         BigDecimal courantBefore = balance(courant);
-        BigDecimal livretBefore = balance(livret);
 
         String backup = mvc.perform(get("/api/v1/export/backup")).andReturn().getResponse()
                 .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        // La section financiere est apparue en v3 ; la sauvegarde courante (v4) la conserve a l'identique.
-        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(4);
-        assertThat((Integer) JsonPath.read(backup, "$.finance.operations.length()")).isEqualTo(7);
+        // La section financiere est apparue en v3 ; la sauvegarde courante (v5) la conserve.
+        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(5);
+        assertThat((Integer) JsonPath.read(backup, "$.finance.operations.length()")).isEqualTo(5);
 
         resetState();
         send(post("/api/v1/import"), backup)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errors.length()").value(0))
-                .andExpect(jsonPath("$.finance.accountsCreated").value(2))
+                .andExpect(jsonPath("$.finance.accountsCreated").value(1))
                 .andExpect(jsonPath("$.finance.categoriesCreated").value(2))
-                .andExpect(jsonPath("$.finance.operationsCreated").value(7));
+                .andExpect(jsonPath("$.finance.operationsCreated").value(5));
         assertThat(balance(courant)).isEqualByComparingTo(courantBefore);
-        assertThat(balance(livret)).isEqualByComparingTo(livretBefore);
         mvc.perform(get(API + "/operations/" + salary))
                 .andExpect(jsonPath("$.plannedAmount").value(2200))
                 .andExpect(jsonPath("$.amount").value(2150));
@@ -439,8 +434,8 @@ class FinanceIT extends IntegrationTest {
         // Reimport : rien n'est duplique.
         send(post("/api/v1/import"), backup)
                 .andExpect(jsonPath("$.finance.operationsCreated").value(0))
-                .andExpect(jsonPath("$.finance.operationsSkipped").value(7))
-                .andExpect(jsonPath("$.finance.accountsReused").value(2))
+                .andExpect(jsonPath("$.finance.operationsSkipped").value(5))
+                .andExpect(jsonPath("$.finance.accountsReused").value(1))
                 .andExpect(jsonPath("$.finance.categoriesReused").value(2));
         assertThat(balance(courant)).isEqualByComparingTo(courantBefore);
 
@@ -450,6 +445,54 @@ class FinanceIT extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.finance").doesNotExist());
         assertThat(balance(courant)).isEqualByComparingTo(courantBefore);
+    }
+
+    @Test
+    void legacyBackupWithSeveralAccountsTransfersAndLoansIsMergedIntoTheSingleAccount() throws Exception {
+        String file = """
+                {"version":4,"finance":{
+                  "accounts":[{"id":"00000000-0000-0000-0000-0000000000a2","name":"Livret","type":"SAVINGS"},
+                              {"id":"00000000-0000-0000-0000-0000000000a1","name":"Courant","type":"CURRENT"}],
+                  "loans":[{"id":"00000000-0000-0000-0000-0000000000d1","person":"Sami","direction":"LENT",
+                            "principal":100,"startDate":"2026-10-02"}],
+                  "operations":[
+                   {"id":"00000000-0000-0000-0000-0000000000f1","accountId":"00000000-0000-0000-0000-0000000000a1",
+                    "type":"OPENING_BALANCE","status":"COMPLETED","direction":"CREDIT","date":"2026-10-01","amount":1000,
+                    "label":"Solde initial"},
+                   {"id":"00000000-0000-0000-0000-0000000000f2","accountId":"00000000-0000-0000-0000-0000000000a2",
+                    "type":"OPENING_BALANCE","status":"COMPLETED","direction":"CREDIT","date":"2026-10-01","amount":500,
+                    "label":"Solde initial"},
+                   {"id":"00000000-0000-0000-0000-0000000000f3","accountId":"00000000-0000-0000-0000-0000000000a1",
+                    "targetAccountId":"00000000-0000-0000-0000-0000000000a2","type":"TRANSFER","status":"COMPLETED",
+                    "direction":"DEBIT","date":"2026-10-03","amount":200,"label":"Epargne"},
+                   {"id":"00000000-0000-0000-0000-0000000000f4","accountId":"00000000-0000-0000-0000-0000000000a1",
+                    "type":"LOAN_GIVEN","status":"COMPLETED","direction":"DEBIT","date":"2026-10-02","amount":100,
+                    "label":"Pret a Sami","loanId":"00000000-0000-0000-0000-0000000000d1"},
+                   {"id":"00000000-0000-0000-0000-0000000000f5","accountId":"00000000-0000-0000-0000-0000000000a1",
+                    "type":"LOAN_COLLECTED","status":"COMPLETED","direction":"CREDIT","date":"2026-10-20","amount":40,
+                    "label":"Remboursement de Sami","loanId":"00000000-0000-0000-0000-0000000000d1"}]}}""";
+        send(post("/api/v1/import"), file)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errors.length()").value(0))
+                .andExpect(jsonPath("$.finance.accountsCreated").value(1))
+                .andExpect(jsonPath("$.finance.accountsReused").value(1))
+                .andExpect(jsonPath("$.finance.operationsCreated").value(4))
+                .andExpect(jsonPath("$.finance.operationsSkipped").value(1));
+
+        // Un seul compte (le compte courant), qui porte tout l'argent : 1000 + 500 - 100 + 40.
+        mvc.perform(get(API + "/accounts")).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Courant"));
+        assertThat(balance("00000000-0000-0000-0000-0000000000a1")).isEqualByComparingTo("1440");
+        mvc.perform(get(API + "/operations/00000000-0000-0000-0000-0000000000f2"))
+                .andExpect(jsonPath("$.type").value("ADJUSTMENT"))
+                .andExpect(jsonPath("$.label").value("Solde de départ — Livret"));
+        mvc.perform(get(API + "/operations/00000000-0000-0000-0000-0000000000f4"))
+                .andExpect(jsonPath("$.type").value("EXPENSE"))
+                .andExpect(jsonPath("$.category.name").value("Prêts"));
+        mvc.perform(get(API + "/operations/00000000-0000-0000-0000-0000000000f5"))
+                .andExpect(jsonPath("$.type").value("INCOME"))
+                .andExpect(jsonPath("$.incomeKind").value("OTHER"))
+                .andExpect(jsonPath("$.category.name").value("Prêts"));
     }
 
     @Test

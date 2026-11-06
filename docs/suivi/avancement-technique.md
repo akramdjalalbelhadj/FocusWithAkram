@@ -1,6 +1,6 @@
 # FocusWithAkram — avancement technique
 
-Relevé des sources du **5 novembre 2026**, branche `main`. Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends** ; jusqu’à la version stable, seul Angular évolue (React et mobile déprioritisés, voir [refonte v2](refonte-v2.md)).
+Relevé des sources du **5 novembre 2026**, branche `main` ; le lot 13 (« Mes achats » simplifié) est validé sur la branche `lot-13-mes-achats-simplifie` (6 novembre 2026). Fonctionnel : [avancement fonctionnel](avancement-fonctionnel.md). Commandes : [exploitation](../technique/exploitation.md). Ce document traite du backend **et des deux frontends** ; jusqu’à la version stable, seul Angular évolue (React et mobile déprioritisés, voir [refonte v2](refonte-v2.md)).
 
 ## 1. Architecture d’ensemble
 
@@ -43,6 +43,8 @@ Racine : `backend/src/main/java/com/focusflow`. Depuis la refonte v2 (novembre 2
 | `pomodoro` | Sessions et historique | PomodoroSession, PomodoroService |
 | `settings` | Préférences (singleton) | UserSettings, SettingsService |
 | `dashboard`, `eisenhower`, `statistics`, `search` | Vues en lecture et agrégations | DashboardService, MatrixService, StatisticsService |
+| `finance` | Module « Mes achats » : compte unique, opérations, catégories, échéanciers à montants datés, dépenses variables plafonnées et feuille du mois (lot 13), budget, prévision, objectifs d'achat, alertes, statistiques, simulations | Operation, Schedule, ForecastEngine, FinanceBackup |
+| `note` | Notes & idées et transformation en tâches | Note, NoteService, NoteBackup |
 | `transfer` | Export CSV/JSON, sauvegarde versionnée, import | TransferService, BackupFile |
 | `common`, `common.exception` | Pagination, PATCH partiels, erreurs HTTP | PageResponse, Patch, GlobalExceptionHandler |
 | `config` | Horloge, CORS, PostgreSQL embarqué | ClockConfig, EmbeddedPostgresConfig |
@@ -100,6 +102,8 @@ Préfixe commun `/api/v1` ; documentation interactive `/swagger-ui.html`, docume
 
 ### 3.5 État de validation backend
 
+Lot 13 (« Mes achats » simplifié, 6 novembre 2026) : **188 tests sans échec**. Les sources ajoutent la migration `V8__finance_single_account.sql` (fusion des comptes, conversion des prêts) et son test `SingleAccountMigrationIT`, retirent `LoanIT` avec le domaine des prêts et adaptent `FinanceIT` et `InsightIT` ; la migration `V9__finance_month_sheet.sql` (montants datés, dépenses variables plafonnées, catégorie « Prêts ») s’accompagne de `MonthSheetIT` et `EnvelopeIT`. Détail : [refonte v2, lot 13](refonte-v2.md).
+
 Relevé du 5 novembre 2026 (lot 9, stabilisation) : **172 tests, 0 échec** sur PostgreSQL 18.6, dont `ExistingIdsTest` (identifiants existants lus par lots avant un import ; les tests d’import, de finance et de notes restent inchangés et verts). Côté Angular : 47 tests unitaires, dont `accessible-dialogs.spec.ts` ; 10 scénarios E2E. Détail et défauts corrigés : [refonte v2, lot 9](refonte-v2.md).
 
 Relevé du 5 novembre 2026 (lot 12, lanceurs et PostgreSQL 18) : **170 tests, 0 échec** sur **PostgreSQL 18.6** (`mvn test`), dont 3 tests unitaires du PostgreSQL embarqué (port de repli, refus d’une base d’une autre version majeure avec la commande de migration, PID d’un `postmaster.pid` qui n’est pas PostgreSQL ignoré) et `EmbeddedPostgresVersionIT` (le serveur embarqué a la version déclarée dans le `pom.xml`). La migration 14 → 18 (`scripts/migrate_postgres.ps1`, `scripts/lib/PgCopy.java`) a été essayée sur une copie de la base personnelle : voir [refonte v2, lot 12](refonte-v2.md).
@@ -133,6 +137,8 @@ Composants standalone, `OnPush`, signaux, application sans zone.js et HttpClient
 
 30 templates ont été externalisés. Le lint interdit les propriétés de métadonnées Angular `template` et `styles` inline. La matrice a des classes sémantiques et une feuille locale ; d’autres templates gardent encore des classes Tailwind. L’externalisation des templates ne signifie donc pas que cette conversion CSS est complète.
 
+« Mes achats » (lot 13, validé le 6 novembre 2026 : 104 tests unitaires Angular, `finance.spec.ts` réécrit) : quatre onglets (Mon mois, Opérations, Projets d’achat, Analyses) et ⚙ Réglages, vues secondaires par paramètre d’adresse (`?vue=`), anciennes adresses redirigées, visite guidée et composant d’infobulle `ff-help-tip` ; voir l’[architecture frontend](../technique/architecture-frontend.md).
+
 Le composant de réglages se trouve dans `features/pomodoro/components/pomodoro-settings/`. Il utilise le store partagé, vérifie les bornes, enregistre au changement et affiche les refus de notification. Les paramètres généraux ne portent plus les réglages du minuteur.
 
 ## 5. Frontend React — FWA-T003
@@ -164,7 +170,7 @@ Le panneau Pomodoro a un brouillon contrôlé pour préserver les modifications 
 | Chemin                     | Usage                                            |
 | -------------------------- | ------------------------------------------------ |
 | `shared/models.ts`         | DTO et enums TypeScript cohérents avec l’API     |
-| `shared/finance.ts`        | Contrats du module « Mes achats »                |
+| `shared/finance.ts`        | Contrats du module « Mes achats » (feuille du mois depuis le lot 13) |
 | `shared/notes.ts`          | Contrats du module Notes & idées                 |
 | `shared/time.ts`           | Dates, jours locaux et conversions d’horodatages |
 | `shared/timer.ts`          | Calculs du temps restant                         |
@@ -193,6 +199,9 @@ Ne pas importer un composant Angular dans React ni réciproquement. Ne pas dupli
 | Modifications concurrentes          | Pas de version envoyée dans les mises à jour : entre deux onglets, la dernière écriture l’emporte ; un élément supprimé ailleurs donne une 404 traitée par l’interface. |
 | Notes : Markdown comme format unique | Les deux modes d’éditeur, la recherche, la sauvegarde et un futur portage lisent le même texte ; le mode visuel (Tiptap) peut normaliser la syntaxe. Le rendu passe par le schéma ProseMirror : aucun HTML saisi n’est injecté tel quel. |
 | Notes : lien tâche → idée par identifiant | Pas de dépendance Java de `task` vers `note` (ArchUnit) ; la base détache les tâches si l’idée est supprimée. |
+| Mes achats : compte unique (lot 13) | La table `fin_account` est conservée avec un seul enregistrement : opérations et échéanciers gardent leur clé de compte. La migration V8 fusionne les comptes en conservant le solde total (soldes de départ convertis en corrections, virements internes supprimés) ; elle modifie des données : sauvegarde JSON avant la mise à jour. |
+| Mes achats : montants datés (lot 13) | Versions « à partir d’un mois » (`fin_schedule_amount`, `fin_envelope_amount`) plutôt que de réécrire le montant habituel : les mois passés gardent leur montant sans copier les échéances ; « ce mois seulement » réutilise l’ajustement d’échéance existant. |
+| Mes achats : contrats sans prêts (lot 13) | Types et champs de prêt retirés de `shared/finance.ts` (et non rendus facultatifs) : aucun client n’en dépend, React n’important aucun contrat financier. Les anciennes sauvegardes restent lisibles (type d’opération lu comme texte, mouvements de prêt convertis). |
 | Avertissements de bibliothèques     | Dépréciations Spring/JDK et configuration de tests à examiner lors d’une mise à niveau dédiée.                                  |
 
 ## 8. Validation et points d’extension

@@ -34,3 +34,9 @@
   color: var(--brand);
   border-bottom-color: var(--brand);
 }
+
+/* Lien des reglages (icone de l'en-tete) quand la page des reglages est ouverte. */
+.fin-settings-active {
+  background: var(--brand-soft);
+  color: var(--brand);
+}

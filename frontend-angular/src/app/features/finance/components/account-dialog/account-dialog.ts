@@ -7,13 +7,11 @@ import { FinanceApi } from '../../../../core/api/finance.api';
 import { AccountType, FinanceAccount } from '../../../../core/api/models';
 import { SettingsStore } from '../../../../core/services/settings.store';
 import { parseAmount } from '../../../../core/util/money';
-import { IconComponent } from '../../../../shared/ui/icon/icon';
-import { ACCOUNT_TYPES } from '../../finance-labels';
 
-/** Creation d'un compte (avec son solde actuel) ou modification de son nom et de son type. */
+/** Creation du compte unique (avec le total de l'argent disponible) ou changement de son nom. */
 @Component({
   selector: 'ff-account-dialog',
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './account-dialog.html',
 })
@@ -22,11 +20,10 @@ export class AccountDialogComponent {
   protected readonly data = inject<FinanceAccount | null>(DIALOG_DATA);
   protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
   protected readonly today = inject(SettingsStore).today();
-  protected readonly types = ACCOUNT_TYPES;
   protected readonly saving = signal(false);
   protected readonly error = signal('');
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    name: [this.data?.name ?? '', [Validators.required, Validators.maxLength(80)]],
+    name: [this.data?.name ?? 'Mon compte', [Validators.required, Validators.maxLength(80)]],
     type: [this.data?.type ?? ('CURRENT' as AccountType)],
     opening: [''],
     openingDate: [this.today],

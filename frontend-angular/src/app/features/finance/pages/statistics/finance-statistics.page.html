@@ -1,16 +1,15 @@
 <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
   <p class="text-sm text-muted max-w-2xl">
-    Mois complets, opérations réalisées uniquement. Les dépenses sont nettes des remboursements
-    d’achats ; prêts, virements et corrections n’y figurent pas.
+    Mois complets, opérations réalisées uniquement. L’épargne d’un mois est ce qui reste : revenus
+    reçus − dépenses payées. Les prêts comptent dans la catégorie « Prêts » ; les corrections de
+    solde n’y figurent pas.
   </p>
-  <div class="flex rounded-xl border border-line p-1 gap-1" role="tablist" aria-label="Période">
+  <div class="segmented" role="group" aria-label="Période">
     @for (p of periods; track p) {
       <button
         type="button"
-        role="tab"
-        class="rounded-lg px-3 py-1.5 text-sm font-semibold"
-        [attr.aria-selected]="span() === p"
-        [class]="span() === p ? 'bg-brand-soft text-brand' : 'text-muted'"
+        class="segmented-item"
+        [attr.aria-pressed]="span() === p"
         (click)="span.set(p)"
       >
         {{ p }} mois
@@ -29,7 +28,7 @@
       <ff-empty
         icon="chart"
         title="Pas encore de statistiques"
-        hint="Les revenus reçus, dépenses payées et virements vers l’épargne de la période apparaîtront ici."
+        hint="Les revenus reçus et les dépenses payées de la période apparaîtront ici."
       />
     </div>
   } @else {
@@ -47,8 +46,16 @@
         <p class="text-xs text-muted mt-1">{{ money(s.totals.averageExpenses) }} par mois en moyenne</p>
       </div>
       <div class="card p-4">
-        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Épargne mise de côté</p>
-        <p class="text-xl font-bold tabular-nums mt-1">{{ money(s.totals.savedToSavings) }}</p>
+        <div class="flex items-center gap-1">
+          <p class="text-xs font-semibold text-muted uppercase tracking-wide">Épargné</p>
+          <ff-help-tip
+            label="Épargné"
+            text="Ce qui reste sur la période : revenus reçus moins dépenses payées. Le tableau « Épargne et plafond » le compare mois par mois à votre objectif."
+          />
+        </div>
+        <p class="text-xl font-bold tabular-nums mt-1" [class.text-danger]="s.totals.unspent < 0">
+          {{ money(s.totals.unspent) }}
+        </p>
         <p class="text-xs text-muted mt-1">
           @if (s.totals.savingsRate !== null) {
             {{ s.totals.savingsRate }} % des revenus reçus
@@ -58,14 +65,26 @@
         </p>
       </div>
       <div class="card p-4">
-        <p class="text-xs font-semibold text-muted uppercase tracking-wide">Non dépensé</p>
-        <p class="text-xl font-bold tabular-nums mt-1" [class.text-danger]="s.totals.unspent < 0">
-          {{ money(s.totals.unspent) }}
-        </p>
-        <p class="text-xs text-muted mt-1">
-          Indispensables {{ money(s.totals.essentialPaid) }} · variables
-          {{ money(s.totals.variablePaid) }}
-        </p>
+        <div class="flex items-center gap-1">
+          <p class="text-xs font-semibold text-muted uppercase tracking-wide">Plafond variable</p>
+          <ff-help-tip
+            label="Plafond variable"
+            text="Nombre de mois où les dépenses variables (courses, restaurants…) ont dépassé leur plafond, parmi les mois qui en avaient un."
+          />
+        </div>
+        @if (capSummary().total) {
+          <p
+            class="text-xl font-bold tabular-nums mt-1"
+            [class.text-danger]="capSummary().exceeded > 0"
+            [class.text-success]="capSummary().exceeded === 0"
+          >
+            {{ capSummary().exceeded }} / {{ capSummary().total }}
+          </p>
+          <p class="text-xs text-muted mt-1">mois au-dessus du plafond</p>
+        } @else {
+          <p class="text-xl font-bold mt-1 text-muted">—</p>
+          <p class="text-xs text-muted mt-1">Aucun plafond défini sur la période</p>
+        }
       </div>
     </section>
 
@@ -74,8 +93,60 @@
       <ff-chart
         [option]="monthsChart"
         [height]="280"
-        label="Barres : revenus reçus et dépenses payées par mois ; courbe : épargne mise de côté"
+        label="Barres : revenus reçus et dépenses payées par mois ; courbe : épargne du mois"
       />
+    </section>
+
+    <section class="card p-5 mb-5" aria-labelledby="st-savings">
+      <h3 id="st-savings" class="section-title">Épargne et plafond, mois par mois</h3>
+      <div class="overflow-x-auto -mx-1 px-1">
+        <table class="w-full text-sm tabular-nums">
+          <thead>
+            <tr class="text-left text-xs text-muted uppercase tracking-wide">
+              <th scope="col" class="py-2 pr-3 font-semibold">Mois</th>
+              <th scope="col" class="py-2 pr-3 font-semibold text-right">Revenus</th>
+              <th scope="col" class="py-2 pr-3 font-semibold text-right">Dépenses</th>
+              <th scope="col" class="py-2 pr-3 font-semibold text-right">Épargné</th>
+              <th scope="col" class="py-2 pr-3 font-semibold">Objectif</th>
+              <th scope="col" class="py-2 font-semibold">Dépenses variables</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--line)]">
+            @for (m of monthRows(); track m.month) {
+              <tr>
+                <th scope="row" class="py-2 pr-3 font-semibold text-left whitespace-nowrap capitalize">
+                  {{ monthLabel(m.month) }}
+                </th>
+                <td class="py-2 pr-3 text-right">{{ money(m.incomeReceived) }}</td>
+                <td class="py-2 pr-3 text-right">{{ money(m.expensesPaid) }}</td>
+                <td class="py-2 pr-3 text-right font-semibold" [class.text-danger]="m.unspent < 0">
+                  {{ money(m.unspent) }}
+                </td>
+                <td class="py-2 pr-3 whitespace-nowrap">
+                  @if (m.targetMet === null) {
+                    <span class="text-muted">—</span>
+                  } @else if (m.targetMet) {
+                    <span class="badge badge-done">Atteint · {{ money(m.savingsTarget) }}</span>
+                  } @else {
+                    <span class="badge badge-late">Manqué · {{ money(m.savingsTarget) }}</span>
+                  }
+                </td>
+                <td class="py-2 whitespace-nowrap">
+                  {{ money(m.variablePaid) }}
+                  @if (m.variableCap !== null) {
+                    <span class="text-muted">/ {{ money(m.variableCap) }}</span>
+                    @if (m.capExceeded) {
+                      <span class="badge badge-late ml-1">Dépassé</span>
+                    } @else {
+                      <span class="badge badge-done ml-1">Tenu</span>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <div class="grid gap-5 lg:grid-cols-2 mb-5">
@@ -151,9 +222,9 @@
       </section>
     </div>
 
-    @if (s.purchases.length || s.writtenOffLent || s.writtenOffBorrowed) {
+    @if (s.purchases.length) {
       <section class="card p-5" aria-labelledby="st-goals">
-        <h3 id="st-goals" class="section-title">Achats prévus réalisés</h3>
+        <h3 id="st-goals" class="section-title">Projets d’achat réalisés</h3>
         @if (s.purchases.length) {
           <ul class="divide-y divide-[var(--line)] text-sm">
             @for (p of s.purchases; track p.goalId) {
@@ -180,17 +251,6 @@
           <p class="text-sm text-muted mt-2">
             Écart total entre prix payés et estimés :
             <strong class="tabular-nums">{{ signed(varianceTotal()) }}</strong>
-          </p>
-        }
-        @if (s.writtenOffLent || s.writtenOffBorrowed) {
-          <p class="text-sm text-muted mt-2 flex items-center gap-2">
-            <ff-icon name="hand-coins" [size]="16" />
-            @if (s.writtenOffLent) {
-              Créances abandonnées : {{ money(s.writtenOffLent) }}.
-            }
-            @if (s.writtenOffBorrowed) {
-              Dettes remises : {{ money(s.writtenOffBorrowed) }}.
-            }
           </p>
         }
       </section>

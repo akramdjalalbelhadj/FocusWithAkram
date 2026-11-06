@@ -1,0 +1,56 @@
+@if (tour.current(); as step) {
+  <div class="tour-layer" aria-hidden="true" (mousedown)="block($event)" (click)="block($event)">
+    @if (spot(); as s) {
+      <div
+        class="tour-spot"
+        [style.top.px]="s.top"
+        [style.left.px]="s.left"
+        [style.width.px]="s.width"
+        [style.height.px]="s.height"
+      ></div>
+    } @else {
+      <div class="tour-dim"></div>
+    }
+  </div>
+
+  <div
+    #bubble
+    class="tour-bubble card anim-pop"
+    [class.tour-sheet]="placement().mode === 'sheet'"
+    [class.tour-center]="placement().mode === 'center'"
+    [style.top.px]="placement().top"
+    [style.left.px]="placement().left"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ff-tour-title"
+    aria-describedby="ff-tour-text"
+    tabindex="-1"
+    cdkTrapFocus
+  >
+    <div aria-live="polite">
+      <p class="tour-progress">{{ tour.progress() }}</p>
+      <h2 id="ff-tour-title" class="tour-title">{{ step.title }}</h2>
+      <p id="ff-tour-text" class="tour-text">{{ step.text }}</p>
+    </div>
+    <div class="tour-bar" aria-hidden="true">
+      <span [style.width.%]="((tour.index() + 1) / tour.steps().length) * 100"></span>
+    </div>
+    <div class="tour-actions">
+      @if (!tour.isLast()) {
+        <button type="button" class="btn btn-ghost btn-sm" (click)="tour.skip()">Passer</button>
+      }
+      <span class="flex-1"></span>
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        [attr.aria-disabled]="tour.isFirst()"
+        (click)="tour.previous()"
+      >
+        Précédent
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" (click)="tour.next()">
+        {{ tour.isLast() ? 'Terminer' : 'Suivant' }}
+      </button>
+    </div>
+  </div>
+}

@@ -124,7 +124,7 @@ class ImportExportIT extends IntegrationTest {
         mvc.perform(patch("/api/v1/settings").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"theme\":\"DARK\",\"workMinutes\":50}")).andExpect(status().isOk());
         String backup = mvc.perform(get("/api/v1/export/backup")).andReturn().getResponse().getContentAsString();
-        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(4);
+        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(5);
 
         resetState();
         mvc.perform(get("/api/v1/settings")).andExpect(jsonPath("$.theme").value("SYSTEM"));

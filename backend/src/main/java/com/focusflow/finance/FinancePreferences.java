@@ -35,6 +35,10 @@ public class FinancePreferences {
     @Column(name = "warning_percent", nullable = false)
     private int warningPercent = 80;
 
+    /** Visite guidee du module terminee ou passee : elle ne s'ouvre plus d'elle-meme. */
+    @Column(name = "tutorial_done", nullable = false)
+    private boolean tutorialDone;
+
     @Version
     private long version;
 
@@ -48,4 +52,6 @@ public class FinancePreferences {
     public void setDefaultSavingsTarget(BigDecimal defaultSavingsTarget) { this.defaultSavingsTarget = defaultSavingsTarget; }
     public int getWarningPercent() { return warningPercent; }
     public void setWarningPercent(int warningPercent) { this.warningPercent = warningPercent; }
+    public boolean isTutorialDone() { return tutorialDone; }
+    public void setTutorialDone(boolean tutorialDone) { this.tutorialDone = tutorialDone; }
 }

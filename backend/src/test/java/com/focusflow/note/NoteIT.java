@@ -269,7 +269,7 @@ class NoteIT extends IntegrationTest {
         send(patch("/api/v1/settings"), "{\"noteEditorMode\":\"RICH\"}").andExpect(status().isOk());
 
         String backup = body(mvc.perform(get("/api/v1/export/backup")).andExpect(status().isOk()));
-        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(4);
+        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(5);
         assertThat((String) JsonPath.read(backup, "$.tasks[0].sourceNoteId")).isEqualTo(note);
         assertThat((List<?>) JsonPath.read(backup, "$.notes.notes")).hasSize(1);
 

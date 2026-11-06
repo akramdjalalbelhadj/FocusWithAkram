@@ -1,6 +1,6 @@
 # FocusWithAkram — guide d’utilisation
 
-Mis à jour le **3 novembre 2026** pour Angular et React (Notes & idées : Angular seulement). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
+Mis à jour le **5 novembre 2026** pour Angular et React (Mes achats et Notes & idées : Angular seulement ; « Mes achats » décrit la version simplifiée du lot 13). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
 
 ## 1. Ouvrir l’application
 
@@ -97,33 +97,112 @@ Pour importer : sélectionner le JSON, lire l’aperçu des créations, réutili
 
 Depuis le format v2, la sauvegarde complète contient les préférences (thème, fuseau, minuteur, mode d’éditeur des notes) ; l’export CSV ne les contient pas. Un export contient des données personnelles en clair : le conserver à un endroit adapté.
 
-## 11. Mes achats : comptes, dépenses et revenus
+## 11. Mes achats : votre mois, pas à pas
 
-Le module **Mes achats** (menu, ou G puis B) suit votre argent réel. Ses règles complètes sont dans la [spécification](mes-achats/specification.md).
+Le module **Mes achats** (menu, ou G puis B ; Angular) suit votre argent réel, mois par mois. Règles complètes : [spécification](mes-achats/specification.md) et [feuille du mois](mes-achats/feuille-du-mois.md).
 
-1. **Premier accès** : créez votre compte principal avec le montant réellement disponible aujourd’hui. Ajoutez ensuite, dans **Réglages**, un compte d’épargne ou des espèces. L’épargne n’entre pas dans le solde disponible.
-2. **Saisie rapide** : touche **E** (ou bouton **Dépense**, ou la palette) depuis n’importe quel écran. Saisissez le montant (virgule acceptée), un libellé et une catégorie. Cochez « Indispensable » pour un loyer ou un abonnement de transport, « Exceptionnelle » pour une dépense imprévue.
-3. **Réalisée ou prévue** : seule une opération réalisée (payée, reçue) change le solde. Un salaire attendu se saisit comme revenu **prévu** ; le jour venu, menu **⋯ → Marquer comme reçu** avec le montant réel : l’écart avec le prévu reste affiché.
-4. **Virements** : d’un compte à un autre ; vers l’épargne, ils comptent comme épargne mise de côté.
-5. **Retour d’un produit** : menu **⋯ → Saisir un remboursement** sur la dépense ; il réduit les dépenses de la catégorie, il ne compte pas comme un revenu.
-6. **Doublons** : si une opération semblable existe (même compte et montant, à trois jours près), l’application le signale avant d’enregistrer ; confirmez si ce n’est pas la même.
-7. **Solde différent de la banque** : **Corriger le solde** sur le compte. L’écart devient une correction visible et datée dans l’historique.
-8. **Annuler ou supprimer** : « Annuler » garde l’opération dans l’historique sans effet ; « Supprimer » l’efface (erreur de saisie). Le solde initial ne se supprime pas : il se corrige.
-9. **Catégories** : dans **Réglages**, créez, renommez, déplacez ou archivez catégories et sous-catégories. Une catégorie déjà utilisée s’archive au lieu d’être supprimée, pour que l’historique reste lisible.
+En bref : **un seul compte** pour tout votre argent, une **feuille par mois** (prévu, réel, écart), et votre **épargne = ce qui reste** à la fin du mois.
 
-10. **Échéancier** : déclarez votre salaire, vos abonnements, charges fixes et paiements en plusieurs fois (montant habituel, périodicité, première échéance, fin éventuelle). Leurs échéances apparaissent comme **prévues** dans la vue d’ensemble et le budget, jamais comme payées : menu **⋯ → Marquer comme payé / reçu** (montant réel), **Ajuster cette échéance** (autre montant ou date pour cette fois) ou **Sauter cette échéance** (mois sans salaire, abonnement non renouvelé). Suspendez, reprenez ou résiliez un échéancier ; son historique est conservé.
-11. **Budget** : fixez pour le mois un **plafond des dépenses variables** et un **objectif d’épargne** (ou des valeurs par défaut dans **Réglages**). La jauge est verte, orange à partir du seuil d’alerte (80 % par défaut), rouge au-delà du plafond ; une dépense réelle n’est jamais bloquée. Le budget affiche aussi les revenus reçus et attendus, les dépenses indispensables du mois et l’épargne théorique (revenus attendus − indispensables − plafond).
-12. **Préférences financières** (Réglages) : réserve de sécurité, plancher d’épargne, plafond et objectif par défaut, seuil d’alerte.
-13. **Achats prévus** : ajoutez un produit ou un service (prix estimé, maximum acceptable, date cible, importance, urgence). Pendant la saisie, l’application calcule s’il est **réalisable** à la date voulue, en tenant compte de vos revenus et échéances prévus, du plafond variable, de l’épargne du mois, de votre réserve de sécurité et des autres achats prioritaires ; elle vérifie aussi les trois mois qui suivent l’achat. S’il ne l’est pas, elle propose une date réaliste, un budget réduit, un effort d’épargne mensuel ou une priorité plus haute. Vous pouvez toujours enregistrer l’objectif tel quel.
-14. **Matrice des achats** : vue « Matrice » de l’onglet Achats prévus, distincte de celle des tâches. Glissez une carte ou utilisez **⋯ → Déplacer en Qx** : l’ordre de financement suit les quadrants (Q1 d’abord), puis la date cible.
-15. **Réserver et acheter** : **⋯ → Réserver de l’argent** affecte une part du disponible libre à l’achat ; **Je l’ai acheté** enregistre la dépense réelle (prix et date réels), qui ne consomme pas le plafond variable. **Reporter** et **Abandonner** conservent l’historique ; la **prévision de trésorerie** affiche le disponible jour par jour avant et après les achats prévus.
-16. **Prêts** : onglet **Prêts**, bouton **Prêt ou emprunt**. Indiquez la personne, le montant, la date, l’échéance éventuelle et le compte concerné ; cochez « Prêt antérieur au suivi » si l’argent a bougé avant votre solde de départ. Un prêt n’est ni une dépense ni un revenu. **⋯ → Remboursement reçu** (ou **Rembourser**) enregistre un remboursement, même partiel ; **Abandonner le reste** (ou **Dette remise**) clôt le prêt sans mouvement d’argent ; **Annuler** sert aux saisies erronées. Un remboursement que l’on vous doit n’est jamais compté comme disponible dans les prévisions ; une dette est déduite à son échéance.
-17. **Alertes** : en tête de la vue d’ensemble, l’application signale ce qui demande votre attention (plafond presque atteint ou dépassé, salaire non reçu, échéances des 7 prochains jours ou en retard, disponible prévu sous votre réserve, achat devenu risqué, prêt en retard). Chaque alerte mène à l’onglet où agir ; elle disparaît d’elle-même quand sa cause disparaît.
-18. **Calendrier** : le mois jour par jour, entrées et sorties réalisées et prévues (échéances comprises). Touchez un jour pour voir ses opérations et les confirmer.
-19. **Statistiques** : sur 3, 6, 12 ou 24 mois, revenus, dépenses (indispensables, variables, achats prévus), épargne et taux d’épargne, dépenses par catégorie et sous-catégorie, plus grosses dépenses, écart entre prix estimés et prix payés.
-20. **Et si… ?** (Achats prévus) : testez une baisse de salaire, des dépenses variables réduites, un achat supplémentaire, un report ou un renoncement. Le résultat est comparé à la prévision actuelle ; rien n’est enregistré.
+### 11.1 Premier accès : votre argent aujourd’hui
 
-La **Vue d’ensemble** montre le disponible, l’épargne, les revenus reçus et attendus, les dépenses du mois (indispensables et variables), le non dépensé, ce qu’on vous doit et ce que vous devez, les opérations à venir ou en retard et la répartition par catégorie. **Opérations** filtre l’historique par période, type, statut, compte, catégorie, nature, montant et texte.
+1. Ouvrez **Mes achats** et commencez : la fenêtre **Mon argent aujourd’hui** demande votre total.
+2. Additionnez tout votre argent : compte en banque, épargne (livret…) et espèces. Saisissez ce **total** (virgule acceptée), gardez ou changez le nom du compte, puis **Commencer**.
+3. C’est le point de départ de tous les calculs. Il n’y a qu’un compte : vous n’en ajouterez pas d’autre.
+
+À la première visite, une **visite guidée** présente les écrans (§ 11.9).
+
+### 11.2 Lire « Mon mois »
+
+**Mon mois** est l’onglet par défaut. Choisissez le mois en haut de la feuille ; le résumé reprend les totaux. Chaque ligne montre le **prévu**, le **réel** (ce qui a vraiment été reçu ou payé) et l’**écart** (réel − prévu).
+
+| Section | Vous y voyez | Vous y faites |
+| --- | --- | --- |
+| Revenus | Salaire et autres revenus prévus du mois | Confirmer le montant reçu (§ 11.3) |
+| Dépenses fixes | Loyer, téléphone, transport… déjà remplis | Confirmer « payé » (§ 11.4) |
+| Dépenses variables | Courses, restaurants… : plafond, dépensé, reste | Ajouter les dépenses ou le total du mois ; commenter un dépassement (§ 11.5) |
+| Autres dépenses | Imprévus, achats réalisés | Bouton **Dépense** ou touche **E** (§ 11.6) |
+| En bas | Épargne prévue, épargne réelle, objectif | Vérifier que l’objectif est atteint (§ 11.8) |
+
+Seul le **réel** change votre solde ; le prévu sert à anticiper.
+
+### 11.3 Votre salaire : une saisie pour plusieurs mois
+
+1. Ajoutez un **revenu prévu** (section **Revenus** de Mon mois, ou **Opérations → Revenus et charges récurrents → Revenu prévu**).
+2. Indiquez le montant, le jour de versement et la période : un seul mois, ou plusieurs (ex. 2 290 € le 28, de novembre 2026 à février 2027).
+3. Le revenu apparaît **prévu** dans chaque mois de la période. Le jour venu, confirmez le montant **réellement reçu** : il peut être plus bas (absence, prime en moins). Le prévu reste affiché avec l’écart ; les autres mois ne changent pas.
+4. Erreur de saisie ? Confirmez de nouveau avec le bon montant, ou annulez l’enregistrement : la ligne redevient prévue.
+
+Un revenu ponctuel (cadeau, vente) se saisit dans **Opérations → + Opération**, type Revenu.
+
+### 11.4 Dépenses fixes : une fois pour toutes
+
+1. Déclarez une fois chaque charge fixe (loyer, téléphone, abonnement de transport) : **Opérations → Revenus et charges récurrents → Charge ou abonnement** (montant, jour, catégorie).
+2. Chaque mois, la feuille en est **déjà remplie**. Quand c’est payé, confirmez **payé** avec le montant réel.
+3. Le montant change ? Deux choix :
+   - **À partir de ce mois** : le loyer passe de 350 € à 400 € en janvier 2027 → choisissez janvier 2027 et 400 € ; novembre et décembre 2026 restent à 350 €.
+   - **Ce mois seulement** : une facture exceptionnellement plus élevée → seul ce mois change.
+4. Pas de paiement ce mois-ci : **sautez** l’échéance. Fin d’un abonnement : résiliez-le dans **Revenus et charges récurrents** ; l’historique reste.
+
+### 11.5 Dépenses variables : un plafond par poste
+
+1. Dans la section **Dépenses variables** de Mon mois, créez une **dépense variable plafonnée** : une catégorie et un plafond mensuel (ex. courses 300 €), à partir d’un mois.
+2. Au fil du mois, chaque dépense de cette catégorie (bouton **Dépense**, touche **E**) s’ajoute au **dépensé** ; la feuille affiche le **reste**.
+3. Vous ne gardez pas chaque ticket ? **Saisir le total du mois** : indiquez ce que vous avez dépensé en tout ; l’application complète les dépenses déjà saisies. Impossible pour un mois futur ou pour un total plus bas que ce qui est déjà saisi.
+4. **Dépassement** : la dépense n’est jamais bloquée, mais la ligne le signale et la feuille vous demande un **commentaire** (« invités pour un anniversaire »). Il reste attaché à ce mois.
+5. Changer un plafond : **à partir d’un mois**, comme pour une dépense fixe. Ne plus plafonner un poste : terminez-le après un mois ; ses dépenses restent dans l’historique.
+
+La somme de ces plafonds forme le **plafond variable** du mois. Un achat d’un projet d’achat (§ 11.10) ne l’entame pas.
+
+### 11.6 Autres dépenses et saisie rapide
+
+- Touche **E** (ou bouton **Dépense**, ou la palette) depuis n’importe quel écran : montant (virgule acceptée), libellé, catégorie. Cochez « Indispensable » pour une charge, « Exceptionnelle » pour un imprévu.
+- Une dépense d’une catégorie plafonnée rejoint sa ligne ; les autres apparaissent dans **Autres dépenses**.
+- **Retour d’un produit** : dans **Opérations**, menu **⋯ → Saisir un remboursement** sur la dépense ; il réduit les dépenses de la catégorie, ce n’est pas un revenu.
+- **Doublon** : si une opération semblable existe (même montant, à trois jours près), l’application le signale ; confirmez si ce n’est pas la même.
+- **Annuler** garde l’opération dans l’historique sans effet ; **Supprimer** l’efface (erreur de saisie).
+
+### 11.7 Prêts : une simple catégorie
+
+| Vous… | Saisissez |
+| --- | --- |
+| prêtez de l’argent | une dépense, catégorie « Prêts » |
+| remboursez quelqu’un | une dépense, catégorie « Prêts » |
+| empruntez de l’argent | un revenu, catégorie « Prêts » |
+| êtes remboursé | un revenu, catégorie « Prêts » |
+
+La catégorie d’un revenu est facultative : choisissez « Prêts » dans le formulaire du revenu. Si elle n’existe pas encore, créez-la dans **⚙ Réglages → Catégories**. Il n’y a plus de suivi du reste dû ni d’alerte de retard.
+
+### 11.8 Épargne et objectif
+
+- L’épargne n’est pas un compte : c’est **ce qui reste** du mois. **Épargne prévue** = revenus prévus − dépenses prévues ; **épargne réelle** = revenus reçus − dépenses payées.
+- Fixez votre **objectif d’épargne** dans **⚙ Réglages → Préférences financières** (objectif par défaut, repris chaque mois), ou pour un mois précis avec le bouton **Objectif d’épargne** de **Mon mois**. En bas de la feuille, l’épargne réelle est comparée à cet objectif.
+- **Analyses** montre, mois par mois, l’épargne, l’objectif **atteint** ou **manqué** et le plafond variable **tenu** ou **dépassé**.
+- Rien à « virer » vers l’épargne : l’argent qui reste sur le compte est votre épargne.
+
+### 11.9 Visite guidée et bulles d’aide
+
+- La **visite guidée** s’ouvre seule à votre première visite de Mes achats. Chaque étape a **Suivant**, **Précédent** et **Passer**. Une fois terminée ou passée, elle ne revient plus d’elle-même ; le bouton **?** en haut de Mes achats la relance.
+- Les petites icônes **?** à côté des sections et des notions (prévu, réel, plafond, épargne, « à partir de », « ce mois seulement ») ouvrent une courte explication. Elles s’utilisent aussi au clavier et sont lues par les lecteurs d’écran.
+
+### 11.10 Où trouver le reste
+
+| Onglet | Contenu |
+| --- | --- |
+| **Opérations** | **Historique** filtrable (période, type, statut, catégorie, nature, montant, texte) et bouton **+ Opération** (revenu ponctuel, dépense prévue). Vue **Revenus et charges récurrents** : salaire, loyer, abonnements, paiements en plusieurs fois ; suspendre, reprendre, résilier. |
+| **Projets d’achat** | Ajoutez un produit ou un service (prix estimé, maximum acceptable, date cible, importance, urgence) : l’application dit s’il est **réalisable** à la date voulue (revenus et échéances prévus, plafond variable, épargne du mois, réserve de sécurité, autres achats prioritaires, trois mois suivant l’achat) et propose sinon une date réaliste, un budget réduit, un effort d’épargne ou une priorité plus haute. Vue **Matrice** (glisser ou **⋯ → Déplacer en Qx**), **Réserver de l’argent**, **Je l’ai acheté**, **Reporter**, **Abandonner**, prévision de trésorerie et panneau **Et si… ?** (baisse de salaire, achat supplémentaire, report : rien n’est enregistré). |
+| **Analyses** | **Statistiques** sur 3, 6, 12 ou 24 mois : revenus, dépenses, épargne, objectif et plafond mois par mois, dépenses par catégorie, plus grosses dépenses, écart entre prix estimés et payés. **Calendrier** : le mois jour par jour, opérations réalisées et prévues. |
+| **⚙ Réglages** | **Mon compte** : **Renommer**, **Corriger le solde** (l’écart avec la banque devient une correction datée et visible). **Préférences financières** : réserve de sécurité, plafond variable et objectif d’épargne par défaut, seuil d’alerte (80 % par défaut). **Catégories** : créer, renommer, déplacer, archiver (une catégorie utilisée s’archive au lieu d’être supprimée). |
+
+Les **alertes** signalent ce qui demande votre attention : plafond presque atteint ou dépassé, dépense variable au-delà de son plafond, salaire non reçu, échéances des 7 prochains jours ou en retard, disponible prévu sous votre réserve, projet d’achat devenu risqué. Chacune mène à l’onglet où agir et disparaît d’elle-même quand sa cause disparaît.
+
+### 11.11 Après la mise à jour du 5 novembre 2026
+
+Si vous utilisiez déjà Mes achats :
+
+- vos comptes ont été **fusionnés** en un seul, sans changer le total : le solde de départ de chaque autre compte apparaît comme une correction « Solde de départ — <nom du compte> », et les virements entre vos comptes ont disparu ;
+- vos **prêts** sont devenus des dépenses ou des revenus de la catégorie « Prêts » ;
+- l’onglet Prêts, l’onglet Budget et la vue d’ensemble sont remplacés par **Mon mois** ; les anciens liens y mènent automatiquement (l’échéancier mène à **Opérations → Revenus et charges récurrents**, les statistiques et le calendrier à **Analyses**) ;
+- votre disponible inclut désormais l’argent qui était sur un compte d’épargne.
 
 ## 12. Notes & idées : de l’idée à la tâche
 
@@ -156,6 +235,7 @@ Supprimer une catégorie conserve ses idées, sans catégorie.
 | Pause/reprise d’une session active | Espace, hors champ de saisie et selon l’élément qui a le focus |
 | Fermer une fenêtre                 | Échap lorsque le dialogue le permet                            |
 | Aide rapide Angular                | ? ; la palette accepte aussi /                                 |
+| Visite guidée de Mes achats        | Bouton **?** en haut de Mes achats (distinct de la touche ?)   |
 
 Les champs de saisie gardent leur usage normal. Les raccourcis simples peuvent être désactivés ; Ctrl/Cmd + K reste un accès privilégié. Consulter la liste affichée dans l’interface plutôt que de supposer que tous les raccourcis optionnels sont identiques dans les deux variantes.
 

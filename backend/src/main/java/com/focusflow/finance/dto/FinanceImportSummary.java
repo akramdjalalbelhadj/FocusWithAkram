@@ -4,5 +4,5 @@ package com.focusflow.finance.dto;
 public record FinanceImportSummary(int accountsCreated, int accountsReused, int categoriesCreated, int categoriesReused,
                                    int operationsCreated, int operationsSkipped, int schedulesCreated,
                                    int schedulesSkipped, int budgetsRestored, boolean preferencesRestored,
-                                   int goalsCreated, int goalsSkipped, int loansCreated, int loansSkipped) {
+                                   int goalsCreated, int goalsSkipped) {
 }

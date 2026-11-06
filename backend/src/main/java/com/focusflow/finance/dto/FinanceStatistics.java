@@ -8,19 +8,26 @@ import java.util.UUID;
 
 /**
  * Statistiques d'une periode de mois complets, calculees sur les operations realisees. Les depenses sont nettes des
- * remboursements d'achats ; prets, virements et corrections n'y figurent pas.
+ * remboursements d'achats ; corrections de solde exclues. L'epargne d'un mois est ce qui reste : `unspent` = revenus
+ * recus - depenses payees.
  */
 public record FinanceStatistics(YearMonth from, YearMonth to, List<MonthStat> months, Totals totals,
                                 List<CategoryStat> categories, List<OperationResponse> topExpenses,
-                                List<PurchaseStat> purchases, BigDecimal writtenOffLent, BigDecimal writtenOffBorrowed) {
+                                List<PurchaseStat> purchases) {
 
+    /**
+     * Bilan d'un mois. `variableCap` / `savingsTarget` : plafond variable (somme des enveloppes actives, sinon valeur
+     * du mois ou par defaut) et objectif d'epargne (valeur du mois ou par defaut) qui s'appliquaient, absents si non
+     * definis, pour savoir si le seuil a ete depasse ou l'objectif tenu.
+     */
     public record MonthStat(YearMonth month, BigDecimal incomeReceived, BigDecimal expensesPaid,
                             BigDecimal essentialPaid, BigDecimal variablePaid, BigDecimal goalPurchasesPaid,
-                            BigDecimal savedToSavings, BigDecimal unspent) {
+                            BigDecimal savedToSavings, BigDecimal unspent, BigDecimal variableCap,
+                            BigDecimal savingsTarget) {
     }
 
     /**
-     * Totaux de la periode. Moyennes : par mois de la periode. `savingsRate` : epargne mise de cote / revenus recus,
+     * Totaux de la periode. Moyennes : par mois de la periode. `savingsRate` : epargne (revenus - depenses) / revenus recus,
      * en pourcentage arrondi (absent sans revenu).
      */
     public record Totals(BigDecimal incomeReceived, BigDecimal expensesPaid, BigDecimal essentialPaid,

@@ -1,0 +1,98 @@
+<form
+  class="card w-[min(30rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 anim-pop shadow-modal"
+  (ngSubmit)="submit()"
+  role="dialog"
+  aria-labelledby="env-title"
+>
+  <div class="flex items-center gap-1 mb-1">
+    <h2 id="env-title" class="text-lg font-bold">Dépense variable</h2>
+    <ff-help-tip label="Dépense variable" [text]="help.variable" />
+  </div>
+  <p class="text-sm text-muted">
+    Courses, restaurants, sorties… Fixez un plafond par mois : vous saisirez ensuite ce que vous dépensez
+    réellement.
+  </p>
+  <div class="space-y-4 mt-4">
+    <div>
+      <label class="field-label" for="env-cat">Catégorie</label>
+      <select
+        id="env-cat"
+        class="input"
+        name="categoryId"
+        aria-required="true"
+        aria-describedby="env-cat-hint"
+        [ngModel]="categoryId()"
+        (ngModelChange)="categoryId.set($event); error.set('')"
+        cdkFocusInitial
+      >
+        <option value="" disabled>Choisir…</option>
+        @for (c of categories(); track c.id) {
+          <optgroup [label]="c.name">
+            <option [value]="c.id" [disabled]="isTaken(c.id)">
+              {{ c.name }} (général){{ isTaken(c.id) ? ' — déjà suivie' : '' }}
+            </option>
+            @for (s of c.children; track s.id) {
+              <option [value]="s.id" [disabled]="isTaken(s.id)">
+                {{ s.name }}{{ isTaken(s.id) ? ' — déjà suivie' : '' }}
+              </option>
+            }
+          </optgroup>
+        }
+      </select>
+      <p id="env-cat-hint" class="field-hint">
+        Les dépenses de cette catégorie (et de ses sous-catégories) sont comptées automatiquement.
+      </p>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <div class="flex items-center gap-1">
+          <label class="field-label !mb-0" for="env-amount">Plafond par mois</label>
+          <ff-help-tip label="Plafond" [text]="help.cap" />
+        </div>
+        <div class="relative mt-1">
+          <input
+            id="env-amount"
+            class="input pr-8 text-right tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            name="amount"
+            placeholder="0,00"
+            [ngModel]="amount()"
+            (ngModelChange)="amount.set($event); error.set('')"
+          />
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true">€</span>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center gap-1">
+          <label class="field-label !mb-0" for="env-from">À partir de</label>
+          <ff-help-tip label="À partir de ce mois" [text]="help.fromMonth" />
+        </div>
+        <input
+          id="env-from"
+          type="month"
+          class="input mt-1"
+          name="fromMonth"
+          placeholder="AAAA-MM"
+          [ngModel]="fromMonth()"
+          (ngModelChange)="fromMonth.set($event ?? ''); error.set('')"
+        />
+      </div>
+    </div>
+    @if (summary()) {
+      <p class="rounded-xl bg-brand-soft text-sm p-3 flex items-start gap-2" aria-live="polite">
+        <ff-icon name="target" [size]="16" class="text-brand mt-0.5 flex-none" />
+        <span>{{ summary() }}</span>
+      </p>
+    }
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      <ff-icon name="check" [size]="16" />Ajouter
+    </button>
+  </div>
+</form>

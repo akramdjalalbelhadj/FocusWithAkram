@@ -74,14 +74,34 @@ class ScheduleTest {
     @Test
     void monthlyAndAnnualEquivalentsAreComputedExactlyThenRoundedToTheCent() {
         Schedule weekly = income(Frequency.WEEKLY, 1, "2026-11-02", "10");
-        assertThat(weekly.monthlyEquivalent()).isEqualByComparingTo("43.33");
-        assertThat(weekly.annualEquivalent()).isEqualByComparingTo("520.00");
+        assertThat(weekly.monthlyEquivalent(d("2026-11-02"))).isEqualByComparingTo("43.33");
+        assertThat(weekly.annualEquivalent(d("2026-11-02"))).isEqualByComparingTo("520.00");
         Schedule quarterly = income(Frequency.MONTHLY, 3, "2026-11-02", "30");
-        assertThat(quarterly.monthlyEquivalent()).isEqualByComparingTo("10.00");
-        assertThat(quarterly.annualEquivalent()).isEqualByComparingTo("120.00");
+        assertThat(quarterly.monthlyEquivalent(d("2026-11-02"))).isEqualByComparingTo("10.00");
+        assertThat(quarterly.annualEquivalent(d("2026-11-02"))).isEqualByComparingTo("120.00");
         Schedule yearly = income(Frequency.YEARLY, 1, "2026-11-02", "99.99");
-        assertThat(yearly.monthlyEquivalent()).isEqualByComparingTo("8.33");
-        assertThat(yearly.annualEquivalent()).isEqualByComparingTo("99.99");
+        assertThat(yearly.monthlyEquivalent(d("2026-11-02"))).isEqualByComparingTo("8.33");
+        assertThat(yearly.annualEquivalent(d("2026-11-02"))).isEqualByComparingTo("99.99");
+    }
+
+    @Test
+    void datedAmountsApplyFromTheirMonthAndSurviveAResume() {
+        Schedule s = income(Frequency.MONTHLY, 1, "2026-11-28", "2290");
+        s.changeAmount(java.time.YearMonth.parse("2027-01"), new BigDecimal("2400"), NOW);
+        assertThat(s.amountOn(d("2026-12-28"))).isEqualByComparingTo("2290");
+        assertThat(s.amountOn(d("2027-01-28"))).isEqualByComparingTo("2400");
+        assertThat(s.amountOn(d("2027-06-28"))).isEqualByComparingTo("2400");
+        assertThat(s.virtualOccurrence(d("2027-01-28"), NOW).getAmount()).isEqualByComparingTo("2400");
+        assertThat(s.monthlyEquivalent(d("2027-02-01"))).isEqualByComparingTo("2400");
+        assertThat(s.amountTimeline()).hasSize(2);
+
+        // Reprise apres une suspension : le montant valable devient le montant de base.
+        s.pause(NOW);
+        s.resume(d("2027-02-10"), NOW);
+        assertThat(s.getStartDate()).isEqualTo(d("2027-02-28"));
+        assertThat(s.getAmount()).isEqualByComparingTo("2400");
+        assertThat(s.getAmountVersions()).isEmpty();
+        assertThat(s.amountTimeline()).containsOnlyKeys(java.time.YearMonth.parse("2027-02"));
     }
 
     @Test

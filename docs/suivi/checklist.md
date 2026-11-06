@@ -1,6 +1,6 @@
 # FocusWithAkram — checklist
 
-Relevé du **5 novembre 2026** (après le lot 9). Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
+Relevé du **5 novembre 2026** (après le lot 9 ; lot 13 « Mes achats simplifié » validé le 6 novembre 2026). Les cases cochées indiquent une réalisation ou une validation consignée ; elles ne signifient pas que toute la recette a été relancée pendant cette révision documentaire. Une case ouverte reste un travail de validation ou d’évolution.
 
 **Priorité** : version stable de FocusWithAkram web avec **Angular** d’abord. Les cases marquées *(après la version stable)* concernent React ou le mobile, déprioritisés (décision du 5 novembre 2026, [refonte v2](refonte-v2.md)).
 
@@ -65,19 +65,40 @@ Relevé du **5 novembre 2026** (après le lot 9). Les cases cochées indiquent u
 - [x] Export CSV/JSON, sauvegarde versionnée et aperçu d’import.
 - [x] Doublons et échappement CSV testés.
 - [ ] Exécuter une restauration complète sur base vierge et comparer les volumes.
-- [x] Format versionné incluant les préférences utilisateur : sauvegarde v2 et suivantes (réglages, Top 3), v4 actuelle.
+- [x] Format versionné incluant les préférences utilisateur : sauvegarde v2 et suivantes (réglages, Top 3), v4 validée au lot 11.
+- [x] Sauvegarde v5 (lot 13) : aller-retour complet, import des versions antérieures avec conversion de la partie « Mes achats ».
 
-## FWA-F019 à F023 — Mes achats (Angular)
+## FWA-F019 à F023, F028, F029 — Mes achats (Angular)
 
-- [x] Comptes (courant, épargne, espèces), solde initial daté, correction tracée, archivage, suppression sans opération.
-- [x] Opérations : dépenses, revenus, virements, remboursements d’achat ; prévue / réalisée / annulée ; saisie au format français ; doublon probable confirmé explicitement.
+Validé avant le lot 13 et toujours vrai :
+
+- [x] Solde de départ daté et correction du solde tracée (opération visible dans l’historique).
+- [x] Opérations : dépenses, revenus, remboursements d’achat ; prévue / réalisée / annulée ; saisie au format français ; doublon probable confirmé explicitement.
 - [x] Échéancier (salaire, abonnements, charges, paiement en plusieurs fois) ; échéances jamais payées d’office.
-- [x] Budget : plafond variable signalé (jamais bloquant), objectif d’épargne, épargne théorique.
-- [x] Achats prévus : verdict de faisabilité avant enregistrement, matrice, achat réel, report, simulations « Et si… ? ».
-- [x] Prêts et emprunts : reste dû, remboursements, régularisation, annulation ; ni dépense ni revenu.
+- [x] Plafond variable signalé, jamais bloquant ; objectif d’épargne du mois ou par défaut.
+- [x] Projets d’achat : verdict de faisabilité avant enregistrement, matrice, achat réel, report, simulations « Et si… ? ».
 - [x] Alertes, calendrier financier, statistiques sur 3 à 24 mois.
-- [x] Scénario E2E `finance.spec.ts` (lot 9) : parcours complet, coupure réseau pendant un enregistrement, dialogues accessibles, 390 px sans débordement.
 - [ ] Matrice d’achats au glisser-déposer vérifiée par l’automatisation (le déplacement est testé par l’API et par le menu clavier).
+
+Lot 13 — validé le 6 novembre 2026 (188 tests backend, 104 tests Angular, scénario E2E `finance.spec.ts`) :
+
+- [x] Compte unique : premier accès par le total disponible (banque, épargne, espèces) ; second compte refusé ; renommer et corriger le solde dans ⚙ Réglages.
+- [x] Migration V8 essayée sur une base au schéma V7 remplie de deux comptes, d’un virement et d’un prêt (`SingleAccountMigrationIT`) : solde total inchangé, corrections « Solde de départ — <nom> », virements supprimés, mouvements de prêt convertis dans la catégorie « Prêts », table des prêts supprimée.
+- [x] Import d’une sauvegarde v3 ou v4 à plusieurs comptes et prêts : fusion dans le compte unique et conversion des prêts ; réimport sans doublon.
+- [x] Revenu prévu pour un mois ou une période (ex. 2 290 € le 28, de novembre 2026 à février 2027) ; réel plus bas confirmé, prévu et écart affichés ; réel corrigé ou annulé.
+- [x] Dépense fixe déjà remplie chaque mois et confirmée « payé » ; nouveau montant à partir d’un mois sans changer les mois précédents ; montant « ce mois seulement ».
+- [x] Dépenses variables plafonnées : dépensé, reste, total du mois saisi (refus pour un mois futur ou un total trop bas), commentaire demandé en cas de dépassement, alerte `ENVELOPE_OVER`.
+- [x] Feuille du mois : totaux prévus et réels, autres dépenses, épargne prévue et réelle conformes au calcul de la [feuille du mois](../produit/mes-achats/feuille-du-mois.md) § 3.
+- [x] Plafond variable du mois égal à la somme des plafonds des dépenses variables plafonnées (budget, prévision, alertes).
+- [x] Revenu avec catégorie facultative ; prêts saisis dans la catégorie « Prêts » ; onglet Prêts, régularisation et alertes de prêt absents.
+- [x] Plus de financement par l’épargne ni de plancher d’épargne dans les projets d’achat et les préférences.
+- [x] Analyses : épargne du mois, objectif atteint ou manqué, plafond variable tenu ou dépassé, mois par mois.
+- [x] Navigation : Mon mois (par défaut), Opérations (vue « Revenus et charges récurrents »), Projets d’achat, Analyses (statistiques, calendrier), ⚙ Réglages ; anciennes adresses `overview`, `budget`, `loans`, `schedules`, `statistics`, `calendar` redirigées.
+- [x] Visite guidée : ouverte à la première visite, Suivant / Précédent / Passer, non réaffichée une fois terminée ou passée, relançable par le bouton ? ; bulles d’aide ouvertes et fermées au clavier (Échap), audit axe sans violation.
+- [ ] Visite guidée et bulles d’aide essayées avec un vrai lecteur d’écran et au toucher.
+- [x] Scénario E2E `finance.spec.ts` adapté au lot 13 (le scénario du lot 9 couvrait comptes multiples et prêts) : parcours complet, coupure réseau, dialogues accessibles, 390 px sans débordement.
+- [x] Tests backend et Angular, lint et build sans échec ; 390 px sans défilement horizontal sur les 8 vues de Mes achats (E2E) ; thème sombre vérifié sur la page Mon mois avec des données simulées.
+- [x] Données personnelles (1 compte, sans prêt) importées telles quelles dans une base jetable à la nouvelle version : solde identique, aucune erreur ; sauvegarde JSON prise avant la mise à jour.
 
 ## FWA-F024 à F027 — Notes & idées (Angular)
 
@@ -101,7 +122,7 @@ Relevé du **5 novembre 2026** (après le lot 9). Les cases cochées indiquent u
 - [x] Entités dans `entity`, DTO dédiés, mappers et repositories séparés.
 - [x] Exceptions regroupées ; statuts et codes HTTP conservés sur les cas testés.
 - [x] Contrôleurs sans corps `Map` et sans repository directement injecté.
-- [x] 172 tests sans échec sur PostgreSQL 18.6 (unitaires, intégration, contrat, architecture), relevé du 5 novembre 2026 (lot 9).
+- [x] 188 tests sans échec sur PostgreSQL 18.6 (unitaires, intégration, contrat, architecture, migrations), relevé du 6 novembre 2026 (lot 13).
 - [x] JAR généré ; sorties `target/` retirées du suivi Git.
 - [ ] Vérifier les avertissements de dépréciation lors de la prochaine mise à niveau de dépendances (par exemple la configuration de test que Spring Framework 7.1 ne tolérera plus).
 
@@ -111,7 +132,7 @@ Relevé du **5 novembre 2026** (après le lot 9). Les cases cochées indiquent u
 - [x] Templates HTML Angular externalisés et vues JSX React séparées de la logique des pages.
 - [x] Feuilles CSS dédiées et tokens partagés.
 - [x] Builds, typage et lints vérifiés pendant les lots correspondants.
-- [x] Tests unitaires disponibles : 43 Angular, 12 React.
+- [x] Tests unitaires disponibles : 104 Angular (6 novembre 2026), 12 React.
 - [ ] Retirer les utilitaires Tailwind de tous les templates Angular si cette cible est confirmée pour la suite.
 - [ ] Décomposer davantage la coordination de l’état applicatif React quand son évolution le justifie *(après la version stable)*.
 

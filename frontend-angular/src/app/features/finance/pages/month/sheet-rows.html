@@ -1,0 +1,137 @@
+<div class="sheet-scroll">
+  <table class="sheet-table rows-table">
+    <caption class="sr-only-text">{{ caption() }}</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="c-label">Libellé</th>
+        <th scope="col" class="c-date">Date</th>
+        <th scope="col" class="c-num">
+          <span class="th-inner">Prévu<ff-help-tip label="Prévu" [text]="help.planned" /></span>
+        </th>
+        <th scope="col" class="c-num">
+          <span class="th-inner">Réel<ff-help-tip label="Réel" [text]="help.actual" /></span>
+        </th>
+        <th scope="col" class="c-num">
+          <span class="th-inner">Écart<ff-help-tip label="Écart" [text]="help.difference" /></span>
+        </th>
+        <th scope="col" class="c-status">Statut</th>
+        <th scope="col" class="c-menu"><span class="sr-only-text">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.key) {
+        <tr [class.is-skipped]="row.status === 'SKIPPED'" [class.is-late]="row.status === 'LATE'">
+          <th scope="row" class="c-label">
+            <span class="row-title">{{ row.label }}</span>
+            <span class="row-sub">
+              @if (detail(row); as d) {
+                <span>{{ d }}</span>
+              }
+              @if (!row.scheduleId) {
+                <span>Ponctuel</span>
+              }
+              @if (row.adjusted) {
+                <span class="badge badge-warning" title="Montant modifié pour ce mois seulement"
+                  >Ce mois seulement</span
+                >
+              }
+            </span>
+            @if (row.comment) {
+              <span class="row-comment"
+                ><ff-icon name="file-text" [size]="12" class="mt-0.5 flex-none" /><span>{{
+                  row.comment
+                }}</span></span
+              >
+            }
+          </th>
+          <td class="c-date">{{ shortDate(row.date) }}</td>
+          <td class="c-num c-planned" data-label="Prévu">{{ money(row.planned) }}</td>
+          <td class="c-num c-actual" data-label="Réel">
+            @if (row.actual !== null) {
+              <span class="font-semibold">{{ money(row.actual) }}</span>
+            } @else if (canRecord(row)) {
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm record-btn"
+                [attr.aria-label]="recordLabel(row)"
+                (click)="actions.recordActual(row, income())"
+              >
+                <ff-icon name="pencil" [size]="13" />Saisir
+              </button>
+            } @else {
+              <span class="text-muted">—</span>
+            }
+          </td>
+          <td class="c-num c-diff" data-label="Écart" [class]="tone(row)">{{ difference(row) }}</td>
+          <td class="c-status">
+            <span class="badge" [class]="badge[row.status]">{{ status(row) }}</span>
+          </td>
+          <td class="c-menu">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm btn-icon"
+              [attr.aria-label]="'Actions sur « ' + row.label + ' »'"
+              [cdkMenuTriggerFor]="menu"
+            >
+              <ff-icon name="more" />
+            </button>
+            <ng-template #menu>
+              <div cdkMenu class="menu anim-pop" aria-label="Actions">
+                @if (row.scheduleId) {
+                  @if (canRecord(row)) {
+                    <button cdkMenuItem class="menu-item" (click)="actions.recordActual(row, income())">
+                      <ff-icon [name]="row.status === 'DONE' ? 'pencil' : 'circle-check'" [size]="16" />{{
+                        row.status === 'DONE' ? 'Modifier le réel' : 'Saisir le réel'
+                      }}
+                    </button>
+                  }
+                  @if (row.status === 'PLANNED' || row.status === 'LATE') {
+                    <button cdkMenuItem class="menu-item" (click)="actions.adjustThisMonth(row)">
+                      <ff-icon name="calendar-check" [size]="16" />Ce mois seulement…
+                    </button>
+                    <button cdkMenuItem class="menu-item" (click)="actions.skipRow(row, income())">
+                      <ff-icon name="x" [size]="16" />{{ income() ? 'Pas reçu ce mois' : 'Pas payé ce mois' }}
+                    </button>
+                  }
+                  @if (row.status === 'DONE' || row.status === 'SKIPPED' || row.adjusted) {
+                    <button cdkMenuItem class="menu-item" (click)="actions.resetRow(row, income())">
+                      <ff-icon name="undo" [size]="16" />{{
+                        row.status === 'DONE'
+                          ? 'Annuler la saisie'
+                          : row.status === 'SKIPPED'
+                            ? 'Rétablir ce mois'
+                            : 'Revenir au montant habituel'
+                      }}
+                    </button>
+                  }
+                  <div class="menu-sep" role="separator"></div>
+                  <button cdkMenuItem class="menu-item" (click)="actions.changeAmountFrom(row, month())">
+                    <ff-icon name="calendar-days" [size]="16" />Changer à partir de ce mois…
+                  </button>
+                  <button cdkMenuItem class="menu-item" (click)="actions.editRowSchedule(row)">
+                    <ff-icon name="settings" [size]="16" />{{
+                      income() ? 'Modifier ou arrêter le revenu…' : 'Modifier ou arrêter la dépense…'
+                    }}
+                  </button>
+                } @else {
+                  @if (canRecord(row) && row.status !== 'DONE') {
+                    <button cdkMenuItem class="menu-item" (click)="actions.recordActual(row, income())">
+                      <ff-icon name="circle-check" [size]="16" />Saisir le réel
+                    </button>
+                  }
+                  <button cdkMenuItem class="menu-item" (click)="actions.editRowOperation(row)">
+                    <ff-icon name="pencil" [size]="16" />Modifier
+                  </button>
+                  <div class="menu-sep" role="separator"></div>
+                  <button cdkMenuItem class="menu-item danger" (click)="actions.deleteRowOperation(row)">
+                    <ff-icon name="trash" [size]="16" />Supprimer
+                  </button>
+                }
+              </div>
+            </ng-template>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
