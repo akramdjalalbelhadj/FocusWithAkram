@@ -17,6 +17,7 @@ import { NotesApi } from '../../../../core/api/notes.api';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
 import { ToastService } from '../../../../core/services/toast.service';
+import { saveBlob } from '../../../../core/util/download';
 import { Loader } from '../../../../core/util/loader';
 import { QuadrantBadgeComponent, StatusBadgeComponent } from '../../../../shared/ui/badges/index';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
@@ -29,6 +30,7 @@ import { TaskActions } from '../../../tasks/services/task-actions.service';
 import { NoteEditorComponent } from '../../components/note-editor/note-editor';
 import { NoteActions } from '../../services/note-actions.service';
 import { parseTags } from '../../util/markdown';
+import { markdownFileName, noteToMarkdownFile } from '../../util/markdown-blocks';
 
 /** Delai sans frappe avant l'enregistrement automatique. */
 const SAVE_DELAY = 800;
@@ -277,6 +279,27 @@ export class NotePage {
       content: this.content(),
       tags: parseTags(this.tagsText()),
     });
+  }
+
+  /** Telecharge la note en .md (en-tete de metadonnees + contenu), saisie en cours comprise. */
+  protected exportMarkdown(): void {
+    const note = this.note();
+    if (!note) return;
+    const title = this.title().trim() || note.title;
+    const categoryId = this.categoryId();
+    const category =
+      (this.categories.data() ?? []).find((c) => c.id === categoryId)?.name ??
+      (note.category?.id === categoryId ? note.category.name : null);
+    const file = noteToMarkdownFile({
+      title,
+      content: this.content(),
+      category,
+      tags: parseTags(this.tagsText()),
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt,
+    });
+    saveBlob(new Blob([file], { type: 'text/markdown;charset=utf-8' }), markdownFileName(title));
+    this.toast.success('Note exportée en Markdown.');
   }
 
   protected async remove(): Promise<void> {

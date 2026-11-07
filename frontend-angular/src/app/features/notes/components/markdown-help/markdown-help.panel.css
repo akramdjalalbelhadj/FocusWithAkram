@@ -1,0 +1,106 @@
+.md-help-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.md-help-nav {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.625rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.md-help-nav a {
+  flex: none;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+
+.md-help-nav a:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.md-help-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0.5rem 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+.md-help-section-title {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  scroll-margin-top: 0.75rem;
+}
+
+.md-help-example {
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.md-help-example-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.md-help-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.md-help-cell {
+  min-width: 0;
+  padding: 0.75rem 0.875rem;
+}
+
+.md-help-cell + .md-help-cell {
+  border-left: 1px solid var(--line);
+}
+
+.md-help-cell-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: var(--subtle);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.md-help-source {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .md-help-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .md-help-cell + .md-help-cell {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}

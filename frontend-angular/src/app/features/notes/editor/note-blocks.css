@@ -1,0 +1,259 @@
+/* Blocs riches du contenu des notes : alertes, code colore, tableaux. Styles globaux (contenu cree par Tiptap). */
+
+/* ---- Alertes [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION] ---- */
+
+.note-prose .note-callout {
+  --callout: var(--info);
+  --callout-soft: var(--info-soft);
+  margin: 0.875em 0;
+  padding: 0.625rem 0.875rem 0.625rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--callout) 22%, transparent);
+  border-left: 4px solid var(--callout);
+  border-radius: var(--radius-sm);
+  background: var(--callout-soft);
+}
+
+.note-prose .note-callout-tip {
+  --callout: var(--success);
+  --callout-soft: var(--success-soft);
+}
+.note-prose .note-callout-important {
+  --callout: var(--q4);
+  --callout-soft: var(--q4-soft);
+}
+.note-prose .note-callout-warning {
+  --callout: var(--warning);
+  --callout-soft: var(--warning-soft);
+}
+.note-prose .note-callout-caution {
+  --callout: var(--danger);
+  --callout-soft: var(--danger-soft);
+}
+
+.note-prose .note-callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.2rem;
+  color: var(--callout);
+  font-size: 0.875rem;
+  font-weight: 650;
+  user-select: none;
+}
+
+.note-prose .note-callout-title svg {
+  flex: none;
+}
+
+.note-prose .note-callout-body {
+  color: var(--fg);
+}
+
+.note-prose .note-callout-body > :first-child {
+  margin-top: 0;
+}
+
+.note-prose .note-callout-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Blocs de code colores ---- */
+
+.note-prose .note-code {
+  margin: 0.875em 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.note-prose .note-code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.375rem 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-3);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.note-prose .note-code-lang {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.note-prose select.note-code-lang {
+  padding: 0.125rem 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-prose select.note-code-lang:hover {
+  border-color: var(--line-strong);
+}
+
+.note-prose .note-code-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.75rem;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  color: var(--muted);
+  font-weight: 550;
+}
+
+.note-prose .note-code-copy:hover {
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.note-prose :is(.note-code-copy, select.note-code-lang):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.note-prose .note-code pre {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0;
+  background: none;
+  overflow-x: auto;
+  tab-size: 4;
+}
+
+.note-prose .note-code pre code {
+  display: block;
+  min-width: max-content;
+  white-space: pre;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.note-prose .hljs-comment,
+.note-prose .hljs-quote {
+  color: var(--subtle);
+  font-style: italic;
+}
+.note-prose .hljs-keyword,
+.note-prose .hljs-selector-tag,
+.note-prose .hljs-doctag,
+.note-prose .hljs-meta .hljs-keyword {
+  color: var(--q4);
+}
+.note-prose .hljs-string,
+.note-prose .hljs-regexp,
+.note-prose .hljs-addition,
+.note-prose .hljs-template-variable {
+  color: var(--success);
+}
+.note-prose .hljs-number,
+.note-prose .hljs-literal,
+.note-prose .hljs-symbol,
+.note-prose .hljs-bullet {
+  color: var(--q3);
+}
+.note-prose .hljs-title,
+.note-prose .hljs-title.function_,
+.note-prose .hljs-section,
+.note-prose .hljs-name {
+  color: var(--info);
+}
+.note-prose .hljs-attr,
+.note-prose .hljs-attribute,
+.note-prose .hljs-property,
+.note-prose .hljs-variable,
+.note-prose .hljs-selector-class,
+.note-prose .hljs-selector-id {
+  color: var(--q1);
+}
+.note-prose .hljs-type,
+.note-prose .hljs-built_in,
+.note-prose .hljs-title.class_ {
+  color: var(--q2);
+}
+.note-prose .hljs-meta,
+.note-prose .hljs-punctuation {
+  color: var(--muted);
+}
+.note-prose .hljs-deletion {
+  color: var(--danger);
+}
+.note-prose .hljs-emphasis {
+  font-style: italic;
+}
+.note-prose .hljs-strong {
+  font-weight: 700;
+}
+
+/* ---- Tableaux ---- */
+
+.note-prose .tableWrapper {
+  margin: 0.875em 0;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.note-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.note-prose :is(th, td) {
+  min-width: 6rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  vertical-align: top;
+  text-align: left;
+}
+
+.note-prose :is(th, td):last-child {
+  border-right: 0;
+}
+
+.note-prose tr:last-child > td {
+  border-bottom: 0;
+}
+
+.note-prose th {
+  background: var(--surface-2);
+  font-weight: 650;
+}
+
+.note-prose :is(th, td) > p {
+  margin: 0;
+}
+
+.note-prose .selectedCell {
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+}
+
+/* ---- Rendu compact (aide Markdown) ---- */
+
+.note-prose.note-prose-inline {
+  display: block;
+  min-height: 0;
+  padding: 0;
+}
+
+.note-prose.note-prose-inline .note-prose-content {
+  min-height: 0;
+}
+
+.note-prose.note-prose-inline .note-prose-content > :first-child {
+  margin-top: 0;
+}
+
+.note-prose.note-prose-inline .note-prose-content > :last-child {
+  margin-bottom: 0;
+}

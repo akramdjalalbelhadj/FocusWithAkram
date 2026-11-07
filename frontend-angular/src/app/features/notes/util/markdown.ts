@@ -4,7 +4,7 @@
  */
 
 export type MarkdownAction =
-  'heading' | 'bold' | 'italic' | 'code' | 'bullet' | 'ordered' | 'task' | 'quote';
+  'heading' | 'bold' | 'italic' | 'strike' | 'code' | 'bullet' | 'ordered' | 'task' | 'quote';
 
 export interface TextEdit {
   text: string;
@@ -12,7 +12,12 @@ export interface TextEdit {
   end: number;
 }
 
-const WRAP: Partial<Record<MarkdownAction, string>> = { bold: '**', italic: '*', code: '`' };
+const WRAP: Partial<Record<MarkdownAction, string>> = {
+  bold: '**',
+  italic: '*',
+  strike: '~~',
+  code: '`',
+};
 
 /** Prefixes de ligne : `match` reconnait le prefixe deja present, `make` produit celui de la n-ieme ligne. */
 const PREFIX: Partial<Record<MarkdownAction, { match: RegExp; make: (n: number) => string }>> = {

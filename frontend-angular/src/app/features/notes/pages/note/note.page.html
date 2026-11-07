@@ -34,6 +34,14 @@
     <div class="flex gap-1 ml-auto">
       <button
         type="button"
+        class="btn btn-ghost btn-sm"
+        title="Télécharger la note au format Markdown (.md)"
+        (click)="exportMarkdown()"
+      >
+        <ff-icon name="download" [size]="16" />Exporter .md
+      </button>
+      <button
+        type="button"
         class="btn btn-ghost btn-sm note-star"
         [attr.aria-pressed]="n.favorite"
         (click)="toggleFavorite()"

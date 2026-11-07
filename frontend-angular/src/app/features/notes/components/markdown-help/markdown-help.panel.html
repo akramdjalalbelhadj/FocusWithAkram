@@ -1,0 +1,73 @@
+<aside
+  class="md-help h-full w-[min(46rem,100vw)] bg-surface border-l border-line shadow-modal flex flex-col anim-slide"
+  role="dialog"
+  aria-labelledby="md-help-title"
+>
+  <header class="md-help-header">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="ref.close()">
+      <ff-icon name="arrow-left" [size]="16" />Retour
+    </button>
+    <div class="min-w-0">
+      <h2 id="md-help-title" class="font-bold text-lg">Syntaxes Markdown</h2>
+      <p class="text-sm text-muted">
+        À gauche ce que vous tapez, à droite le résultat. « Insérer » ajoute l’exemple à votre note.
+      </p>
+    </div>
+  </header>
+
+  <nav class="md-help-nav" aria-label="Rubriques">
+    @for (s of sections; track s.id) {
+      <a [href]="'#md-help-' + s.id" (click)="scrollTo(s.id, $event)">{{ s.title }}</a>
+    }
+  </nav>
+
+  <div class="md-help-body">
+    @for (s of sections; track s.id) {
+      <section [id]="'md-help-' + s.id" [attr.aria-labelledby]="'md-help-h-' + s.id">
+        <h3 [id]="'md-help-h-' + s.id" class="md-help-section-title">{{ s.title }}</h3>
+        @for (ex of s.examples; track ex.title) {
+          <article class="md-help-example">
+            <div class="md-help-example-head">
+              <div class="min-w-0">
+                <h4 class="font-semibold text-sm">{{ ex.title }}</h4>
+                @if (ex.hint) {
+                  <p class="text-xs text-muted">{{ ex.hint }}</p>
+                }
+              </div>
+              <div class="flex gap-1 flex-none">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="'Copier la syntaxe : ' + ex.title"
+                  (click)="copy(ex.markdown)"
+                >
+                  <ff-icon [name]="copied() === ex.markdown ? 'check' : 'copy'" [size]="14" />{{
+                    copied() === ex.markdown ? 'Copié' : 'Copier'
+                  }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  [attr.aria-label]="'Insérer dans la note : ' + ex.title"
+                  (click)="insert(ex.markdown)"
+                >
+                  <ff-icon name="plus" [size]="14" />Insérer
+                </button>
+              </div>
+            </div>
+            <div class="md-help-pair">
+              <div class="md-help-cell">
+                <span class="md-help-cell-label">Syntaxe</span>
+                <pre class="md-help-source"><code>{{ ex.markdown }}</code></pre>
+              </div>
+              <div class="md-help-cell">
+                <span class="md-help-cell-label">Résultat</span>
+                <ff-markdown-view [markdown]="ex.markdown" [label]="'Résultat : ' + ex.title" />
+              </div>
+            </div>
+          </article>
+        }
+      </section>
+    }
+  </div>
+</aside>

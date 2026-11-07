@@ -14,7 +14,7 @@
           type="button"
           role="tab"
           [attr.aria-selected]="tab() === 'preview'"
-          (click)="tab.set('preview')"
+          (click)="tab.set('preview'); linkDraft.set(null)"
         >
           <ff-icon name="eye" [size]="14" />Aperçu
         </button>
@@ -29,35 +29,116 @@
             [attr.aria-label]="item.label"
             [attr.title]="item.keys ? item.label + ' (' + item.keys + ')' : item.label"
             [attr.aria-pressed]="mode() === 'RICH' ? isActive(item.action) : null"
+            [disabled]="visualLocked()"
             (mousedown)="$event.preventDefault()"
             (click)="apply(item.action)"
           >
             <ff-icon [name]="item.icon" [size]="16" />
           </button>
         }
+        <button
+          type="button"
+          class="note-tool"
+          aria-label="Lien"
+          title="Lien (Ctrl+K)"
+          [attr.aria-pressed]="mode() === 'RICH' ? linkActive() : null"
+          [attr.aria-expanded]="linkDraft() !== null"
+          [disabled]="visualLocked()"
+          (mousedown)="$event.preventDefault()"
+          (click)="linkDraft() === null ? openLink() : cancelLink()"
+        >
+          <ff-icon name="link" [size]="16" />
+        </button>
+        <span class="note-tools-sep" aria-hidden="true"></span>
+        <button
+          type="button"
+          class="note-tool note-tool-text"
+          title="Insérer une alerte, un tableau, un bloc de code…"
+          [disabled]="visualLocked()"
+          [cdkMenuTriggerFor]="insertMenu"
+          (mousedown)="$event.preventDefault()"
+        >
+          <ff-icon name="plus" [size]="16" />Insérer<ff-icon name="chevron-down" [size]="14" />
+        </button>
       </div>
     }
-    <div class="note-mode" role="radiogroup" aria-label="Mode d’édition">
+    <div class="note-toolbar-end">
       <button
         type="button"
-        role="radio"
-        [attr.aria-checked]="mode() === 'MARKDOWN'"
-        title="Saisie Markdown avec aperçu"
-        (click)="setMode('MARKDOWN')"
+        class="note-tool note-tool-text"
+        title="Toutes les syntaxes Markdown, avec leur rendu"
+        (click)="openHelp()"
       >
-        Markdown
+        <ff-icon name="book-open" [size]="16" /><span class="note-help-label">Aide Markdown</span>
       </button>
-      <button
-        type="button"
-        role="radio"
-        [attr.aria-checked]="mode() === 'RICH'"
-        title="Éditeur visuel : la mise en forme s’affiche directement"
-        (click)="setMode('RICH')"
-      >
-        Visuel
-      </button>
+      <div class="note-mode" role="radiogroup" aria-label="Mode d’édition">
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="mode() === 'MARKDOWN'"
+          title="Saisie Markdown avec aperçu"
+          (click)="setMode('MARKDOWN')"
+        >
+          Markdown
+        </button>
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="mode() === 'RICH'"
+          title="Éditeur visuel : la mise en forme s’affiche directement"
+          (click)="setMode('RICH')"
+        >
+          Visuel
+        </button>
+      </div>
     </div>
   </div>
+
+  @if (linkDraft() !== null) {
+    <form class="note-linkbar" (submit)="applyLink($event)">
+      <label class="sr-only-text" for="note-link-url">Adresse du lien</label>
+      <input
+        #linkInput
+        id="note-link-url"
+        class="input"
+        type="text"
+        inputmode="url"
+        autocomplete="url"
+        placeholder="https://… , mailto:… ou #titre"
+        [value]="linkDraft()"
+        [attr.aria-invalid]="!!linkError()"
+        [attr.aria-describedby]="linkError() ? 'note-link-error' : null"
+        (input)="linkDraft.set($any($event.target).value); linkError.set('')"
+        (keydown.escape)="cancelLink()"
+      />
+      <button type="submit" class="btn btn-primary btn-sm">Appliquer</button>
+      @if (linkActive()) {
+        <button type="button" class="btn btn-ghost btn-sm" (click)="removeLink()">
+          Retirer le lien
+        </button>
+      }
+      <button type="button" class="btn btn-ghost btn-sm" (click)="cancelLink()">Annuler</button>
+      @if (linkError()) {
+        <p id="note-link-error" class="field-error w-full" role="alert">{{ linkError() }}</p>
+      }
+    </form>
+  }
+
+  @if (visualLocked()) {
+    <div class="note-locked" role="status">
+      <ff-icon name="alert" [size]="18" />
+      <div class="min-w-0">
+        <p class="font-semibold">Mode Visuel en lecture seule pour cette note</p>
+        <p class="text-sm">
+          Elle contient des éléments que le mode Visuel ne sait pas conserver (HTML, notes de bas de
+          page, images…). Pour ne rien perdre, modifiez-la en mode Markdown.
+        </p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="backToMarkdown()">
+        Passer en Markdown
+      </button>
+    </div>
+  }
 
   @if (mode() === 'RICH') {
     <div #richHost class="note-prose"></div>
@@ -78,3 +159,57 @@
     <div #previewHost class="note-prose note-prose-preview" role="tabpanel"></div>
   }
 </div>
+
+<ng-template #insertMenu>
+  <div cdkMenu class="menu anim-pop note-insert-menu" aria-label="Insérer">
+    <p class="note-menu-heading" aria-hidden="true">Alertes</p>
+    @for (c of callouts; track c.type) {
+      <button
+        cdkMenuItem
+        class="menu-item"
+        [class]="'note-menu-callout-' + c.type"
+        [attr.aria-label]="(isCalloutActive(c.type) ? 'Retirer l’alerte ' : 'Alerte ') + c.label"
+        (cdkMenuItemTriggered)="insert(c.type)"
+      >
+        <ff-icon [name]="c.icon" [size]="16" />{{ c.label }}
+        <span class="note-menu-hint">[!{{ c.marker }}]</span>
+        @if (isCalloutActive(c.type)) {
+          <ff-icon name="check" [size]="14" />
+        }
+      </button>
+    }
+    <div class="menu-sep" role="separator"></div>
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="insert('table')">
+      <ff-icon name="table" [size]="16" />Tableau
+    </button>
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="insert('codeblock')">
+      <ff-icon name="code-block" [size]="16" />Bloc de code
+    </button>
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="insert('hr')">
+      <ff-icon name="minus" [size]="16" />Séparateur
+    </button>
+    @if (inTable()) {
+      <div class="menu-sep" role="separator"></div>
+      <p class="note-menu-heading" aria-hidden="true">Tableau</p>
+      <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="tableAction('addRowAfter')">
+        <ff-icon name="plus" [size]="16" />Ajouter une ligne
+      </button>
+      <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="tableAction('addColumnAfter')">
+        <ff-icon name="plus" [size]="16" />Ajouter une colonne
+      </button>
+      <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="tableAction('deleteRow')">
+        <ff-icon name="minus" [size]="16" />Supprimer la ligne
+      </button>
+      <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="tableAction('deleteColumn')">
+        <ff-icon name="minus" [size]="16" />Supprimer la colonne
+      </button>
+      <button
+        cdkMenuItem
+        class="menu-item danger"
+        (cdkMenuItemTriggered)="tableAction('deleteTable')"
+      >
+        <ff-icon name="trash" [size]="16" />Supprimer le tableau
+      </button>
+    }
+  </div>
+</ng-template>

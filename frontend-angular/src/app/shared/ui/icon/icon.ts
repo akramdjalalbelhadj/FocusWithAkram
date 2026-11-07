@@ -100,6 +100,14 @@ import {
   Quote,
   SquareCheck,
   Star,
+  BookOpen,
+  Link,
+  MessageSquareWarning,
+  Minus,
+  OctagonAlert,
+  SquareCode,
+  Strikethrough,
+  Table,
 } from 'lucide';
 
 const ICONS: Record<string, IconNode> = {
@@ -204,6 +212,14 @@ const ICONS: Record<string, IconNode> = {
   'square-check': SquareCheck,
   quote: Quote,
   code: Code,
+  strike: Strikethrough,
+  link: Link,
+  table: Table,
+  minus: Minus,
+  'code-block': SquareCode,
+  'book-open': BookOpen,
+  'message-warning': MessageSquareWarning,
+  'octagon-alert': OctagonAlert,
 };
 
 /** Icone Lucide inline. Le balisage provient de donnees statiques de la bibliotheque, jamais de l'utilisateur. */
