@@ -1,0 +1,66 @@
+.emoji-picker {
+  display: flex;
+  width: min(20.75rem, calc(100vw - 1rem));
+  max-height: min(24rem, 70dvh);
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.emoji-search {
+  flex: none;
+}
+
+.emoji-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/* Titre de categorie colle en haut de la zone qui defile. */
+.emoji-section {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0.375rem 0.25rem 0.25rem;
+  background: var(--surface);
+  color: var(--subtle);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* 8 emojis par ligne : valeur reprise par la navigation au clavier (COLUMNS). */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.125rem;
+  padding-bottom: 0.375rem;
+}
+
+.emoji-cell {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.emoji-cell:hover {
+  background: var(--surface-2);
+}
+
+.emoji-cell:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+  background: var(--brand-soft);
+}

@@ -1,0 +1,40 @@
+<div class="emoji-picker" role="dialog" aria-label="Émojis" (keydown.escape)="onEscape($event)">
+  <label class="sr-only-text" for="emoji-search">Rechercher un émoji</label>
+  <input
+    #search
+    id="emoji-search"
+    class="input emoji-search"
+    type="search"
+    autocomplete="off"
+    placeholder="Rechercher : fusée, coche, café…"
+    [value]="query()"
+    (input)="setQuery($any($event.target).value)"
+    (keydown.enter)="pickFirst($event)"
+    (keydown)="onSearchKeydown($event)"
+  />
+  <!-- Nombre de resultats annonce pendant la recherche. -->
+  <p class="sr-only-text" aria-live="polite">{{ query().trim() ? sections()[0].label : '' }}</p>
+  <div class="emoji-scroll" (keydown)="onGridKeydown($event)">
+    @for (section of sections(); track section.id) {
+      <h3 class="emoji-section" [id]="'emoji-section-' + section.id">{{ section.label }}</h3>
+      @if (section.emojis.length) {
+        <div class="emoji-grid" role="group" [attr.aria-labelledby]="'emoji-section-' + section.id">
+          @for (emoji of section.emojis; track emoji.char; let i = $index) {
+            <button
+              type="button"
+              class="emoji-cell"
+              [attr.data-index]="section.offset + i"
+              [attr.tabindex]="section.offset + i === active() ? 0 : -1"
+              [attr.aria-label]="emoji.name"
+              [title]="emoji.name"
+              (focus)="active.set(section.offset + i)"
+              (click)="pick(emoji)"
+            >
+              {{ emoji.char }}
+            </button>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

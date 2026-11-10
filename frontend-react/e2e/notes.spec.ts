@@ -442,3 +442,74 @@ test("Notes : un seul bouton Exporter, en Markdown ou en PDF", async ({ page, re
   }
   expect(errors, "erreurs JavaScript").toEqual([]);
 });
+
+test("Notes : liste d’émojis dans la barre d’outils, insérés à la position du curseur", async ({ page, request }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  const stamp = Date.now().toString(36);
+  await setTutorialDone(request, true);
+  const previousMode = (await (await request.get(api + "settings")).json()).noteEditorMode;
+  expect((await request.patch(api + "settings", { data: { noteEditorMode: "RICH" } })).ok()).toBe(true);
+  const created = await request.post(api + "notes", { data: { title: `Émojis ${stamp}`, content: "Avant après" } });
+  expect(created.ok()).toBe(true);
+  const noteId = (await created.json()).id;
+  const content = async () => (await (await request.get(api + "notes/" + noteId)).json()).content;
+
+  try {
+    await page.goto("/notes/" + noteId);
+    const toolbar = page.getByRole("toolbar", { name: "Mise en forme — Contenu de l’idée" });
+    const editor = page.getByRole("textbox", { name: "Contenu de l’idée" });
+    const emojiButton = toolbar.getByRole("button", { name: "Émojis" });
+    const picker = page.getByRole("dialog", { name: "Émojis" });
+    await expect(editor).toHaveText("Avant après");
+
+    // Mode Visuel : curseur apres « Avant », recherche en francais puis Entree.
+    await editor.click();
+    await page.keyboard.press("Home");
+    for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowRight");
+    await emojiButton.click();
+    await expect(picker).toBeVisible();
+    await expect(picker.getByRole("searchbox", { name: "Rechercher un émoji" })).toBeFocused();
+    await axe(page, "liste d’émojis");
+    await picker.getByRole("searchbox").fill("fusée");
+    await expect(picker.getByRole("heading", { name: "1 résultat" })).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(picker).toHaveCount(0);
+    await expect(editor).toHaveText("Avant 🚀après");
+    await expect.poll(content).toBe("Avant 🚀après");
+
+    // Mode Markdown : la selection est remplacee ; le dernier emoji choisi est en tete des recents.
+    await page.getByRole("radio", { name: "Markdown" }).click();
+    const area = page.getByRole("textbox", { name: "Contenu de l’idée" });
+    await area.evaluate((el: HTMLTextAreaElement) => {
+      const start = el.value.indexOf("après");
+      el.setSelectionRange(start, start + "après".length);
+    });
+    await emojiButton.click();
+    await expect(picker.getByRole("heading").first()).toHaveText("Récents");
+    await picker.getByRole("button", { name: "coche verte" }).click();
+    await expect(area).toHaveValue("Avant 🚀✅");
+    await expect.poll(content).toBe("Avant 🚀✅");
+
+    // Echap ferme sans rien inserer et rend le focus au bouton.
+    await emojiButton.click();
+    await expect(picker).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(picker).toHaveCount(0);
+    await expect(emojiButton).toBeFocused();
+    await expect(area).toHaveValue("Avant 🚀✅");
+
+    // Sur telephone, la liste tient dans l'ecran.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await emojiButton.scrollIntoViewIfNeeded();
+    await emojiButton.click();
+    const box = (await picker.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    await axe(page, "liste d’émojis à 390 px");
+  } finally {
+    await request.patch(api + "settings", { data: { noteEditorMode: previousMode } });
+    await request.delete(api + "notes/" + noteId);
+  }
+  expect(errors, "erreurs JavaScript").toEqual([]);
+});

@@ -1,6 +1,11 @@
 import { CdkMenu, CdkMenuItem, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
 import { Dialog } from '@angular/cdk/dialog';
-import { Overlay } from '@angular/cdk/overlay';
+import {
+  CdkConnectedOverlay,
+  CdkOverlayOrigin,
+  ConnectedPosition,
+  Overlay,
+} from '@angular/cdk/overlay';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -44,6 +49,7 @@ import {
   applyHighlight,
   isHighlightColor,
 } from '../../util/highlight';
+import { EmojiPickerComponent } from '../emoji-picker/emoji-picker';
 import { MarkdownHelpPanelComponent } from '../markdown-help/markdown-help.panel';
 
 /** Derniere couleur de surlignage choisie : propre au navigateur, comme une preference d'affichage. */
@@ -127,7 +133,16 @@ function replaceText(area: HTMLTextAreaElement, next: string): void {
  */
 @Component({
   selector: 'ff-note-editor',
-  imports: [IconComponent, CdkMenu, CdkMenuItem, CdkMenuItemRadio, CdkMenuTrigger],
+  imports: [
+    IconComponent,
+    CdkMenu,
+    CdkMenuItem,
+    CdkMenuItemRadio,
+    CdkMenuTrigger,
+    CdkConnectedOverlay,
+    CdkOverlayOrigin,
+    EmojiPickerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Le contenu de Tiptap est cree hors du template : ses styles ne peuvent pas etre encapsules.
   encapsulation: ViewEncapsulation.None,
@@ -160,6 +175,15 @@ export class NoteEditorComponent {
     color,
     label: HIGHLIGHT_LABEL[color],
   }));
+  /** Liste d'emojis ouverte. */
+  protected readonly emojiOpen = signal(false);
+  /** Sous le bouton, aligne a gauche ou a droite selon la place ; au-dessus si l'ecran manque en bas. */
+  protected readonly emojiPositions: ConnectedPosition[] = [
+    { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 6 },
+    { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 6 },
+    { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -6 },
+  ];
+  private readonly emojiButton = viewChild<ElementRef<HTMLButtonElement>>('emojiButton');
   /** Couleur du bouton « Surligner » et de Ctrl+Maj+H : la derniere choisie dans le menu. */
   protected readonly highlightColor = signal<HighlightColor>(readHighlightColor());
   /** Couleur du surlignage sous le curseur (mode Visuel), null s'il n'y en a pas. */
@@ -316,6 +340,46 @@ export class NoteEditorComponent {
       return;
     }
     this.editText((text, start, end) => applyHighlight(text, start, end, color, toggle));
+  }
+
+  protected toggleEmojis(): void {
+    if (this.emojiOpen()) {
+      this.emojiOpen.set(false);
+      return;
+    }
+    // Mode Markdown : la selection du texte est gardee pendant que le focus est dans la liste.
+    if (this.mode() === 'MARKDOWN') this.saveSelection();
+    this.emojiOpen.set(true);
+  }
+
+  /** Echap : fermeture, focus rendu au bouton. */
+  protected closeEmojis(): void {
+    this.emojiOpen.set(false);
+    this.emojiButton()?.nativeElement.focus();
+  }
+
+  /** Clic hors de la liste ; le bouton lui-meme gere l'ouverture et la fermeture. */
+  protected onEmojiOutsideClick(event: MouseEvent): void {
+    const button = this.emojiButton()?.nativeElement;
+    if (button && event.target instanceof Node && button.contains(event.target)) return;
+    this.emojiOpen.set(false);
+  }
+
+  /** Insere l'emoji choisi a la position du curseur (a la place de la selection), puis rend la main au texte. */
+  protected insertEmoji(char: string): void {
+    this.emojiOpen.set(false);
+    if (this.mode() === 'RICH') {
+      this.rich?.chain().focus().insertContent(char).run();
+      return;
+    }
+    this.editText(
+      (text, start, end) => ({
+        text: text.slice(0, start) + char + text.slice(end),
+        start: start + char.length,
+        end: start + char.length,
+      }),
+      true,
+    );
   }
 
   protected isCalloutActive(type: CalloutType): boolean {

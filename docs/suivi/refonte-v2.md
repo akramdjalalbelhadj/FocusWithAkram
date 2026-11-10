@@ -29,6 +29,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-10 | Notes & idées : **onglets** des idées ouvertes ; ouvrir une idée lui donne un onglet, revenir à la liste le garde, seule une fermeture explicite (ou la suppression de l'idée) le retire ; fermer l'idée affichée ouvre sa voisine ; état d'interface propre au navigateur (`localStorage`), hors serveur et hors sauvegarde | Lot 17 ; [cahier des charges FWA-F032 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **barre d'outils collée** en haut de l'écran pendant la saisie d'un long texte ; **surlignage** en quatre couleurs (jaune `==texte==`, rouge, bleu ciel, violet `<mark data-color>`), une seule couleur par passage | Lot 18 ; [cahier des charges FWA-F026 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **export en PDF** à côté du Markdown, derrière un seul bouton « Exporter » ; PDF produit dans le navigateur (pdfmake), sans serveur | Lot 19 ; [cahier des charges FWA-F033 et § 4.5](../produit/cahier-des-charges.md) |
+| 2026-11-10 | Notes & idées : **liste d'émojis** dans la barre d'outils (catégories, recherche en français, récents), insertion à la position du curseur | Lot 20 ; [cahier des charges FWA-F026](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
 
@@ -53,6 +54,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 17 | Onglets des idées ouvertes dans Notes & idées (Angular seulement, sans changement d'API) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 18 | Éditeur des idées : barre d'outils collée et surlignage en quatre couleurs (Angular ; extrait des cartes côté serveur) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 19 | Export d'une idée en PDF ; un seul bouton « Exporter » (Markdown ou PDF) (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
+| 20 | Liste d'émojis dans la barre d'outils de l'éditeur (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -338,6 +340,18 @@ Vérifications (10 novembre 2026) : 264 tests backend sans échec, 194 tests uni
 | Émojis | Noto Emoji (`@expo-google-fonts/noto-emoji` 0.4.8, OFL-1.1) copiée dans `fonts/` au build, chargée à la demande ; découpage des émojis dans tout le document | `note-pdf.spec.ts` ; E2E « export » |
 
 Émojis (demande du même jour) : police Noto Emoji monochrome (une police de PDF n'a pas de couleurs), téléchargée seulement si l'idée en contient ; émojis complets (drapeaux, ZWJ, tons de peau, touches) dans tout le document ; police indisponible : PDF sans émojis et message. Vérifié par `note-pdf.spec.ts` (12 tests), l'E2E « export » (police `NotoEmoji` embarquée dans le fichier) et le rendu d'une idée riche en émojis. Limite restante : symboles rares absents des polices. Vérifications (10 novembre 2026) : 206 tests unitaires Angular, lint et build de production Angular ; `notes.spec.ts` à six scénarios sans échec sur backend et base jetables. Hors périmètre : React et Krimou (voir § 4).
+
+### Lot 20 — Liste d'émojis
+
+**Livré le 10 novembre 2026**, à valider par le propriétaire. Demande : une liste d'émojis dans la barre d'outils.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Liste | 217 émojis en 8 catégories avec nom français et mots-clés (`util/emoji-list.ts`) ; recherche multi-mots sans accents ni ligatures (« coeur rouge » → ❤️) ; 16 récents dans le navigateur | `emoji-list.spec.ts` (5 tests) |
+| Panneau | `ff-emoji-picker` ancré au bouton 🙂 (`cdkConnectedOverlay`, sous le bouton ou au-dessus selon la place) ; recherche focalisée, nombre de résultats annoncé, Entrée = premier résultat, grille à une seule tabulation et flèches, Échap rend le focus au bouton, clic à l'extérieur ferme | `emoji-picker.spec.ts` (4 tests) ; E2E « émojis » (audits axe, 390 px) |
+| Insertion | À la position du curseur en mode Visuel, à la place de la sélection en mode Markdown (sélection mémorisée pendant que le focus est dans la liste) | E2E « émojis » (contenu lu par l'API) |
+
+Défauts trouvés par les tests et corrigés : « coeur » ne trouvait pas « cœur » (ligature), et le nom de catégorie élargissait trop la recherche. Vérifications (10 novembre 2026) : 215 tests unitaires Angular, lint et build de production Angular (chargement initial inchangé) ; `notes.spec.ts` à sept scénarios sans échec sur backend et base jetables. Hors périmètre : React et Krimou (voir § 4).
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

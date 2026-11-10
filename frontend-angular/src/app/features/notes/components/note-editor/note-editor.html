@@ -82,6 +82,35 @@
           >
             <ff-icon name="link" [size]="16" />
           </button>
+          <!-- Liste d'emojis : panneau ancre sous le bouton, l'emoji choisi va a la position du curseur. -->
+          <button
+            #emojiButton
+            type="button"
+            class="note-tool"
+            aria-label="Émojis"
+            title="Insérer un émoji"
+            aria-haspopup="dialog"
+            cdkOverlayOrigin
+            #emojiOrigin="cdkOverlayOrigin"
+            [attr.aria-expanded]="emojiOpen()"
+            [disabled]="visualLocked()"
+            (mousedown)="$event.preventDefault()"
+            (click)="toggleEmojis()"
+          >
+            <ff-icon name="smile" [size]="16" />
+          </button>
+          <ng-template
+            cdkConnectedOverlay
+            [cdkConnectedOverlayOrigin]="emojiOrigin"
+            [cdkConnectedOverlayOpen]="emojiOpen()"
+            [cdkConnectedOverlayPositions]="emojiPositions"
+            [cdkConnectedOverlayPush]="true"
+            [cdkConnectedOverlayViewportMargin]="8"
+            (overlayOutsideClick)="onEmojiOutsideClick($event)"
+            (detach)="emojiOpen.set(false)"
+          >
+            <ff-emoji-picker (picked)="insertEmoji($event)" (cancel)="closeEmojis()" />
+          </ng-template>
           <span class="note-tools-sep" aria-hidden="true"></span>
           <button
             type="button"
