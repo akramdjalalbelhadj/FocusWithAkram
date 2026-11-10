@@ -1,6 +1,6 @@
 # FocusWithAkram — guide d’utilisation
 
-Mis à jour le **6 novembre 2026** pour Angular et React (Mes achats et Notes & idées : Angular seulement ; « Mes achats » décrit la version simplifiée du lot 13, Notes & idées et la matrice leurs tutoriels des lots 14 et 15 ; onglets, barre d’outils collée et surlignage de Notes & idées ajoutés le 10 novembre 2026). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
+Mis à jour le **6 novembre 2026** pour Angular et React (Mes achats et Notes & idées : Angular seulement ; « Mes achats » décrit la version simplifiée du lot 13, Notes & idées et la matrice leurs tutoriels des lots 14 et 15 ; onglets, barre d’outils collée, surlignage et export PDF de Notes & idées ajoutés le 10 novembre 2026). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
 
 ## 1. Ouvrir l’application
 
@@ -280,6 +280,15 @@ Chaque idée ouverte prend un **onglet** dans la barre en haut de Notes & idées
 - **Fermer** : la croix de l’onglet (ou le clic molette, ou **Suppr** sur l’onglet sélectionné au clavier). Fermer l’idée affichée ouvre l’onglet voisin (à droite, sinon à gauche), ou la liste s’il n’en reste aucun. Une idée fermée n’a plus d’onglet tant qu’on ne la rouvre pas. Avec plusieurs onglets, le bouton **⋯** à droite de la barre propose **Fermer les autres onglets** et **Fermer tous les onglets**.
 - L’onglet suit le titre que vous tapez et prend la couleur de la catégorie. Supprimer une idée ferme son onglet.
 - Les onglets restent après un rechargement de la page : ils sont gardés **dans ce navigateur** (propres à l’appareil, hors sauvegarde) et partagés entre ses fenêtres. Beaucoup d’onglets : la barre défile horizontalement.
+
+### 12.4 Exporter une idée (Markdown ou PDF)
+
+Dans l’éditeur d’une idée, le bouton **Exporter** (en haut à droite) propose deux formats. L’export prend la saisie en cours, même si elle n’est pas encore enregistrée. Le fichier porte le nom de l’idée (« Projet Krimou » donne `projet-krimou.md` ou `projet-krimou.pdf`).
+
+- **Markdown (.md)** : le texte tel que vous l’avez écrit, précédé d’un en-tête (titre, catégorie, étiquettes, dates) lu par Obsidian, GitHub et les éditeurs de texte. Pratique pour reprendre l’idée ailleurs.
+- **PDF (.pdf)** : un document A4 mis en page, téléchargé directement, à partager ou à imprimer. En tête, le titre, la catégorie, les étiquettes et les dates ; ensuite, le contenu comme dans le mode Visuel : titres, gras, italique, barré, liens cliquables, surlignages en couleur, listes, cases cochées ou non, alertes, citations, tableaux et blocs de code colorés. Pied de page : titre et numéro de page. Le premier export PDF prend une ou deux secondes (chargement de l’outil de mise en page) ; « Export PDF… » s’affiche pendant ce temps.
+
+Limites du PDF : les émojis et les caractères absents de la police (certains symboles) n’apparaissent pas ; dans les blocs de code, seuls les caractères latins s’affichent.
 
 ## 13. Recherche et raccourcis
 

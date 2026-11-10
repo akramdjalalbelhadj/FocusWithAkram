@@ -28,6 +28,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-06 | Matrice d'Eisenhower : même type de **tutoriel**, dont le schéma est la matrice elle-même (grille 2 × 2 aux couleurs des quadrants, axes Urgent / Pas urgent et Important / Pas important) et qui insiste sur Q2 « Planifier » ; état `matrixTutorialDone` indépendant de celui des notes, côté serveur, hors sauvegarde ; relançable par « Comment ça marche ? » | Lot 15 ; migration V11 ; [cahier des charges FWA-F031 et § 4.1](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **onglets** des idées ouvertes ; ouvrir une idée lui donne un onglet, revenir à la liste le garde, seule une fermeture explicite (ou la suppression de l'idée) le retire ; fermer l'idée affichée ouvre sa voisine ; état d'interface propre au navigateur (`localStorage`), hors serveur et hors sauvegarde | Lot 17 ; [cahier des charges FWA-F032 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **barre d'outils collée** en haut de l'écran pendant la saisie d'un long texte ; **surlignage** en quatre couleurs (jaune `==texte==`, rouge, bleu ciel, violet `<mark data-color>`), une seule couleur par passage | Lot 18 ; [cahier des charges FWA-F026 et § 4.5](../produit/cahier-des-charges.md) |
+| 2026-11-10 | Notes & idées : **export en PDF** à côté du Markdown, derrière un seul bouton « Exporter » ; PDF produit dans le navigateur (pdfmake), sans serveur | Lot 19 ; [cahier des charges FWA-F033 et § 4.5](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
 
@@ -51,6 +52,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 15 | Tutoriel de la matrice d'Eisenhower (grille 2 × 2 colorée, secret de la case « Planifier »), disposition `matrix` du schéma et moteur commun `PageTourEngine` (API et Angular) | Validé le 6 novembre 2026 (branche `lot-14-15-tutoriels`, fusionnée dans `main`) |
 | 17 | Onglets des idées ouvertes dans Notes & idées (Angular seulement, sans changement d'API) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 18 | Éditeur des idées : barre d'outils collée et surlignage en quatre couleurs (Angular ; extrait des cartes côté serveur) | Livré le 10 novembre 2026, à valider par le propriétaire |
+| 19 | Export d'une idée en PDF ; un seul bouton « Exporter » (Markdown ou PDF) (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -323,6 +325,18 @@ Vérifications (10 novembre 2026) : 176 tests unitaires Angular (dont 17 nouveau
 | Extrait | `NoteMapper.excerpt` retire `==` (pas dans « a == b ») et les balises `<mark>` | `NoteMapperTest.theExcerptDropsHighlightMarkersButKeepsComparisons` |
 
 Vérifications (10 novembre 2026) : 264 tests backend sans échec, 194 tests unitaires Angular, lint et build de production Angular ; `notes.spec.ts` à cinq scénarios sans échec sur backend et base jetables ; audits axe en thème clair et sombre sur du texte surligné. Restent humains : lecteur d'écran réel et toucher. Hors périmètre : React et Krimou (voir § 4).
+
+### Lot 19 — Export PDF
+
+**Livré le 10 novembre 2026**, à valider par le propriétaire. Demande : exporter une idée en PDF ; un seul bouton d'export avec deux choix, Markdown ou PDF.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Bouton | « Exporter .md » remplacé par **Exporter** (menu : Markdown (.md), PDF (.pdf)) ; « Export PDF… » et bouton désactivé pendant la génération ; message de réussite ou d'erreur | E2E « export » (audit axe du menu) |
+| PDF | `notePdfDefinition` (pure) : en-tête (titre, catégorie, étiquettes, dates), titres, gras, italique, barré, code, liens cliquables, surlignages en couleur, listes imbriquées, cases dessinées, alertes colorées, citations, tableaux avec en-tête, code coloré (Courier), séparateurs, pied de page (titre, page / total) ; idée vide signalée | `note-pdf.spec.ts` (7 tests, dont un vrai PDF généré : `%PDF-`) ; rendu d'une idée riche vérifié en image |
+| Chargement | pdfmake 0.3.13 (figé) et ses polices dans des morceaux paresseux (≈ 250 + 310 Ko compressés), chargés au premier export ; chargement initial inchangé ; `allowedCommonJsDependencies` | Build de production sans avertissement |
+
+Limites connues : émojis et caractères absents de Roboto non affichés ; code limité aux caractères latins (Courier). Vérifications (10 novembre 2026) : 201 tests unitaires Angular, lint et build de production Angular ; `notes.spec.ts` à six scénarios sans échec sur backend et base jetables. Hors périmètre : React et Krimou (voir § 4).
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

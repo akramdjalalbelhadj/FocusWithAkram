@@ -395,3 +395,48 @@ test("Notes : surligner en jaune, rouge, bleu ciel ou violet, en mode Visuel com
   }
   expect(errors, "erreurs JavaScript").toEqual([]);
 });
+
+test("Notes : un seul bouton Exporter, en Markdown ou en PDF", async ({ page, request }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  const stamp = Date.now().toString(36);
+  await setTutorialDone(request, true);
+  const title = `Export ${stamp}`;
+  const content = "## Plan\n\n- [x] ==Réserver== la salle\n- [ ] Écrire le compte rendu\n\n```js\nconst a = 1;\n```";
+  const created = await request.post(api + "notes", { data: { title, content, tags: ["visa"] } });
+  expect(created.ok()).toBe(true);
+  const noteId = (await created.json()).id;
+
+  try {
+    await page.goto("/notes/" + noteId);
+    const exportButton = page.getByRole("button", { name: "Exporter" });
+    await expect(exportButton).toBeVisible();
+    await exportButton.click();
+    const menu = page.getByRole("menu", { name: "Exporter la note" });
+    await expect(menu.getByRole("menuitem")).toHaveText(["Markdown (.md)", "PDF (.pdf)"]);
+    await axe(page, "menu d’export");
+
+    // Markdown : en-tete YAML puis contenu tel quel.
+    const [md] = await Promise.all([page.waitForEvent("download"), menu.getByRole("menuitem", { name: "Markdown (.md)" }).click()]);
+    expect(md.suggestedFilename()).toBe(`export-${stamp}.md`);
+    const mdText = (await (await md.createReadStream()).toArray()).map((c) => c.toString()).join("");
+    expect(mdText).toContain(`title: "${title}"`);
+    expect(mdText).toContain("- [x] ==Réserver== la salle");
+
+    // PDF : vrai fichier, telecharge directement (pdfmake charge au premier export).
+    await exportButton.click();
+    const [pdf] = await Promise.all([
+      page.waitForEvent("download", { timeout: 30000 }),
+      page.getByRole("menu", { name: "Exporter la note" }).getByRole("menuitem", { name: "PDF (.pdf)" }).click(),
+    ]);
+    expect(pdf.suggestedFilename()).toBe(`export-${stamp}.pdf`);
+    const bytes = Buffer.concat(await (await pdf.createReadStream()).toArray());
+    expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(bytes.length).toBeGreaterThan(5000);
+    await expect(page.getByText("Note exportée en PDF.")).toBeVisible();
+    await expect(exportButton).toBeEnabled();
+  } finally {
+    await request.delete(api + "notes/" + noteId);
+  }
+  expect(errors, "erreurs JavaScript").toEqual([]);
+});

@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AppError } from '../../../../core/api/app-error';
@@ -32,7 +33,7 @@ import { NoteTabsComponent } from '../../components/note-tabs/note-tabs';
 import { NoteActions } from '../../services/note-actions.service';
 import { NoteTabs } from '../../services/note-tabs.service';
 import { parseTags } from '../../util/markdown';
-import { markdownFileName, noteToMarkdownFile } from '../../util/markdown-blocks';
+import { noteFileName, noteToMarkdownFile } from '../../util/markdown-blocks';
 
 /** Delai sans frappe avant l'enregistrement automatique. */
 const SAVE_DELAY = 800;
@@ -58,6 +59,9 @@ const closingSaves = new Map<string, Promise<void>>();
     RouterLink,
     NoteEditorComponent,
     NoteTabsComponent,
+    CdkMenu,
+    CdkMenuItem,
+    CdkMenuTrigger,
     StatusBadgeComponent,
     QuadrantBadgeComponent,
     EmptyComponent,
@@ -93,6 +97,8 @@ export class NotePage {
   protected readonly tagsText = signal('');
 
   protected readonly saveState = signal<SaveState>('saved');
+  /** Export PDF en cours (premier export : chargement de pdfmake). */
+  protected readonly exportingPdf = signal(false);
   protected readonly saveError = signal('');
   private readonly dirty = new Set<EditableField>();
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -322,25 +328,59 @@ export class NotePage {
     });
   }
 
+  /** Categorie choisie a l'ecran (saisie en cours comprise), pour les exports. */
+  private categoryName(note: Note): string | null {
+    const categoryId = this.categoryId();
+    return (
+      (this.categories.data() ?? []).find((c) => c.id === categoryId)?.name ??
+      (note.category?.id === categoryId ? note.category.name : null)
+    );
+  }
+
   /** Telecharge la note en .md (en-tete de metadonnees + contenu), saisie en cours comprise. */
   protected exportMarkdown(): void {
     const note = this.note();
     if (!note) return;
     const title = this.title().trim() || note.title;
-    const categoryId = this.categoryId();
-    const category =
-      (this.categories.data() ?? []).find((c) => c.id === categoryId)?.name ??
-      (note.category?.id === categoryId ? note.category.name : null);
     const file = noteToMarkdownFile({
       title,
       content: this.content(),
-      category,
+      category: this.categoryName(note),
       tags: parseTags(this.tagsText()),
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
     });
-    saveBlob(new Blob([file], { type: 'text/markdown;charset=utf-8' }), markdownFileName(title));
+    saveBlob(new Blob([file], { type: 'text/markdown;charset=utf-8' }), noteFileName(title, 'md'));
     this.toast.success('Note exportée en Markdown.');
+  }
+
+  /**
+   * Telecharge la note en PDF mis en page (titre, categorie, etiquettes, dates, contenu, numeros de page), saisie
+   * en cours comprise. pdfmake n'est charge qu'au premier export.
+   */
+  protected async exportPdf(): Promise<void> {
+    const note = this.note();
+    if (!note || this.exportingPdf()) return;
+    this.exportingPdf.set(true);
+    const title = this.title().trim() || note.title;
+    const category = this.categoryName(note);
+    const tags = parseTags(this.tagsText());
+    const meta = [
+      ...(category ? [`Catégorie : ${category}`] : []),
+      ...(tags.length ? [`Étiquettes : ${tags.join(', ')}`] : []),
+      `Créée le ${this.settings.fmt(note.createdAt)}`,
+      `Modifiée le ${this.settings.fmt(note.updatedAt)}`,
+    ];
+    try {
+      const { noteToPdf } = await import('../../util/note-pdf-export');
+      const pdf = await noteToPdf({ title, content: this.content(), meta });
+      saveBlob(pdf, noteFileName(title, 'pdf'));
+      this.toast.success('Note exportée en PDF.');
+    } catch (e) {
+      this.toast.errorFrom(e, 'Export PDF impossible. Réessayez, ou exportez en Markdown.');
+    } finally {
+      this.exportingPdf.set(false);
+    }
   }
 
   protected async remove(): Promise<void> {

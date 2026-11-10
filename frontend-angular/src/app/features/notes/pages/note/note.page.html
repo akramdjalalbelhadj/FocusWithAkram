@@ -32,13 +32,17 @@
       }
     </p>
     <div class="flex gap-1 ml-auto">
+      <!-- Un seul bouton d'export, deux formats : Markdown (texte) ou PDF (document mis en page). -->
       <button
         type="button"
         class="btn btn-ghost btn-sm"
-        title="Télécharger la note au format Markdown (.md)"
-        (click)="exportMarkdown()"
+        title="Télécharger la note en Markdown ou en PDF"
+        [cdkMenuTriggerFor]="exportMenu"
+        [disabled]="exportingPdf()"
+        [attr.aria-busy]="exportingPdf() || null"
       >
-        <ff-icon name="download" [size]="16" />Exporter .md
+        <ff-icon name="download" [size]="16" />{{ exportingPdf() ? 'Export PDF…' : 'Exporter'
+        }}<ff-icon name="chevron-down" [size]="14" />
       </button>
       <button
         type="button"
@@ -183,3 +187,24 @@
     </aside>
   </div>
 }
+
+<ng-template #exportMenu>
+  <div cdkMenu class="menu anim-pop" aria-label="Exporter la note">
+    <button
+      cdkMenuItem
+      class="menu-item"
+      title="Texte Markdown avec en-tête : Obsidian, GitHub, éditeurs de texte"
+      (cdkMenuItemTriggered)="exportMarkdown()"
+    >
+      <ff-icon name="file-text" [size]="16" />Markdown (.md)
+    </button>
+    <button
+      cdkMenuItem
+      class="menu-item"
+      title="Document mis en page, à partager ou à imprimer"
+      (cdkMenuItemTriggered)="exportPdf()"
+    >
+      <ff-icon name="file-down" [size]="16" />PDF (.pdf)
+    </button>
+  </div>
+</ng-template>

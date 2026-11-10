@@ -175,6 +175,11 @@ export function noteToMarkdownFile(note: ExportableNote): string {
 
 /** Nom de fichier lisible et portable tire du titre : « Mon idée ! » -> « mon-idee.md ». */
 export function markdownFileName(title: string): string {
+  return noteFileName(title, 'md');
+}
+
+/** Nom de fichier d'export tire du titre, pour l'extension donnee (« mon-idee.pdf »). */
+export function noteFileName(title: string, extension: 'md' | 'pdf'): string {
   const slug = title
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -182,7 +187,7 @@ export function markdownFileName(title: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
-  return `${slug || 'note'}.md`;
+  return `${slug || 'note'}.${extension}`;
 }
 
 function escapeRegExp(value: string): string {
