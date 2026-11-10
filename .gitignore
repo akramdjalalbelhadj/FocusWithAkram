@@ -7,8 +7,6 @@ target/
 # Outils locaux (Node portable)
 .tools/
 
-# Données et journaux locaux : ne jamais versionner (données personnelles)
-backend/data/
 logs/
 *.log
 
