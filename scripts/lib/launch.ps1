@@ -228,6 +228,40 @@ function Assert-FfDataVersion {
     "l'application (PostgreSQL $expected). Revenez a une version de l'application qui utilise PostgreSQL $actual.")
 }
 
+# Lance "npm install" si node_modules est absent ou ne correspond plus a package-lock.json (dependance ajoutee ou
+# modifiee depuis la derniere installation). L'empreinte du fichier de verrouillage installe est notee dans
+# node_modules\.focuswithakram-install apres chaque installation reussie.
+function Update-FfFrontendDependencies([string]$Frontend) {
+  $lock = Join-Path $Frontend 'package-lock.json'
+  if (-not (Test-Path $lock)) { $lock = Join-Path $Frontend 'package.json' }
+  $modules = Join-Path $Frontend 'node_modules'
+  $stamp = Join-Path $modules '.focuswithakram-install'
+  $hash = (Get-FileHash $lock -Algorithm SHA256).Hash
+  if ((Test-Path $stamp) -and ((Get-Content $stamp -TotalCount 1) -eq $hash)) { return }
+  $why = if (Test-Path $modules) { 'dependances modifiees depuis la derniere installation' } else { 'premier lancement' }
+  Write-Host "==> Installation des dependances frontend ($why)" -ForegroundColor Cyan
+  Push-Location $Frontend
+  # Windows PowerShell 5.1 change chaque ligne stderr d'un programme en erreur quand la sortie est redirigee : en mode
+  # Stop, un simple avertissement de npm interromprait l'installation. Seul le code de retour fait foi.
+  $previousPreference = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    & npm install 2>&1 | ForEach-Object { "$_" }
+    if ($LASTEXITCODE -ne 0) { throw "npm install a echoue dans $Frontend." }
+  } finally {
+    $ErrorActionPreference = $previousPreference
+    Pop-Location
+  }
+  # Empreinte relue apres coup : npm peut avoir mis a jour package-lock.json.
+  Set-Content -Encoding ASCII $stamp (Get-FileHash $lock -Algorithm SHA256).Hash
+}
+
+# Dernieres lignes d'un journal, sans les codes couleur ANSI (illisibles dans la console de Windows PowerShell 5.1).
+function Get-FfLogTail([string]$Path, [int]$Lines = 25) {
+  if (-not (Test-Path $Path)) { return '' }
+  ((Get-Content $Path -Tail $Lines) -replace "\x1b\[[0-9;]*m", '') -join "`n"
+}
+
 # ---- Ligne de commande ------------------------------------------------------------------------
 function ConvertTo-FfPortList([string]$Text) {
   @($Text -split '[,\s]+' | Where-Object { $_ } | ForEach-Object { [int]$_ })

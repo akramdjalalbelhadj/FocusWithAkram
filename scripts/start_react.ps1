@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   Lance FocusWithAkram en local (backend Spring Boot + frontend React) sans Docker.
 
@@ -15,7 +15,7 @@
   Peut aussi etre fourni par la variable d'environnement FOCUSFLOW_NODE_HOME.
 
 .PARAMETER SkipInstall
-  Ne lance pas "npm install" meme si node_modules est absent.
+  Ne lance pas "npm install", meme si node_modules est absent ou ne correspond plus a package-lock.json.
 
 .PARAMETER NoBrowser
   N'ouvre pas le navigateur une fois l'application prete.
@@ -82,10 +82,8 @@ try {
 
 # ---- Dependances frontend ---------------------------------------------------------------------
 $Frontend = Join-Path $Root 'frontend-react'
-if (-not $SkipInstall -and -not (Test-Path (Join-Path $Frontend 'node_modules'))) {
-  Write-Step 'Installation des dependances frontend (premier lancement)'
-  Push-Location $Frontend
-  try { & npm install; if ($LASTEXITCODE -ne 0) { Fail 'npm install a echoue.' } } finally { Pop-Location }
+if (-not $SkipInstall) {
+  try { Update-FfFrontendDependencies $Frontend } catch { Fail $_.Exception.Message }
 }
 
 # ---- Demarrage --------------------------------------------------------------------------------
@@ -150,7 +148,10 @@ try {
     try { Invoke-WebRequest "http://127.0.0.1:$FrontendPort" -UseBasicParsing -TimeoutSec 2 | Out-Null; $ready = $true; break } catch { }
     Start-Sleep -Seconds 2
   }
-  if (-not $ready) { Fail "Le frontend n'a pas demarre a temps." }
+  if (-not $ready) {
+    $frontendErr = Join-Path $LogDir 'frontend.err.log'
+    Fail "Le frontend n'a pas demarre a temps. Consultez $(Join-Path $LogDir 'frontend.log') et $frontendErr`n$(Get-FfLogTail $frontendErr)"
+  }
 
   Write-Host ''
   Write-Host '  FocusWithAkram est pret' -ForegroundColor Green

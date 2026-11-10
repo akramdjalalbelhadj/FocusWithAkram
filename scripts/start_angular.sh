@@ -69,10 +69,7 @@ for p in "$FRONTEND_PORT" 4200 5173; do
 done
 
 # ---- Dependances frontend -----------------------------------------------------------------------
-if [ ! -d "$ROOT/frontend-angular/node_modules" ]; then
-  step "Installation des dependances frontend (premier lancement)"
-  (cd "$ROOT/frontend-angular" && npm install)
-fi
+update_frontend_dependencies "$ROOT/frontend-angular"
 
 # ---- Demarrage ----------------------------------------------------------------------------------
 pids=()
@@ -125,10 +122,16 @@ pids+=("$frontend_pid")
 ready=0
 for _ in $(seq 1 90); do
   kill -0 "$frontend_pid" 2>/dev/null || fail "Le frontend s'est arrete. Consultez $LOG_DIR/frontend.log"
+  # Echec de la premiere compilation : ng serve reste en attente de modifications sans jamais servir l'application.
+  if grep -q "bundle generation failed" "$LOG_DIR/frontend.log" 2>/dev/null; then
+    fail "La compilation du frontend a echoue. Consultez $LOG_DIR/frontend.log
+$(tail -n 25 "$LOG_DIR/frontend.log")"
+  fi
   if curl -fs -o /dev/null "http://127.0.0.1:$FRONTEND_PORT"; then ready=1; break; fi
   sleep 2
 done
-[ "$ready" -eq 1 ] || fail "Le frontend n'a pas demarre a temps."
+[ "$ready" -eq 1 ] || fail "Le frontend n'a pas demarre a temps. Consultez $LOG_DIR/frontend.log
+$(tail -n 25 "$LOG_DIR/frontend.log" 2>/dev/null)"
 
 printf '\n\033[32m  FocusWithAkram est pret\033[0m\n'
 echo "    Application : http://127.0.0.1:$FRONTEND_PORT"

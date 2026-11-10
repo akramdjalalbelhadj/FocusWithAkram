@@ -134,6 +134,23 @@ stop_own_instance() {
   fi
 }
 
+# Lance "npm install" si node_modules est absent ou ne correspond plus a package-lock.json (dependance ajoutee ou
+# modifiee depuis la derniere installation). L'empreinte du fichier de verrouillage installe est notee dans
+# node_modules/.focuswithakram-install apres chaque installation reussie. $1 : dossier du frontend.
+update_frontend_dependencies() {
+  local dir="$1" lock stamp sum why
+  lock="$dir/package-lock.json"
+  [ -f "$lock" ] || lock="$dir/package.json"
+  stamp="$dir/node_modules/.focuswithakram-install"
+  sum="$(cksum <"$lock")"
+  [ -f "$stamp" ] && [ "$(head -n 1 "$stamp")" = "$sum" ] && return 0
+  if [ -d "$dir/node_modules" ]; then why="dependances modifiees depuis la derniere installation"; else why="premier lancement"; fi
+  printf '\033[36m==> Installation des dependances frontend (%s)\033[0m\n' "$why"
+  (cd "$dir" && npm install) || fail "npm install a echoue dans $dir."
+  # Empreinte relue apres coup : npm peut avoir mis a jour package-lock.json.
+  cksum <"$lock" >"$stamp"
+}
+
 # Echoue avec un message explicite si la base locale n'a pas la version de PostgreSQL de l'application.
 check_data_version() {
   local expected actual

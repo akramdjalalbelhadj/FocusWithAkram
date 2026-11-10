@@ -69,10 +69,7 @@ for p in "$FRONTEND_PORT" 4200 5173; do
 done
 
 # ---- Dependances frontend -----------------------------------------------------------------------
-if [ ! -d "$ROOT/frontend-react/node_modules" ]; then
-  step "Installation des dependances frontend (premier lancement)"
-  (cd "$ROOT/frontend-react" && npm install)
-fi
+update_frontend_dependencies "$ROOT/frontend-react"
 
 # ---- Demarrage ----------------------------------------------------------------------------------
 pids=()
@@ -127,7 +124,8 @@ for _ in $(seq 1 90); do
   if curl -fs -o /dev/null "http://127.0.0.1:$FRONTEND_PORT"; then ready=1; break; fi
   sleep 2
 done
-[ "$ready" -eq 1 ] || fail "Le frontend n'a pas demarre a temps."
+[ "$ready" -eq 1 ] || fail "Le frontend n'a pas demarre a temps. Consultez $LOG_DIR/frontend.log
+$(tail -n 25 "$LOG_DIR/frontend.log" 2>/dev/null)"
 
 printf '\n\033[32m  FocusWithAkram est pret\033[0m\n'
 echo "    Application : http://127.0.0.1:$FRONTEND_PORT"

@@ -44,14 +44,13 @@ function Fail($msg) { Write-Host "ERREUR : $msg" -ForegroundColor Red; exit 1 }
 # Binaires deja utilises par l'application avant chaque montee de version (defaut de -SourceBinariesVersion).
 $KnownVersions = @{ 14 = '14.22.0' }
 $Artifact = 'io.zonky.test.postgres:embedded-postgres-binaries-windows-amd64'
-$Tar = Join-Path $env:SystemRoot 'System32\tar.exe'
 $Backend = Join-Path $Root 'backend'
 
 # ---- Verifications ----------------------------------------------------------------------------
 Write-Step 'Verifications'
-if (-not (Test-Path $Tar)) { Fail "$Tar introuvable (Windows 10 1803 ou plus recent requis)." }
 if (-not (Get-Command mvn.cmd -ErrorAction SilentlyContinue)) { Fail 'Maven est requis pour recuperer les binaires PostgreSQL.' }
 if (-not (Get-Command java -ErrorAction SilentlyContinue)) { Fail 'Java 25 est requis.' }
+$Java = (Get-Command java).Source
 
 $usesDefaultDir = -not $DataDir
 if ($usesDefaultDir) { $DataDir = $script:FfDataDir }
@@ -126,13 +125,9 @@ function Get-PgBinaries([string]$Version) {
     (Join-Path $Work "maven-$Version.log") "La recuperation des binaires PostgreSQL $Version"
   $jar = Join-Path $jars "embedded-postgres-binaries-windows-amd64-$Version.jar"
   $dir = Join-Path $Work "pg-$Version"
-  New-Item -ItemType Directory -Force $dir | Out-Null
-  & $Tar -xf $jar -C $dir 'postgres-windows-x86_64.txz'
-  if ($LASTEXITCODE -ne 0) { throw "Archive $jar illisible." }
-  $txz = Join-Path $dir 'postgres-windows-x86_64.txz'
-  & $Tar -xf $txz -C $dir
-  if ($LASTEXITCODE -ne 0) { throw "Extraction de $txz impossible." }
-  Remove-Item $txz
+  # Extraction en Java (commons-compress + xz du backend) : le tar.exe de Windows 10 ne lit pas le xz.
+  Assert-Logged $Java ('"@' + $script:argFile + '" "' + (Join-Path $PSScriptRoot 'lib\ExtractPgBinaries.java') + '" "' + $jar + '" "' + $dir + '"') `
+    (Join-Path $Work "extraction-$Version.log") "L'extraction des binaires PostgreSQL $Version"
   $bin = Join-Path $dir 'bin'
   if (-not (Test-Path (Join-Path $bin 'pg_ctl.exe'))) { throw "pg_ctl.exe absent des binaires PostgreSQL $Version." }
   return $bin
@@ -155,15 +150,15 @@ function Stop-Pg([string]$Data) {
 # ---- Migration --------------------------------------------------------------------------------
 $swapped = $false
 try {
-  Write-Step "Recuperation des binaires PostgreSQL $SourceBinariesVersion et $TargetVersion, et des bibliotheques du backend (Maven)"
-  $oldBin = Get-PgBinaries $SourceBinariesVersion
-  $newBin = Get-PgBinaries $TargetVersion
+  Write-Step "Recuperation des bibliotheques du backend et des binaires PostgreSQL $SourceBinariesVersion et $TargetVersion (Maven)"
   $cpFile = Join-Path $Work 'classpath.txt'
   Assert-Logged $Mvn ('-q -f "' + (Join-Path $Backend 'pom.xml') + '" dependency:build-classpath -Dmdep.includeScope=runtime "-Dmdep.outputFile=' + $cpFile + '"') `
     (Join-Path $Work 'maven-classpath.log') 'Le calcul du classpath du backend'
   # Fichier d'arguments Java (classpath trop long pour une ligne de commande) ; barres obliques : pas d'echappement.
   $argFile = Join-Path $Work 'java-args.txt'
   Set-Content -Encoding ASCII $argFile ('--class-path "' + ((Get-Content $cpFile -Raw).Trim() -replace '\\', '/') + '"')
+  $oldBin = Get-PgBinaries $SourceBinariesVersion
+  $newBin = Get-PgBinaries $TargetVersion
 
   Write-Step "Creation de la base PostgreSQL $targetMajor"
   # Memes options que le PostgreSQL embarque du profil local (zonky) : superutilisateur postgres, acces local, UTF-8.
@@ -175,7 +170,7 @@ try {
 
   Write-Step 'Schema (migrations Flyway), copie des donnees et verification'
   $copyLog = Join-Path $Work 'copie.log'
-  $code = Invoke-Logged (Get-Command java).Source ('"@' + $argFile + '" "' + (Join-Path $PSScriptRoot 'lib\PgCopy.java') + '" ' +
+  $code = Invoke-Logged $Java ('"@' + $argFile + '" "' + (Join-Path $PSScriptRoot 'lib\PgCopy.java') + '" ' +
     "jdbc:postgresql://localhost:$oldPort/postgres jdbc:postgresql://localhost:$newPort/postgres " +
     '"' + (Join-Path $Backend 'src\main\resources\db\migration') + '" "' + $Work + '"') $copyLog
   Get-Content $copyLog | Where-Object { $_ -match '^(Source|Schema|  |ATTENTION|ECART|IDENTIQUES)' } | ForEach-Object { Write-Host "    $_" }
