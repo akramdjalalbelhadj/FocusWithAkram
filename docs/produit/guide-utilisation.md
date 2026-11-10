@@ -1,6 +1,6 @@
 # FocusWithAkram — guide d’utilisation
 
-Mis à jour le **6 novembre 2026** pour Angular et React (Mes achats et Notes & idées : Angular seulement ; « Mes achats » décrit la version simplifiée du lot 13, Notes & idées et la matrice leurs tutoriels des lots 14 et 15). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
+Mis à jour le **6 novembre 2026** pour Angular et React (Mes achats et Notes & idées : Angular seulement ; « Mes achats » décrit la version simplifiée du lot 13, Notes & idées et la matrice leurs tutoriels des lots 14 et 15 ; onglets, barre d’outils collée et surlignage de Notes & idées ajoutés le 10 novembre 2026). Installation : [exploitation](../technique/exploitation.md). Les interfaces utilisent les mêmes données ; leur présentation et leur mode d’enregistrement peuvent différer.
 
 ## 1. Ouvrir l’application
 
@@ -252,12 +252,16 @@ flowchart LR
 ### 12.2 Pas à pas
 
 1. **Noter une idée** : tapez un titre dans le champ en haut de la page puis **Entrée** (ou **Développer** pour l’ouvrir aussitôt). Depuis n’importe quelle page, la touche **I** (ou la palette : « Noter une idée ») ouvre une saisie rapide : un titre suffit.
-2. **Développer** : cliquez sur une carte pour ouvrir l’éditeur. Titre, catégorie, étiquettes et contenu sont **enregistrés automatiquement** (« Enregistré » s’affiche en haut) ; quitter la page enregistre aussi la saisie en cours. Un titre vide n’est pas enregistré.
+2. **Développer** : cliquez sur une carte pour ouvrir l’éditeur ; l’idée s’ouvre aussi dans un **onglet** (§ 12.3). Titre, catégorie, étiquettes et contenu sont **enregistrés automatiquement** (« Enregistré » s’affiche en haut) ; quitter la page enregistre aussi la saisie en cours. Un titre vide n’est pas enregistré.
 3. **Deux modes d’édition**, au choix avec le bouton **Markdown / Visuel** de l’éditeur (ou dans **Paramètres → Notes & idées**) :
    - **Markdown** : vous écrivez la syntaxe (`## Titre`, `- liste`, `- [ ] case à cocher`, `**gras**`) ; la barre d’outils l’insère pour vous, **Ctrl+B** / **Ctrl+I** mettent en gras / en italique, **Ctrl+Z** annule. L’onglet **Aperçu** montre le rendu ; on peut y cocher les cases.
    - **Visuel** : la mise en forme s’affiche directement pendant la saisie.
 
    Le contenu est le même dans les deux modes : une note écrite dans l’un s’ouvre dans l’autre. Le mode visuel peut réécrire légèrement la syntaxe (par exemple ajouter une ligne vide sous un titre) sans changer le contenu.
+
+   **La barre d’outils reste à portée de main** : quand vous descendez dans un long texte, elle reste collée en haut de l’écran, sous la barre de recherche, jusqu’à la fin de l’éditeur. Le curseur ne passe jamais dessous : en remontant avec les flèches, la page défile pour le garder visible. Sur téléphone, elle tient sur une seule ligne, qui défile horizontalement.
+
+   **Surligner** : sélectionnez le texte, puis cliquez sur le bouton **Surligner** (le surligneur, souligné de la couleur en cours) ou appuyez sur **Ctrl+Maj+H**. La flèche à côté ouvre les quatre couleurs, **Jaune**, **Rouge**, **Bleu ciel** et **Violet**, ainsi que **Retirer le surlignage**. Une couleur choisie dans ce menu devient celle du bouton et du raccourci (retenue par le navigateur). Un second clic sur le bouton retire le surlignage de cette couleur ; une autre couleur le remplace. Dans le menu, la couleur du passage sous le curseur est cochée. En Markdown, le jaune s’écrit `==texte==` (que vous pouvez aussi taper en mode Visuel) et les autres couleurs `<mark data-color="red">texte</mark>` (`red`, `sky`, `violet`) ; un fichier exporté en .md reste surligné dans GitHub ou Obsidian, en jaune.
 4. **Organiser** : une **catégorie** (créée dans l’écran **Catégories**, avec une couleur), des **étiquettes** séparées par des virgules et l’étoile **Favori**. La liste se filtre par texte (titre et contenu), catégorie, étiquette, et par vue : **Toutes**, **Favorites**, **À transformer** (aucune tâche encore), **Avec tâches** ; elle se trie par date de modification, de création ou par titre.
 5. **Transformer en tâche** : dans l’éditeur, **Créer une tâche** ouvre le formulaire de tâche habituel, prérempli avec le titre et les étiquettes de l’idée ; **Reprendre le contenu de l’idée** copie le texte dans la description. Choisissez le quadrant (urgence et importance), une échéance si besoin, puis **Créer la tâche** : elle rejoint la matrice d’Eisenhower. Recommencez autant de fois que nécessaire : une idée peut donner plusieurs tâches.
 6. **Suivre** : le panneau **Tâches issues de cette idée** liste ces tâches avec leur statut et leur quadrant ; cliquez pour ouvrir leur détail. Depuis le détail d’une tâche, le lien **Issue de l’idée « … »** ramène à l’idée. Dans **Mes tâches**, une pastille **Idée** signale ces tâches.
@@ -265,6 +269,17 @@ flowchart LR
 8. **Supprimer** : une idée sans tâche se supprime après confirmation. Si des tâches en sont issues, la suppression simple est **bloquée** et un avertissement en explique la raison ; **Supprimer quand même** supprime l’idée définitivement, ses tâches restent dans la matrice sans lien vers elle.
 
 Supprimer une catégorie conserve ses idées, sans catégorie.
+
+### 12.3 Onglets des idées ouvertes
+
+Chaque idée ouverte prend un **onglet** dans la barre en haut de Notes & idées, comme dans un navigateur : on passe d’une idée à l’autre sans repasser par la liste.
+
+- **Ouvrir** une idée (carte de la liste, **Développer**, saisie rapide, lien **Issue de l’idée « … »**) ajoute son onglet à droite des autres ; une idée déjà ouverte n’en prend pas un second.
+- **Notes & idées**, le premier onglet (une ampoule sur téléphone), ramène à la liste **sans fermer** les onglets : ils restent dans la barre, au-dessus de la liste. La barre n’apparaît sur la liste que si au moins une idée est ouverte.
+- **Basculer** : un clic sur un onglet ouvre son idée. Changer d’onglet enregistre d’abord la saisie en cours de l’idée quittée.
+- **Fermer** : la croix de l’onglet (ou le clic molette, ou **Suppr** sur l’onglet sélectionné au clavier). Fermer l’idée affichée ouvre l’onglet voisin (à droite, sinon à gauche), ou la liste s’il n’en reste aucun. Une idée fermée n’a plus d’onglet tant qu’on ne la rouvre pas. Avec plusieurs onglets, le bouton **⋯** à droite de la barre propose **Fermer les autres onglets** et **Fermer tous les onglets**.
+- L’onglet suit le titre que vous tapez et prend la couleur de la catégorie. Supprimer une idée ferme son onglet.
+- Les onglets restent après un rechargement de la page : ils sont gardés **dans ce navigateur** (propres à l’appareil, hors sauvegarde) et partagés entre ses fenêtres. Beaucoup d’onglets : la barre défile horizontalement.
 
 ## 13. Recherche et raccourcis
 
@@ -274,6 +289,7 @@ Supprimer une catégorie conserve ses idées, sans catégorie.
 | Nouvelle tâche                     | N, si les raccourcis simples sont activés                      |
 | Saisir une dépense                 | E, si les raccourcis simples sont activés                      |
 | Noter une idée (Angular)           | I, si les raccourcis simples sont activés                      |
+| Surligner dans l’éditeur d’une idée | Ctrl+Maj+H (couleur choisie en dernier ; jaune au départ)     |
 | Navigation                         | G puis D/M/T/F/C/S/B/N/A selon la destination (B : Mes achats, N : Notes & idées) |
 | Pause/reprise d’une session active | Espace, hors champ de saisie et selon l’élément qui a le focus |
 | Fermer une fenêtre                 | Échap lorsque le dialogue le permet                            |

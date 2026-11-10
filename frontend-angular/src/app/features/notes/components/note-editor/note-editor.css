@@ -8,7 +8,26 @@ ff-note-editor .note-editor {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
-  overflow: hidden;
+  /* clip et non hidden : hidden ferait de l'editeur un conteneur de defilement et empecherait la barre de coller. */
+  overflow: clip;
+}
+
+/*
+ * Barre d'outils collee sous la barre superieure de l'application : en mode Visuel ou en Apercu, c'est la page qui
+ * defile ; la barre suit jusqu'a la fin de l'editeur, puis repart avec lui.
+ */
+ff-note-editor .note-sticky {
+  position: sticky;
+  top: var(--app-header-height);
+  z-index: 20;
+  container-type: scroll-state;
+}
+
+/* Une ombre legere signale la barre collee au-dessus du texte (navigateurs qui savent le detecter). */
+@container scroll-state(stuck: top) {
+  ff-note-editor .note-toolbar {
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 ff-note-editor .note-editor:focus-within {
@@ -176,6 +195,65 @@ ff-note-editor .note-locked > .min-w-0 {
   flex: 1 1 16rem;
 }
 
+/* ---- Surligner : bouton + fleche, pastilles de couleur ---- */
+
+ff-note-editor .note-highlight {
+  display: inline-flex;
+}
+
+ff-note-editor .note-highlight-apply {
+  position: relative;
+}
+
+ff-note-editor .note-highlight-more {
+  width: 1.25rem;
+}
+
+/* Trait de la couleur courante sous l'icone du bouton. */
+ff-note-editor .note-swatch-bar {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.25rem;
+  left: 0.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--note-hl-yellow-mark);
+}
+
+ff-note-editor .note-swatch-bar[data-color='red'] {
+  background: var(--note-hl-red-mark);
+}
+
+ff-note-editor .note-swatch-bar[data-color='sky'] {
+  background: var(--note-hl-sky-mark);
+}
+
+ff-note-editor .note-swatch-bar[data-color='violet'] {
+  background: var(--note-hl-violet-mark);
+}
+
+/* Pastilles du menu (hors de l'editeur : le menu s'ouvre dans une couche a part) : le rendu reel du fond. */
+.note-swatch {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  border-radius: 0.25rem;
+  background: var(--note-hl-yellow);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.note-swatch[data-color='red'] {
+  background: var(--note-hl-red);
+}
+
+.note-swatch[data-color='sky'] {
+  background: var(--note-hl-sky);
+}
+
+.note-swatch[data-color='violet'] {
+  background: var(--note-hl-violet);
+}
+
 /* ---- Menu « Insérer » ---- */
 
 .note-insert-menu {
@@ -215,6 +293,22 @@ ff-note-editor .note-locked > .min-w-0 {
 }
 
 @media (max-width: 640px) {
+  /* Telephone : une seule ligne qui defile horizontalement, pour que la barre collee ne couvre pas le texte. */
+  ff-note-editor .note-toolbar,
+  ff-note-editor .note-tools {
+    flex-wrap: nowrap;
+  }
+
+  ff-note-editor .note-toolbar {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  ff-note-editor .note-toolbar > *,
+  ff-note-editor .note-tool {
+    flex: none;
+  }
+
   ff-note-editor .note-textarea {
     min-height: 16rem;
     padding: 0.875rem 1rem;

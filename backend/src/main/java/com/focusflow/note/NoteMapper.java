@@ -20,6 +20,9 @@ final class NoteMapper {
     private static final Pattern IMAGE = Pattern.compile("!\\[([^\\]]*)\\]\\([^)]*\\)");
     private static final Pattern LINK = Pattern.compile("\\[([^\\]]*)\\]\\([^)]*\\)");
     private static final Pattern EMPHASIS = Pattern.compile("\\*\\*|__|~~|[*`]");
+    /** Surlignage jaune `==texte==` (« a == b » n'en est pas un) et balises `<mark ...>` des autres couleurs. */
+    private static final Pattern HIGHLIGHT = Pattern.compile("==(?=[^\\s=])(.*?[^\\s=])==(?!=)");
+    private static final Pattern MARK_TAG = Pattern.compile("(?i)</?mark\\b[^>]*>");
     private static final Pattern RULE = Pattern.compile("(?m)^\\s*([-*_]\\s*){3,}$");
     private static final Pattern SPACES = Pattern.compile("\\s+");
 
@@ -59,6 +62,8 @@ final class NoteMapper {
         s = BLOCK_MARKERS.matcher(s).replaceAll("");
         s = IMAGE.matcher(s).replaceAll("$1");
         s = LINK.matcher(s).replaceAll("$1");
+        s = HIGHLIGHT.matcher(s).replaceAll("$1");
+        s = MARK_TAG.matcher(s).replaceAll("");
         s = EMPHASIS.matcher(s).replaceAll("");
         s = SPACES.matcher(s).replaceAll(" ").strip();
         if (s.length() <= EXCERPT_MAX) {

@@ -45,6 +45,11 @@
   --shadow-modal: var(--shadow-lg);
 }
 
+/* Hauteur de la barre superieure du shell (classe h-14 de shell.html) : decalage des elements colles en haut. */
+:root {
+  --app-header-height: 3.5rem;
+}
+
 html {
   font-family: var(--font-sans);
   background: var(--page);

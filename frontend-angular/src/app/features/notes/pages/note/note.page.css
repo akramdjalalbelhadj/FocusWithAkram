@@ -80,7 +80,7 @@
 
 .note-side {
   position: sticky;
-  top: 1rem;
+  top: calc(var(--app-header-height) + 1rem);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;

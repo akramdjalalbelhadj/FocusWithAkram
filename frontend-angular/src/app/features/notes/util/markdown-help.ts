@@ -29,6 +29,12 @@ export const MARKDOWN_HELP: readonly HelpSection[] = [
         markdown: '**gras**, *italique*, ***les deux***\net ~~texte barré~~',
       },
       {
+        title: 'Surligner',
+        hint: 'Bouton Surligner ou Ctrl+Maj+H. Le jaune s’écrit ==…== ; les autres couleurs, avec la balise <mark>.',
+        markdown:
+          '==jaune==, <mark data-color="red">rouge</mark>,\n<mark data-color="sky">bleu ciel</mark> et <mark data-color="violet">violet</mark>',
+      },
+      {
         title: 'Code dans une phrase',
         markdown: 'Lancez `npm start` puis ouvrez le navigateur.',
       },

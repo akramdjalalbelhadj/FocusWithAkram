@@ -159,6 +159,60 @@
   background: none;
 }
 
+/* ---- Surlignage (4 couleurs) ---- */
+
+/*
+ * Fond doux en theme clair, fonce en theme sombre : le texte garde sa couleur et un contraste d'au moins 4,5:1.
+ * --note-hl-*-mark : teinte vive des pastilles de la barre d'outils et du menu.
+ */
+:root {
+  --note-hl-yellow: #fef08a;
+  --note-hl-red: #fecaca;
+  --note-hl-sky: #bae6fd;
+  --note-hl-violet: #ddd6fe;
+  --note-hl-yellow-mark: #facc15;
+  --note-hl-red-mark: #ef4444;
+  --note-hl-sky-mark: #38bdf8;
+  --note-hl-violet-mark: #8b5cf6;
+}
+
+:root[data-theme='dark'] {
+  --note-hl-yellow: #854d0e;
+  --note-hl-red: #991b1b;
+  --note-hl-sky: #075985;
+  --note-hl-violet: #5b21b6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    --note-hl-yellow: #854d0e;
+    --note-hl-red: #991b1b;
+    --note-hl-sky: #075985;
+    --note-hl-violet: #5b21b6;
+  }
+}
+
+.note-prose mark {
+  padding: 0.05em 0.15em;
+  border-radius: 0.2em;
+  background: var(--note-hl-yellow);
+  color: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.note-prose mark[data-color='red'] {
+  background: var(--note-hl-red);
+}
+
+.note-prose mark[data-color='sky'] {
+  background: var(--note-hl-sky);
+}
+
+.note-prose mark[data-color='violet'] {
+  background: var(--note-hl-violet);
+}
+
 .note-prose hr {
   margin: 1.5em 0;
   border: 0;

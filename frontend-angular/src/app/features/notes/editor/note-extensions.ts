@@ -4,8 +4,10 @@ import { TableKit } from '@tiptap/extension-table';
 import { Placeholder } from '@tiptap/extensions';
 import { Markdown } from '@tiptap/markdown';
 import { StarterKit } from '@tiptap/starter-kit';
+import type { HighlightColor } from '../util/highlight';
 import { Callout } from './callout';
 import { NoteCodeBlock } from './code-block';
+import { NoteHighlight } from './highlight';
 
 export interface NoteExtensionOptions {
   placeholder?: string;
@@ -13,6 +15,8 @@ export interface NoteExtensionOptions {
   onReadOnlyChecked?: (node: unknown, checked: boolean) => boolean;
   /** Les liens s'ouvrent au clic (apercu) au lieu de placer le curseur (edition). */
   openLinks?: boolean;
+  /** Couleur du surlignage au clavier (Ctrl+Maj+H) ; jaune par defaut. */
+  highlightColor?: () => HighlightColor;
 }
 
 /**
@@ -38,6 +42,7 @@ export function noteExtensions(options: NoteExtensionOptions = {}): AnyExtension
     }),
     NoteCodeBlock,
     Callout,
+    NoteHighlight.configure({ shortcutColor: options.highlightColor ?? (() => 'yellow') }),
     TaskList,
     TaskItem.configure({
       nested: true,

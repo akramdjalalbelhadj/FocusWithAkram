@@ -17,6 +17,13 @@ class NoteMapperTest {
     }
 
     @Test
+    void theExcerptDropsHighlightMarkersButKeepsComparisons() {
+        assertThat(NoteMapper.excerpt("Un ==mot jaune==, <mark data-color=\"red\">rouge</mark> et <MARK>x</MARK>"))
+                .isEqualTo("Un mot jaune, rouge et x");
+        assertThat(NoteMapper.excerpt("si a == b alors ==c==")).isEqualTo("si a == b alors c");
+    }
+
+    @Test
     void aLongExcerptIsCutOnAWordBoundary() {
         String excerpt = NoteMapper.excerpt("mot ".repeat(100));
         assertThat(excerpt).endsWith("mot…").hasSizeLessThanOrEqualTo(NoteMapper.EXCERPT_MAX + 1);

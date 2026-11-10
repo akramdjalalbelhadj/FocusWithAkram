@@ -1,128 +1,162 @@
 <div class="note-editor">
-  <div class="note-toolbar" role="toolbar" [attr.aria-label]="'Mise en forme — ' + label()">
-    @if (mode() === 'MARKDOWN') {
-      <div class="note-tabs" role="tablist" aria-label="Affichage">
-        <button
-          type="button"
-          role="tab"
-          [attr.aria-selected]="tab() === 'write'"
-          (click)="tab.set('write')"
-        >
-          <ff-icon name="pencil" [size]="14" />Écrire
-        </button>
-        <button
-          type="button"
-          role="tab"
-          [attr.aria-selected]="tab() === 'preview'"
-          (click)="tab.set('preview'); linkDraft.set(null)"
-        >
-          <ff-icon name="eye" [size]="14" />Aperçu
-        </button>
-      </div>
-    }
-    @if (mode() === 'RICH' || tab() === 'write') {
-      <div class="note-tools">
-        @for (item of toolbar; track item.action) {
+  <!-- Barre d'outils et formulaire de lien restent visibles en haut de l'ecran pendant la saisie d'un long texte. -->
+  <div #stickyBar class="note-sticky">
+    <div class="note-toolbar" role="toolbar" [attr.aria-label]="'Mise en forme — ' + label()">
+      @if (mode() === 'MARKDOWN') {
+        <div class="note-tabs" role="tablist" aria-label="Affichage">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="tab() === 'write'"
+            (click)="tab.set('write')"
+          >
+            <ff-icon name="pencil" [size]="14" />Écrire
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="tab() === 'preview'"
+            (click)="tab.set('preview'); linkDraft.set(null)"
+          >
+            <ff-icon name="eye" [size]="14" />Aperçu
+          </button>
+        </div>
+      }
+      @if (mode() === 'RICH' || tab() === 'write') {
+        <div class="note-tools">
+          @for (item of toolbar; track item.action) {
+            <button
+              type="button"
+              class="note-tool"
+              [attr.aria-label]="item.label"
+              [attr.title]="item.keys ? item.label + ' (' + item.keys + ')' : item.label"
+              [attr.aria-pressed]="mode() === 'RICH' ? isActive(item.action) : null"
+              [disabled]="visualLocked()"
+              (mousedown)="$event.preventDefault()"
+              (click)="apply(item.action)"
+            >
+              <ff-icon [name]="item.icon" [size]="16" />
+            </button>
+            @if (item.action === 'strike') {
+              <!-- Surligner : le bouton applique la derniere couleur choisie, la fleche ouvre les 4 couleurs. -->
+              <div class="note-highlight" role="group" aria-label="Surlignage">
+                <button
+                  type="button"
+                  class="note-tool note-highlight-apply"
+                  [attr.aria-label]="'Surligner en ' + highlightLabel(highlightColor())"
+                  [attr.title]="
+                    'Surligner en ' + highlightLabel(highlightColor()) + ' (Ctrl+Maj+H)'
+                  "
+                  [attr.aria-pressed]="mode() === 'RICH' ? highlightActive() : null"
+                  [disabled]="visualLocked()"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="highlight(highlightColor(), true)"
+                >
+                  <ff-icon name="highlighter" [size]="16" />
+                  <span class="note-swatch-bar" [attr.data-color]="highlightColor()"></span>
+                </button>
+                <button
+                  type="button"
+                  class="note-tool note-highlight-more"
+                  aria-label="Couleur du surlignage"
+                  title="Couleur du surlignage"
+                  [disabled]="visualLocked()"
+                  [cdkMenuTriggerFor]="highlightMenu"
+                  (mousedown)="$event.preventDefault()"
+                >
+                  <ff-icon name="chevron-down" [size]="14" />
+                </button>
+              </div>
+            }
+          }
           <button
             type="button"
             class="note-tool"
-            [attr.aria-label]="item.label"
-            [attr.title]="item.keys ? item.label + ' (' + item.keys + ')' : item.label"
-            [attr.aria-pressed]="mode() === 'RICH' ? isActive(item.action) : null"
+            aria-label="Lien"
+            title="Lien (Ctrl+K)"
+            [attr.aria-pressed]="mode() === 'RICH' ? linkActive() : null"
+            [attr.aria-expanded]="linkDraft() !== null"
             [disabled]="visualLocked()"
             (mousedown)="$event.preventDefault()"
-            (click)="apply(item.action)"
+            (click)="linkDraft() === null ? openLink() : cancelLink()"
           >
-            <ff-icon [name]="item.icon" [size]="16" />
+            <ff-icon name="link" [size]="16" />
           </button>
-        }
-        <button
-          type="button"
-          class="note-tool"
-          aria-label="Lien"
-          title="Lien (Ctrl+K)"
-          [attr.aria-pressed]="mode() === 'RICH' ? linkActive() : null"
-          [attr.aria-expanded]="linkDraft() !== null"
-          [disabled]="visualLocked()"
-          (mousedown)="$event.preventDefault()"
-          (click)="linkDraft() === null ? openLink() : cancelLink()"
-        >
-          <ff-icon name="link" [size]="16" />
-        </button>
-        <span class="note-tools-sep" aria-hidden="true"></span>
+          <span class="note-tools-sep" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="note-tool note-tool-text"
+            title="Insérer une alerte, un tableau, un bloc de code…"
+            [disabled]="visualLocked()"
+            [cdkMenuTriggerFor]="insertMenu"
+            (mousedown)="$event.preventDefault()"
+          >
+            <ff-icon name="plus" [size]="16" />Insérer<ff-icon name="chevron-down" [size]="14" />
+          </button>
+        </div>
+      }
+      <div class="note-toolbar-end">
         <button
           type="button"
           class="note-tool note-tool-text"
-          title="Insérer une alerte, un tableau, un bloc de code…"
-          [disabled]="visualLocked()"
-          [cdkMenuTriggerFor]="insertMenu"
-          (mousedown)="$event.preventDefault()"
+          title="Toutes les syntaxes Markdown, avec leur rendu"
+          (click)="openHelp()"
         >
-          <ff-icon name="plus" [size]="16" />Insérer<ff-icon name="chevron-down" [size]="14" />
+          <ff-icon name="book-open" [size]="16" /><span class="note-help-label">Aide Markdown</span>
         </button>
-      </div>
-    }
-    <div class="note-toolbar-end">
-      <button
-        type="button"
-        class="note-tool note-tool-text"
-        title="Toutes les syntaxes Markdown, avec leur rendu"
-        (click)="openHelp()"
-      >
-        <ff-icon name="book-open" [size]="16" /><span class="note-help-label">Aide Markdown</span>
-      </button>
-      <div class="note-mode" role="radiogroup" aria-label="Mode d’édition">
-        <button
-          type="button"
-          role="radio"
-          [attr.aria-checked]="mode() === 'MARKDOWN'"
-          title="Saisie Markdown avec aperçu"
-          (click)="setMode('MARKDOWN')"
-        >
-          Markdown
-        </button>
-        <button
-          type="button"
-          role="radio"
-          [attr.aria-checked]="mode() === 'RICH'"
-          title="Éditeur visuel : la mise en forme s’affiche directement"
-          (click)="setMode('RICH')"
-        >
-          Visuel
-        </button>
+        <div class="note-mode" role="radiogroup" aria-label="Mode d’édition">
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="mode() === 'MARKDOWN'"
+            title="Saisie Markdown avec aperçu"
+            (click)="setMode('MARKDOWN')"
+          >
+            Markdown
+          </button>
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="mode() === 'RICH'"
+            title="Éditeur visuel : la mise en forme s’affiche directement"
+            (click)="setMode('RICH')"
+          >
+            Visuel
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  @if (linkDraft() !== null) {
-    <form class="note-linkbar" (submit)="applyLink($event)">
-      <label class="sr-only-text" for="note-link-url">Adresse du lien</label>
-      <input
-        #linkInput
-        id="note-link-url"
-        class="input"
-        type="text"
-        inputmode="url"
-        autocomplete="url"
-        placeholder="https://… , mailto:… ou #titre"
-        [value]="linkDraft()"
-        [attr.aria-invalid]="!!linkError()"
-        [attr.aria-describedby]="linkError() ? 'note-link-error' : null"
-        (input)="linkDraft.set($any($event.target).value); linkError.set('')"
-        (keydown.escape)="cancelLink()"
-      />
-      <button type="submit" class="btn btn-primary btn-sm">Appliquer</button>
-      @if (linkActive()) {
-        <button type="button" class="btn btn-ghost btn-sm" (click)="removeLink()">
-          Retirer le lien
-        </button>
-      }
-      <button type="button" class="btn btn-ghost btn-sm" (click)="cancelLink()">Annuler</button>
-      @if (linkError()) {
-        <p id="note-link-error" class="field-error w-full" role="alert">{{ linkError() }}</p>
-      }
-    </form>
-  }
+    @if (linkDraft() !== null) {
+      <form class="note-linkbar" (submit)="applyLink($event)">
+        <label class="sr-only-text" for="note-link-url">Adresse du lien</label>
+        <input
+          #linkInput
+          id="note-link-url"
+          class="input"
+          type="text"
+          inputmode="url"
+          autocomplete="url"
+          placeholder="https://… , mailto:… ou #titre"
+          [value]="linkDraft()"
+          [attr.aria-invalid]="!!linkError()"
+          [attr.aria-describedby]="linkError() ? 'note-link-error' : null"
+          (input)="linkDraft.set($any($event.target).value); linkError.set('')"
+          (keydown.escape)="cancelLink()"
+        />
+        <button type="submit" class="btn btn-primary btn-sm">Appliquer</button>
+        @if (linkActive()) {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="removeLink()">
+            Retirer le lien
+          </button>
+        }
+        <button type="button" class="btn btn-ghost btn-sm" (click)="cancelLink()">Annuler</button>
+        @if (linkError()) {
+          <p id="note-link-error" class="field-error w-full" role="alert">{{ linkError() }}</p>
+        }
+      </form>
+    }
+  </div>
 
   @if (visualLocked()) {
     <div class="note-locked" role="status">
@@ -159,6 +193,30 @@
     <div #previewHost class="note-prose note-prose-preview" role="tabpanel"></div>
   }
 </div>
+
+<ng-template #highlightMenu>
+  <div cdkMenu class="menu anim-pop" aria-label="Couleur du surlignage">
+    @for (c of highlightColors; track c.color) {
+      <!-- Case cochee : couleur du passage sous le curseur (annoncee par les lecteurs d'ecran). -->
+      <button
+        cdkMenuItemRadio
+        class="menu-item"
+        [cdkMenuItemChecked]="c.color === activeHighlight()"
+        (cdkMenuItemTriggered)="highlight(c.color)"
+      >
+        <span class="note-swatch" [attr.data-color]="c.color" aria-hidden="true"></span
+        >{{ c.label }}
+        @if (c.color === activeHighlight()) {
+          <ff-icon name="check" [size]="14" class="ml-auto" />
+        }
+      </button>
+    }
+    <div class="menu-sep" role="separator"></div>
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="highlight(null)">
+      <ff-icon name="eraser" [size]="16" />Retirer le surlignage
+    </button>
+  </div>
+</ng-template>
 
 <ng-template #insertMenu>
   <div cdkMenu class="menu anim-pop note-insert-menu" aria-label="Insérer">

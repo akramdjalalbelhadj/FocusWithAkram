@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { NoteSort, NoteSummary } from '../../../../core/api/models';
@@ -15,8 +23,10 @@ import {
   SkeletonComponent,
 } from '../../../../shared/ui/states/index';
 import { TourComponent } from '../../../../shared/ui/tour/tour';
+import { NoteTabsComponent } from '../../components/note-tabs/note-tabs';
 import { NotesTourService } from '../../components/notes-tour/notes-tour.service';
 import { NoteActions } from '../../services/note-actions.service';
+import { NoteTabs } from '../../services/note-tabs.service';
 
 /** Vues rapides : toutes, favorites, encore a transformer (sans tache), deja transformees (avec taches). */
 type NoteView = 'all' | 'favorites' | 'open' | 'converted';
@@ -32,6 +42,7 @@ const PAGE = 60;
     SkeletonComponent,
     RouterLink,
     TourComponent,
+    NoteTabsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notes.page.html',
@@ -46,6 +57,8 @@ export class NotesPage {
   protected readonly settings = inject(SettingsStore);
   /** Tutoriel « de l’idée à l’action » : propose seul a la premiere visite, relance par « Comment ça marche ? ». */
   protected readonly tour = inject(NotesTourService);
+  /** Idees ouvertes en onglets : la barre n'apparait que s'il y en a. */
+  protected readonly tabs = inject(NoteTabs);
 
   protected readonly views: { value: NoteView; label: string }[] = [
     { value: 'all', label: 'Toutes' },
@@ -88,6 +101,11 @@ export class NotesPage {
 
   constructor() {
     void this.tour.autoStart();
+    // Un titre ou une categorie modifies (autre appareil, categorie renommee) se retrouvent dans les onglets.
+    effect(() => {
+      const notes = this.notes();
+      untracked(() => this.tabs.refresh(notes));
+    });
   }
 
   /** Saisie rapide en tete de page. */

@@ -208,3 +208,74 @@ describe('robustesse', () => {
     expect(visualLosses(md, roundTrip(md))).toEqual([]);
   });
 });
+
+describe('surlignage', () => {
+  it.each([
+    ['==jaune==', 'yellow'],
+    ['<mark data-color="red">rouge</mark>', 'red'],
+    ['<mark data-color="sky">bleu ciel</mark>', 'sky'],
+    ['<mark data-color="violet">violet</mark>', 'violet'],
+  ])('rend %s en <mark> de couleur et le réécrit à l’identique', (syntax, color) => {
+    const md = `Avant ${syntax} après.`;
+    const ed = load(md);
+    const mark = ed.view.dom.querySelector('mark');
+    expect(mark?.getAttribute('data-color')).toBe(color);
+    expect(mark?.classList).toContain('note-mark');
+    expect(ed.getMarkdown()).toBe(md);
+    expect(visualLosses(md, ed.getMarkdown())).toEqual([]);
+  });
+
+  it('garde la mise en forme à l’intérieur et le surlignage dans une liste', () => {
+    const md =
+      '- ==**très** important== et <mark data-color="sky">[lien](https://example.org)</mark>';
+    // Le lien passe a l'exterieur du surlignage : meme rendu, aucun mot perdu, forme stable ensuite.
+    const out = roundTrip(md);
+    expect(out).toBe(
+      '- ==**très** important== et [<mark data-color="sky">lien</mark>](https://example.org)',
+    );
+    expect(visualLosses(md, out)).toEqual([]);
+    expect(roundTrip(out)).toBe(out);
+  });
+
+  it('lit <mark> sans couleur en jaune sans passer le mode Visuel en lecture seule', () => {
+    const md = 'Un <mark>passage</mark> clé.';
+    const out = roundTrip(md);
+    expect(out).toBe('Un ==passage== clé.');
+    expect(visualLosses(md, out)).toEqual([]);
+  });
+
+  it('ne prend ni une comparaison ni du code pour un surlignage', () => {
+    const ed = load('si a == b alors `x==y==z`');
+    expect(ed.view.dom.querySelector('mark')).toBeNull();
+  });
+
+  it('applique, change et retire une couleur depuis la barre d’outils', () => {
+    const ed = load('Un mot clé.');
+    ed.commands.setTextSelection({ from: 4, to: 7 });
+    ed.commands.setHighlight('red');
+    expect(ed.getMarkdown()).toBe('Un <mark data-color="red">mot</mark> clé.');
+    ed.commands.toggleHighlight('violet');
+    expect(ed.getMarkdown()).toBe('Un <mark data-color="violet">mot</mark> clé.');
+    ed.commands.toggleHighlight('violet');
+    expect(ed.getMarkdown()).toBe('Un mot clé.');
+    ed.commands.setHighlight('yellow');
+    ed.commands.setTextSelection(5);
+    ed.commands.unsetHighlight();
+    expect(ed.getMarkdown()).toBe('Un mot clé.');
+  });
+
+  it('tape ==texte== pour surligner en jaune en mode Visuel', () => {
+    const ed = load('');
+    ed.commands.focus('end');
+    for (const ch of 'Voir ==ceci==') {
+      const { from, to } = ed.state.selection;
+      if (
+        !ed.view.someProp('handleTextInput', (f) => f(ed.view, from, to, ch, () => ed.state.tr))
+      ) {
+        ed.commands.insertContent(ch);
+      }
+    }
+    expect(ed.getMarkdown()).toBe('Voir ==ceci==');
+    expect(ed.view.dom.querySelector('mark')?.textContent).toBe('ceci');
+  });
+});

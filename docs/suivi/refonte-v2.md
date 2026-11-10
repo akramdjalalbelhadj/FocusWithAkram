@@ -26,6 +26,8 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-03 | Notes & Brainstorming : une idée **n'a pas de statut** (seules ses tâches en ont) ; catégories gérées dans un écran dédié ; deux modes d'éditeur (Markdown avec aperçu, visuel) sur un contenu Markdown unique, mode par défaut dans les Paramètres ; suppression d'une idée refusée tant que des tâches en sont issues, avec suppression forcée qui conserve les tâches | Lot 11 ; [cahier des charges § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-06 | Notes & idées : un **tutoriel** explique le but du module par un schéma simple et coloré en trois étapes (**Nouvelle idée** → **Brainstorming** → **Transformation en tâches**) ; ouvert à la première visite de la liste, non réaffiché une fois terminé ou passé (`notesTutorialDone`, côté serveur, hors sauvegarde), relançable par « Comment ça marche ? » ; la visite guidée de Mes achats devient un composant partagé | Lot 14 ; migration V10 ; [cahier des charges FWA-F030 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-06 | Matrice d'Eisenhower : même type de **tutoriel**, dont le schéma est la matrice elle-même (grille 2 × 2 aux couleurs des quadrants, axes Urgent / Pas urgent et Important / Pas important) et qui insiste sur Q2 « Planifier » ; état `matrixTutorialDone` indépendant de celui des notes, côté serveur, hors sauvegarde ; relançable par « Comment ça marche ? » | Lot 15 ; migration V11 ; [cahier des charges FWA-F031 et § 4.1](../produit/cahier-des-charges.md) |
+| 2026-11-10 | Notes & idées : **onglets** des idées ouvertes ; ouvrir une idée lui donne un onglet, revenir à la liste le garde, seule une fermeture explicite (ou la suppression de l'idée) le retire ; fermer l'idée affichée ouvre sa voisine ; état d'interface propre au navigateur (`localStorage`), hors serveur et hors sauvegarde | Lot 17 ; [cahier des charges FWA-F032 et § 4.5](../produit/cahier-des-charges.md) |
+| 2026-11-10 | Notes & idées : **barre d'outils collée** en haut de l'écran pendant la saisie d'un long texte ; **surlignage** en quatre couleurs (jaune `==texte==`, rouge, bleu ciel, violet `<mark data-color>`), une seule couleur par passage | Lot 18 ; [cahier des charges FWA-F026 et § 4.5](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
 
@@ -47,6 +49,8 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 13 | « Mes achats » simplifié : compte unique, prêts en catégorie, épargne du mois, feuille du mois, montants datés, dépenses variables plafonnées, navigation en quatre onglets, visite guidée et bulles d'aide, sauvegarde v5 (API et Angular) | Validé le 6 novembre 2026 (branche `lot-13-mes-achats-simplifie`) |
 | 14 | Tutoriel de Notes & idées « de l'idée à l'action » (schéma coloré en trois étapes), composant de visite guidée partagé `ff-tour` repris par Mes achats (API et Angular) | Validé le 6 novembre 2026 (branche `lot-14-15-tutoriels`, fusionnée dans `main`) |
 | 15 | Tutoriel de la matrice d'Eisenhower (grille 2 × 2 colorée, secret de la case « Planifier »), disposition `matrix` du schéma et moteur commun `PageTourEngine` (API et Angular) | Validé le 6 novembre 2026 (branche `lot-14-15-tutoriels`, fusionnée dans `main`) |
+| 17 | Onglets des idées ouvertes dans Notes & idées (Angular seulement, sans changement d'API) | Livré le 10 novembre 2026, à valider par le propriétaire |
+| 18 | Éditeur des idées : barre d'outils collée et surlignage en quatre couleurs (Angular ; extrait des cartes côté serveur) | Livré le 10 novembre 2026, à valider par le propriétaire |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -294,6 +298,31 @@ Vérifications (6 novembre 2026) : 182 tests backend sans échec, 115 tests unit
 Migration : `V11__matrix_tutorial.sql` (additive) : `user_settings.matrix_tutorial_done BOOLEAN NOT NULL DEFAULT FALSE` ; le tutoriel est proposé une fois sur une base déjà utilisée.
 
 Vérifications (6 novembre 2026) : 183 tests backend sans échec, 122 tests unitaires Angular, lint et build de production Angular, build et lint React ; 12 scénarios E2E Angular. Nouveau `matrix.spec.ts` (Angular seulement, rejouable : il remet lui-même `matrixTutorialDone` à faux, crée puis supprime sa tâche) : démarrage seul, quatre cases et leurs libellés, positions 2 × 2, quatre couleurs, axes, audit axe, Suivant, Passer enregistré, pas de réaffichage après rechargement, focus rendu au bouton, relance et parcours complet jusqu'à « Terminer » avec Q2 mise en avant à l'étape « Planifier » et l'étape des onglets sautée sur ordinateur ; à 390 px, grille toujours en 2 × 2, aucun débordement, audit axe, étape des onglets présente, fermeture par Échap. `smoke.spec.ts` marque désormais les tutoriels comme vus (`PATCH /settings` dans `beforeEach`) pour qu'ils ne couvrent pas les écrans qu'il contrôle. Restent humains : lecteur d'écran réel et toucher. Hors périmètre : React et Krimou.
+
+### Lot 17 — Onglets de Notes & idées
+
+**Livré le 10 novembre 2026**, à valider par le propriétaire. Demande : quand on entre dans une idée pour la modifier, elle s'ouvre dans un onglet ; revenir à la liste laisse l'onglet, sauf si on l'a fermé avec le bouton de l'onglet ; on bascule facilement entre les idées ouvertes ; une idée fermée doit être rouverte pour revenir dans la barre ; sans encombrer la page. Angular seulement, aucune modification d'API ni de sauvegarde.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| État | `NoteTabs` (`features/notes/services/note-tabs.service.ts`) : onglets `{ id, title, color }` dans `localStorage` (`ff.notes.tabs`), relecture tolérante (JSON illisible, doublons, entrées invalides ignorés), synchronisation entre fenêtres ; ouverture à droite sans doublon, mise à jour sans résurrection d'un onglet fermé, fermeture, « autres », « tous », voisin à afficher | `note-tabs.service.spec.ts` (9 tests) |
+| Barre | `ff-note-tabs` : « Notes & idées » (liste) puis un onglet par idée, soulignement de l'onglet affiché, pastille de catégorie, titre tronqué avec infobulle, croix, clic molette, Suppr, menu ⋯ dès deux onglets, focus rendu au voisin, défilement horizontal ; sur l'éditeur elle remplace le lien « ← Notes & idées » ; sur la liste elle n'apparaît que si une idée est ouverte | `note-tabs.spec.ts` (5 tests) ; captures clair, sombre, 1440 px et 390 px |
+| Changement d'onglet | `AppRouteReuseStrategy` (`core/routing/`) recrée l'éditeur quand l'identifiant change (route marquée `recreateOnParamChange`) : l'idée quittée enregistre sa saisie en attente, l'idée ouverte ne peut pas recevoir le texte de la précédente ; rouvrir aussitôt la même idée attend la fin de l'envoi ; un chargement terminé après la fermeture de l'onglet ne le rouvre pas (défaut trouvé par l'E2E et corrigé) | `route-reuse.strategy.spec.ts` (3 tests) ; E2E « saisie puis changement d'onglet » lue par l'API |
+| Cohérence | Titre et couleur suivis pendant la saisie ; titres rafraîchis par la liste ; onglet fermé à la suppression de l'idée et sur un 404 | `notes.spec.ts` |
+
+Vérifications (10 novembre 2026) : 176 tests unitaires Angular (dont 17 nouveaux), lint et build de production Angular ; `notes.spec.ts` à trois scénarios sans échec sur backend et base **jetables** (18080, `backend/target/onglets-e2e-db`, Angular 4300) : le nouveau scénario « onglets » couvre l'ouverture, le retour à la liste, la bascule, l'enregistrement au changement d'onglet, le titre suivi, le rechargement, la fermeture de l'onglet affiché et d'un autre, la réouverture, axe et 390 px ; le scénario « parcours » cible désormais la carte de la liste (l'onglet porte le même nom). Restent humains : lecteur d'écran réel et toucher. Hors périmètre : React et Krimou (voir § 4).
+
+### Lot 18 — Barre d'outils collée et surlignage
+
+**Livré le 10 novembre 2026**, à valider par le propriétaire. Demandes : la barre d'outils (gras, italique…) doit suivre quand on descend dans un long texte, au lieu d'obliger à remonter au début ; un bouton de surlignage du texte choisi, en jaune, rouge, bleu ciel et violet.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Barre collée | `.note-sticky` (barre d'outils et formulaire de lien) collée sous la barre supérieure (`--app-header-height`) ; cadre de l'éditeur en `overflow: clip` (au lieu de `hidden`, qui empêchait le collage) ; ombre quand elle est collée (`@container scroll-state`) ; une ligne défilante sur téléphone ; curseur gardé sous la barre (`handleScrollToSelection`) ; panneau des tâches recalé sous la barre supérieure | E2E « barre d'outils collée » ; désactiver la correction du curseur fait échouer le scénario (vérifié) ; captures clair, sombre, 390 px |
+| Surlignage | Marque `NoteHighlight` (Tiptap) et `util/highlight.ts` : `==texte==` (jaune), `<mark data-color="red\|sky\|violet">` ; bouton (dernière couleur, retire au second clic), flèche vers les quatre couleurs (cases radio annoncées) et **Retirer le surlignage**, Ctrl+Maj+H dans les deux modes, `==texte==` tapé en mode Visuel ; aide Markdown complétée ; aucune lecture seule du mode Visuel | `highlight.spec.ts` (9 tests), `note-extensions.spec.ts` (+9 tests : aller-retour des quatre couleurs, lien et gras surlignés, `<mark>` sans couleur, comparaisons et code ignorés, commandes, saisie `==`) ; E2E « surlignage » |
+| Extrait | `NoteMapper.excerpt` retire `==` (pas dans « a == b ») et les balises `<mark>` | `NoteMapperTest.theExcerptDropsHighlightMarkersButKeepsComparisons` |
+
+Vérifications (10 novembre 2026) : 264 tests backend sans échec, 194 tests unitaires Angular, lint et build de production Angular ; `notes.spec.ts` à cinq scénarios sans échec sur backend et base jetables ; audits axe en thème clair et sombre sur du texte surligné. Restent humains : lecteur d'écran réel et toucher. Hors périmètre : React et Krimou (voir § 4).
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

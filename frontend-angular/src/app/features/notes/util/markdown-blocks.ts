@@ -111,10 +111,15 @@ export function insertLink(text: string, start: number, end: number, url: string
     : { text: result, start: start + link.length, end: start + link.length };
 }
 
-/** Mots (lettres et chiffres) d'un texte Markdown, entites HTML ignorees, casse ignoree. */
+/**
+ * Mots (lettres et chiffres) d'un texte Markdown, entites HTML ignorees, casse ignoree. Les balises de
+ * surlignage `<mark ...>` sont de la mise en forme : `<mark>x</mark>` reecrit en `==x==` ne perd aucun mot.
+ */
 function words(markdown: string): Map<string, number> {
   const counts = new Map<string, number>();
-  const plain = markdown.replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, ' ');
+  const plain = markdown
+    .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, ' ')
+    .replace(/<\/?mark\b[^>]*>/gi, ' ');
   for (const w of plain.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []) {
     counts.set(w, (counts.get(w) ?? 0) + 1);
   }

@@ -1,4 +1,4 @@
-import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
+import { CdkMenu, CdkMenuItem, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import {
@@ -37,7 +37,26 @@ import {
   normalizeUrl,
   visualLosses,
 } from '../../util/markdown-blocks';
+import {
+  HIGHLIGHT_COLORS,
+  HIGHLIGHT_LABEL,
+  HighlightColor,
+  applyHighlight,
+  isHighlightColor,
+} from '../../util/highlight';
 import { MarkdownHelpPanelComponent } from '../markdown-help/markdown-help.panel';
+
+/** Derniere couleur de surlignage choisie : propre au navigateur, comme une preference d'affichage. */
+const HIGHLIGHT_KEY = 'ff.notes.highlight';
+
+function readHighlightColor(): HighlightColor {
+  try {
+    const stored = localStorage.getItem(HIGHLIGHT_KEY);
+    return isHighlightColor(stored) ? stored : 'yellow';
+  } catch {
+    return 'yellow';
+  }
+}
 
 interface ToolbarItem {
   action: MarkdownAction;
@@ -67,6 +86,9 @@ const CALLOUT_ICON: Record<CalloutType, string> = {
   warning: 'alert',
   caution: 'octagon-alert',
 };
+
+/** Espace garde entre le curseur et le bas de la barre d'outils collee, en pixels. */
+const CARET_MARGIN = 12;
 
 type TableAction = 'addRowAfter' | 'addColumnAfter' | 'deleteRow' | 'deleteColumn' | 'deleteTable';
 
@@ -105,7 +127,7 @@ function replaceText(area: HTMLTextAreaElement, next: string): void {
  */
 @Component({
   selector: 'ff-note-editor',
-  imports: [IconComponent, CdkMenu, CdkMenuItem, CdkMenuTrigger],
+  imports: [IconComponent, CdkMenu, CdkMenuItem, CdkMenuItemRadio, CdkMenuTrigger],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Le contenu de Tiptap est cree hors du template : ses styles ne peuvent pas etre encapsules.
   encapsulation: ViewEncapsulation.None,
@@ -134,6 +156,23 @@ export class NoteEditorComponent {
   protected readonly tab = signal<'write' | 'preview'>('write');
   /** Incremente a chaque transaction de l'editeur visuel : l'etat actif des boutons en depend. */
   private readonly tick = signal(0);
+  protected readonly highlightColors = HIGHLIGHT_COLORS.map((color) => ({
+    color,
+    label: HIGHLIGHT_LABEL[color],
+  }));
+  /** Couleur du bouton « Surligner » et de Ctrl+Maj+H : la derniere choisie dans le menu. */
+  protected readonly highlightColor = signal<HighlightColor>(readHighlightColor());
+  /** Couleur du surlignage sous le curseur (mode Visuel), null s'il n'y en a pas. */
+  protected readonly activeHighlight = computed<HighlightColor | null>(() => {
+    this.tick();
+    const ed = this.rich;
+    if (this.mode() !== 'RICH' || !ed?.isActive('highlight')) return null;
+    const color = ed.getAttributes('highlight')['color'];
+    return isHighlightColor(color) ? color : 'yellow';
+  });
+  protected readonly highlightActive = computed(
+    () => this.activeHighlight() !== null && this.activeHighlight() === this.highlightColor(),
+  );
   /** Mots que le mode visuel perdrait (vide : edition visuelle sans risque). */
   protected readonly losses = signal<string[]>([]);
   protected readonly visualLocked = computed(
@@ -155,6 +194,7 @@ export class NoteEditorComponent {
   private savedSelection: [number, number] | null = null;
 
   private readonly textarea = viewChild<ElementRef<HTMLTextAreaElement>>('textarea');
+  private readonly stickyBar = viewChild<ElementRef<HTMLElement>>('stickyBar');
   private readonly richHost = viewChild<ElementRef<HTMLElement>>('richHost');
   private readonly previewHost = viewChild<ElementRef<HTMLElement>>('previewHost');
   private readonly linkInput = viewChild<ElementRef<HTMLInputElement>>('linkInput');
@@ -248,6 +288,34 @@ export class NoteEditorComponent {
       case 'quote':
         return ed.isActive('blockquote');
     }
+  }
+
+  protected highlightLabel(color: HighlightColor): string {
+    return HIGHLIGHT_LABEL[color].toLowerCase();
+  }
+
+  /**
+   * Surligne la selection. `toggle` (bouton principal, Ctrl+Maj+H) retire un surlignage deja de cette couleur ;
+   * un choix dans le menu applique la couleur et devient celle du bouton. null retire le surlignage.
+   */
+  protected highlight(color: HighlightColor | null, toggle = false): void {
+    if (color && color !== this.highlightColor()) {
+      this.highlightColor.set(color);
+      try {
+        localStorage.setItem(HIGHLIGHT_KEY, color);
+      } catch {
+        /* stockage indisponible : la couleur dure le temps de la page */
+      }
+    }
+    if (this.mode() === 'RICH') {
+      const chain = this.rich?.chain().focus();
+      if (!chain) return;
+      if (!color) chain.unsetHighlight().run();
+      else if (toggle) chain.toggleHighlight(color).run();
+      else chain.setHighlight(color).run();
+      return;
+    }
+    this.editText((text, start, end) => applyHighlight(text, start, end, color, toggle));
   }
 
   protected isCalloutActive(type: CalloutType): boolean {
@@ -416,7 +484,10 @@ export class NoteEditorComponent {
   protected onKeydown(event: KeyboardEvent): void {
     if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
     const key = event.key.toLowerCase();
-    if (key === 'b' || key === 'i') {
+    if (key === 'h' && event.shiftKey) {
+      event.preventDefault();
+      this.highlight(this.highlightColor(), true);
+    } else if (key === 'b' || key === 'i') {
       event.preventDefault();
       this.apply(key === 'b' ? 'bold' : 'italic');
     } else if (key === 'k') {
@@ -502,6 +573,7 @@ export class NoteEditorComponent {
       element: host,
       extensions: noteExtensions({
         placeholder: 'Développez votre idée : contexte, pistes, questions…',
+        highlightColor: () => this.highlightColor(),
       }),
       content: value,
       contentType: 'markdown',
@@ -512,6 +584,8 @@ export class NoteEditorComponent {
           'aria-multiline': 'true',
           'aria-label': this.label(),
         },
+        handleScrollToSelection: (view) =>
+          this.keepCaretBelowToolbar(view.coordsAtPos(view.state.selection.head)),
       },
       onUpdate: ({ editor }) => {
         const markdown = editor.getMarkdown();
@@ -521,6 +595,19 @@ export class NoteEditorComponent {
       onTransaction: () => this.tick.update((n) => n + 1),
     });
     this.checkLosses(value);
+  }
+
+  /**
+   * La barre d'outils collee (et la barre de l'application) couvre le haut de l'ecran : un curseur qui remonte
+   * dessous (fleches, Page precedente) fait defiler la page pour rester visible. Sinon, defilement par defaut.
+   */
+  private keepCaretBelowToolbar(caret: { top: number }): boolean {
+    const bar = this.stickyBar()?.nativeElement;
+    if (!bar) return false;
+    const hidden = caret.top - bar.getBoundingClientRect().bottom - CARET_MARGIN;
+    if (hidden >= 0) return false;
+    window.scrollBy({ top: hidden });
+    return true;
   }
 
   /** Verrouille l'editeur visuel si sa conversion du Markdown perdrait du texte. */

@@ -1,0 +1,70 @@
+<nav class="ntabs" aria-label="Onglets des idées">
+  <a
+    class="ntab-home"
+    routerLink="/notes"
+    title="Toutes les idées"
+    [attr.aria-current]="active() ? null : 'page'"
+    ><ff-icon name="lightbulb" [size]="16" /><span class="ntab-home-label"
+      >Notes &amp; idées</span
+    ></a
+  >
+  @if (tabs.tabs().length) {
+    <span class="ntabs-sep" aria-hidden="true"></span>
+    <ul class="ntabs-list">
+      @for (t of tabs.tabs(); track t.id) {
+        <li class="ntab" [class.ntab-active]="t.id === active()">
+          <a
+            class="ntab-link"
+            [routerLink]="['/notes', t.id]"
+            [attr.data-tab-id]="t.id"
+            [attr.aria-current]="t.id === active() ? 'page' : null"
+            [title]="t.title"
+            (auxclick)="onAuxClick($event, t)"
+            (mousedown)="$event.button === 1 && $event.preventDefault()"
+            (keydown.delete)="close(t)"
+          >
+            <span
+              class="ntab-dot"
+              aria-hidden="true"
+              [style.background]="t.color ?? 'var(--line-strong)'"
+            ></span>
+            <span class="ntab-title">{{ t.title }}</span>
+          </a>
+          <button
+            type="button"
+            class="ntab-close"
+            title="Fermer l’onglet"
+            [attr.aria-label]="'Fermer l’onglet « ' + t.title + ' »'"
+            (click)="close(t)"
+          >
+            <ff-icon name="x" [size]="14" />
+          </button>
+        </li>
+      }
+    </ul>
+    @if (tabs.tabs().length > 1) {
+      <button
+        type="button"
+        class="ntabs-more"
+        title="Fermer plusieurs onglets"
+        aria-label="Fermer plusieurs onglets"
+        [cdkMenuTriggerFor]="menu"
+      >
+        <ff-icon name="more" [size]="16" />
+      </button>
+    }
+  }
+</nav>
+
+<ng-template #menu>
+  <div cdkMenu class="menu anim-pop" aria-label="Onglets">
+    @if (active() && tabs.has(active()!)) {
+      <button cdkMenuItem class="menu-item" (click)="closeOthers()">
+        <ff-icon name="x" [size]="16" />Fermer les autres onglets
+      </button>
+    }
+    <button cdkMenuItem class="menu-item" (click)="closeAll()">
+      <ff-icon name="x" [size]="16" />Fermer tous les onglets
+    </button>
+  </div>
+</ng-template>

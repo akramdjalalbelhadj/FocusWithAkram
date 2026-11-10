@@ -28,7 +28,9 @@ import {
 } from '../../../../shared/ui/states/index';
 import { TaskActions } from '../../../tasks/services/task-actions.service';
 import { NoteEditorComponent } from '../../components/note-editor/note-editor';
+import { NoteTabsComponent } from '../../components/note-tabs/note-tabs';
 import { NoteActions } from '../../services/note-actions.service';
+import { NoteTabs } from '../../services/note-tabs.service';
 import { parseTags } from '../../util/markdown';
 import { markdownFileName, noteToMarkdownFile } from '../../util/markdown-blocks';
 
@@ -37,6 +39,12 @@ const SAVE_DELAY = 800;
 
 type SaveState = 'saved' | 'pending' | 'saving' | 'error';
 type EditableField = 'title' | 'content' | 'categoryId' | 'tags';
+
+/**
+ * Enregistrements lances par un editeur qui se ferme (retour a la liste, changement d'onglet), par idee. Rouvrir
+ * aussitot la meme idee attend la fin de l'envoi : sinon l'editeur relirait l'ancien texte et l'ecraserait.
+ */
+const closingSaves = new Map<string, Promise<void>>();
 
 /**
  * Editeur d'une idee. Titre, contenu, categorie et etiquettes sont enregistres automatiquement (champs modifies
@@ -49,6 +57,7 @@ type EditableField = 'title' | 'content' | 'categoryId' | 'tags';
     IconComponent,
     RouterLink,
     NoteEditorComponent,
+    NoteTabsComponent,
     StatusBadgeComponent,
     QuadrantBadgeComponent,
     EmptyComponent,
@@ -69,6 +78,7 @@ export class NotePage {
   private readonly refresh = inject(RefreshService);
   private readonly toast = inject(ToastService);
   private readonly noteActions = inject(NoteActions);
+  private readonly tabs = inject(NoteTabs);
   protected readonly taskActions = inject(TaskActions);
   protected readonly settings = inject(SettingsStore);
 
@@ -87,6 +97,8 @@ export class NotePage {
   private readonly dirty = new Set<EditableField>();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private saving: Promise<void> | null = null;
+  /** Page quittee : un chargement qui se termine apres coup ne doit pas rouvrir l'onglet ferme entre-temps. */
+  private destroyed = false;
 
   protected readonly categories = new Loader(() => this.api.categories());
   protected readonly mode = computed<NoteEditorMode>(
@@ -113,9 +125,29 @@ export class NotePage {
       }
       untracked(() => void this.reloadTasks());
     });
+    // L'onglet suit la saisie : titre (s'il n'est pas vide) et couleur de la categorie choisie.
+    effect(() => {
+      const note = this.note();
+      if (!note) return;
+      const title = this.title();
+      const categoryId = this.categoryId();
+      const category = categoryId
+        ? ((this.categories.data() ?? []).find((c) => c.id === categoryId) ??
+          (note.category?.id === categoryId ? note.category : null))
+        : null;
+      untracked(() => this.tabs.update(note.id, { title, color: category?.color ?? null }));
+    });
     inject(DestroyRef).onDestroy(() => {
-      // Quitter la page enregistre immediatement la saisie en attente.
-      if (this.dirty.size) void this.flush();
+      this.destroyed = true;
+      // Quitter la page enregistre immediatement la saisie en attente (ou attend l'envoi en cours).
+      const id = this.note()?.id;
+      if (id && (this.dirty.size || this.saving)) {
+        const done = this.flush().catch(() => undefined);
+        closingSaves.set(id, done);
+        void done.then(() => {
+          if (closingSaves.get(id) === done) closingSaves.delete(id);
+        });
+      }
       clearTimeout(this.timer);
     });
   }
@@ -124,7 +156,11 @@ export class NotePage {
 
   private async open(id: string): Promise<void> {
     try {
+      await closingSaves.get(id);
       const note = await firstValueFrom(this.api.get(id));
+      if (this.destroyed) return;
+      // Ouvrir une idee l'ajoute aux onglets ; elle y reste jusqu'a « Fermer l'onglet ».
+      this.tabs.open(note);
       this.note.set(note);
       this.title.set(note.title);
       this.content.set(note.content);
@@ -134,8 +170,13 @@ export class NotePage {
       this.saveState.set('saved');
       this.loadError.set(false);
     } catch (e) {
-      if (e instanceof AppError && e.problem.status === 404) this.notFound.set(true);
-      else this.loadError.set(true);
+      if (e instanceof AppError && e.problem.status === 404) {
+        // Idee supprimee (ailleurs, ou depuis un autre appareil) : son onglet disparait.
+        this.tabs.close(id);
+        this.notFound.set(true);
+      } else {
+        this.loadError.set(true);
+      }
     }
   }
 

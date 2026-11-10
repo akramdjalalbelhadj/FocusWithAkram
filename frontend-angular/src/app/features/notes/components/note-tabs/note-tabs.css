@@ -1,0 +1,180 @@
+:host {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* Une ligne discrete posee sur un filet : l'onglet affiche est souligne de la couleur de l'application. */
+.ntabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  /* Filet en ombre interne : le soulignement de l'onglet affiche le recouvre sans etre rogne par le defilement. */
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+
+.ntab-home,
+.ntab {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 2.375rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.ntab-home {
+  gap: 0.375rem;
+  padding: 0 0.625rem;
+}
+
+.ntab-home:hover,
+.ntab:hover {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+.ntab-home[aria-current='page'],
+.ntab-active {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.ntab-home[aria-current='page']::after,
+.ntab-active::after {
+  position: absolute;
+  right: 0.375rem;
+  bottom: 0;
+  left: 0.375rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brand);
+  content: '';
+}
+
+.ntab-home[aria-current='page'] {
+  color: var(--brand);
+}
+
+.ntabs-sep {
+  width: 1px;
+  height: 1.25rem;
+  flex: none;
+  background: var(--line);
+}
+
+/* Beaucoup d'onglets : la barre defile horizontalement, sans deborder de la page. */
+.ntabs-list {
+  display: flex;
+  flex: 1;
+  gap: 0.125rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.ntab {
+  max-width: 15rem;
+}
+
+.ntab-link {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4375rem;
+  height: 100%;
+  padding: 0 0.25rem 0 0.625rem;
+  border-radius: inherit;
+  color: inherit;
+}
+
+.ntab-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 999px;
+}
+
+.ntab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ntab-close,
+.ntabs-more {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: calc(var(--radius-sm) - 2px);
+  color: var(--muted);
+}
+
+.ntab-close {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.25rem;
+  opacity: 0.55;
+}
+
+.ntab:hover .ntab-close,
+.ntab-active .ntab-close,
+.ntab-close:focus-visible {
+  opacity: 1;
+}
+
+.ntab-close:hover,
+.ntabs-more:hover {
+  background: var(--surface-3);
+  color: var(--fg);
+}
+
+.ntabs-more {
+  width: 2rem;
+  height: 2rem;
+  margin-left: auto;
+}
+
+.ntab-home:focus-visible,
+.ntab-link:focus-visible,
+.ntab-close:focus-visible,
+.ntabs-more:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+@media (max-width: 640px) {
+  .ntab {
+    max-width: 10rem;
+  }
+
+  /* Sur telephone, la liste n'est plus qu'une icone ; son nom reste lu par les lecteurs d'ecran. */
+  .ntab-home-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ntab-close {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ntab-home,
+  .ntab {
+    transition: none;
+  }
+}

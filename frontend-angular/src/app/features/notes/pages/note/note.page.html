@@ -1,3 +1,6 @@
+<!-- Onglets des idees ouvertes ; « Notes & idées », a gauche, ramene a la liste sans fermer d'onglet. -->
+<ff-note-tabs [active]="id()" />
+
 @if (notFound()) {
   <div class="card">
     <ff-empty icon="lightbulb" title="Idée introuvable" hint="Elle a peut-être été supprimée."
@@ -11,9 +14,6 @@
 } @else {
   @let n = note()!;
   <div class="note-topbar">
-    <a routerLink="/notes" class="btn btn-ghost btn-sm"
-      ><ff-icon name="arrow-left" [size]="16" />Notes &amp; idées</a
-    >
     <p class="note-save" [attr.data-state]="saveState()" aria-live="polite">
       @switch (saveState()) {
         @case ('saved') {

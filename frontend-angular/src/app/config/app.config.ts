@@ -5,8 +5,9 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { RouteReuseStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from '../routes/app.routes';
+import { AppRouteReuseStrategy } from '../core/routing/route-reuse.strategy';
 import { errorInterceptor } from '../core/interceptors/error.interceptor';
 import { PomodoroEngine } from '../core/services/pomodoro.engine';
 import { SettingsStore } from '../core/services/settings.store';
@@ -17,6 +18,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideAccessibleDialogs(),
     provideRouter(routes, withComponentInputBinding()),
+    { provide: RouteReuseStrategy, useClass: AppRouteReuseStrategy },
     provideHttpClient(withInterceptors([errorInterceptor])),
     // Les parametres (theme, fuseau) sont charges avant le premier rendu ; le moteur Pomodoro se reconnecte
     // a la session active des le demarrage, quelle que soit la page ouverte.

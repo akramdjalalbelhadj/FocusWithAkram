@@ -15,6 +15,7 @@ import {
   QuickNoteDialogComponent,
   QuickNoteResult,
 } from '../components/quick-note-dialog/quick-note-dialog';
+import { NoteTabs } from './note-tabs.service';
 
 /** Ce qu'il faut connaitre d'une idee pour la supprimer (depuis la liste ou depuis l'editeur). */
 export interface NoteRef {
@@ -35,6 +36,7 @@ export class NoteActions {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly tasks = inject(TaskActions);
+  private readonly tabs = inject(NoteTabs);
 
   /** Saisie rapide d'une idee depuis n'importe quelle page (raccourci I, palette). */
   async quickCapture(): Promise<void> {
@@ -91,6 +93,7 @@ export class NoteActions {
       }
     }
     this.toast.success(force ? 'Idée supprimée ; ses tâches sont conservées.' : 'Idée supprimée.');
+    this.tabs.close(note.id);
     this.refresh.bump();
     return true;
   }
