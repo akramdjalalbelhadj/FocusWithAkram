@@ -402,7 +402,7 @@ test("Notes : un seul bouton Exporter, en Markdown ou en PDF", async ({ page, re
   const stamp = Date.now().toString(36);
   await setTutorialDone(request, true);
   const title = `Export ${stamp}`;
-  const content = "## Plan\n\n- [x] ==Réserver== la salle\n- [ ] Écrire le compte rendu\n\n```js\nconst a = 1;\n```";
+  const content = "## Plan 🚀\n\n- [x] ==Réserver== la salle 🎉\n- [ ] Écrire le compte rendu\n\n```js\nconst a = 1;\n```";
   const created = await request.post(api + "notes", { data: { title, content, tags: ["visa"] } });
   expect(created.ok()).toBe(true);
   const noteId = (await created.json()).id;
@@ -433,6 +433,8 @@ test("Notes : un seul bouton Exporter, en Markdown ou en PDF", async ({ page, re
     const bytes = Buffer.concat(await (await pdf.createReadStream()).toArray());
     expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
     expect(bytes.length).toBeGreaterThan(5000);
+    // Emojis ecrits avec la police d'emojis, embarquee dans le fichier.
+    expect(bytes.includes("NotoEmoji")).toBe(true);
     await expect(page.getByText("Note exportée en PDF.")).toBeVisible();
     await expect(exportButton).toBeEnabled();
   } finally {

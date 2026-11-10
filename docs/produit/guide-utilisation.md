@@ -288,7 +288,7 @@ Dans l’éditeur d’une idée, le bouton **Exporter** (en haut à droite) prop
 - **Markdown (.md)** : le texte tel que vous l’avez écrit, précédé d’un en-tête (titre, catégorie, étiquettes, dates) lu par Obsidian, GitHub et les éditeurs de texte. Pratique pour reprendre l’idée ailleurs.
 - **PDF (.pdf)** : un document A4 mis en page, téléchargé directement, à partager ou à imprimer. En tête, le titre, la catégorie, les étiquettes et les dates ; ensuite, le contenu comme dans le mode Visuel : titres, gras, italique, barré, liens cliquables, surlignages en couleur, listes, cases cochées ou non, alertes, citations, tableaux et blocs de code colorés. Pied de page : titre et numéro de page. Le premier export PDF prend une ou deux secondes (chargement de l’outil de mise en page) ; « Export PDF… » s’affiche pendant ce temps.
 
-Limites du PDF : les émojis et les caractères absents de la police (certains symboles) n’apparaissent pas ; dans les blocs de code, seuls les caractères latins s’affichent.
+**Émojis** : ils apparaissent dans le PDF (titre, texte, listes, tableaux, code…), y compris les drapeaux, les tons de peau et les émojis composés, mais **en noir et blanc** : une police de PDF ne porte pas de couleurs. Leur police (Noto Emoji) n’est téléchargée qu’à l’export d’une idée qui en contient ; si elle ne peut pas l’être (hors ligne), le PDF est produit sans eux et un message le signale. Les symboles rares absents des polices n’apparaissent pas.
 
 ## 13. Recherche et raccourcis
 

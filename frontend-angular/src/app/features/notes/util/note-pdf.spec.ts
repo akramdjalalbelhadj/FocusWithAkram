@@ -1,7 +1,7 @@
 import { Editor } from '@tiptap/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { noteExtensions } from '../editor/note-extensions';
-import { notePdfDefinition } from './note-pdf';
+import { EMOJI_FONT, hasEmoji, notePdfDefinition, splitEmoji } from './note-pdf';
 import { noteToPdf } from './note-pdf-export';
 
 let editors: Editor[] = [];
@@ -12,14 +12,14 @@ afterEach(() => {
 });
 
 /** Definition PDF d'un Markdown, analyse comme dans l'editeur. */
-function pdf(markdown: string, meta: string[] = []) {
+function pdf(markdown: string, meta: string[] = [], emojiFont = false, title = 'Projet Krimou') {
   const editor = new Editor({
     extensions: noteExtensions(),
     content: markdown,
     contentType: 'markdown',
   });
   editors.push(editor);
-  return notePdfDefinition({ title: 'Projet Krimou', meta, doc: editor.getJSON() });
+  return notePdfDefinition({ title, meta, doc: editor.getJSON(), emojiFont });
 }
 
 /** Contenu de la note (apres le titre, les informations et le filet). */
@@ -98,9 +98,58 @@ describe('notePdfDefinition', () => {
   });
 });
 
+describe('émojis', () => {
+  it('reconnaît chaque émoji en entier : drapeau, famille, ton de peau, touche', () => {
+    expect(splitEmoji('Go 🚀 ! 🇫🇷 👨‍👩‍👧 👍🏽 1️⃣ ❤️')).toEqual([
+      { text: 'Go ', emoji: false },
+      { text: '🚀', emoji: true },
+      { text: ' ! ', emoji: false },
+      { text: '🇫🇷', emoji: true },
+      { text: ' ', emoji: false },
+      { text: '👨‍👩‍👧', emoji: true },
+      { text: ' ', emoji: false },
+      { text: '👍🏽', emoji: true },
+      { text: ' ', emoji: false },
+      { text: '1️⃣', emoji: true },
+      { text: ' ', emoji: false },
+      { text: '❤️', emoji: true },
+    ]);
+  });
+
+  it('laisse au texte les symboles que la police dessine déjà et les chiffres seuls', () => {
+    expect(hasEmoji('© 2026 ® ™ — 3 # * « » é')).toBe(false);
+    expect(splitEmoji('Prix © 3 €')).toEqual([{ text: 'Prix © 3 €', emoji: false }]);
+  });
+
+  it('écrit les émojis avec la police d’émojis partout, mise en forme conservée', () => {
+    const def = pdf(
+      '## Départ 🚀\n\n**Bravo 🎉** et ==surligné 👍==\n\n| Statut |\n| --- |\n| ✅ fait |\n\n```js\nlog("🔥");\n```',
+      ['Étiquettes : 🏷️ perso'],
+      true,
+      'Idée 💡',
+    );
+    const text = json(def.content);
+    // Chaque emoji dans la police d'emojis, avec le style de son passage (surlignage, couleur du code...).
+    for (const emoji of ['💡', '🏷️', '🚀', '👍', '✅', '🔥']) {
+      expect(text).toMatch(new RegExp(`"text":"${emoji}"[^{}]*"font":"${EMOJI_FONT}"`, 'u'));
+    }
+    expect(text).toContain(`"text":"👍","background":"#fef08a","font":"${EMOJI_FONT}"`);
+    // Le gras du passage est garde sur l'emoji, seule la police change.
+    expect(text).toContain(`"text":"🎉","bold":true,"font":"${EMOJI_FONT}"`);
+    const footer = (def.footer as (p: number, n: number) => unknown)(1, 1);
+    expect(json(footer)).toContain(`"text":"💡","font":"${EMOJI_FONT}"`);
+  });
+
+  it('ne change rien sans police d’émojis', () => {
+    expect(json(pdf('Go 🚀').content)).not.toContain(EMOJI_FONT);
+  });
+});
+
 describe('noteToPdf', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it('produit un vrai fichier PDF', { timeout: 60000 }, async () => {
-    const blob = await noteToPdf({
+    const { pdf: blob, emojiMissing } = await noteToPdf({
       title: 'Projet Krimou',
       content: '## Plan\n\n- [x] ==fait==\n\n```js\nconst a = 1;\n```',
       meta: ['Créée le 10/11/2026'],
@@ -108,5 +157,21 @@ describe('noteToPdf', () => {
     const head = new TextDecoder().decode(await blob.slice(0, 5).arrayBuffer());
     expect(head).toBe('%PDF-');
     expect(blob.size).toBeGreaterThan(5000);
+    expect(emojiMissing).toBe(false);
   });
+
+  it(
+    'produit quand même le PDF si la police d’émojis est indisponible, et le signale',
+    { timeout: 60000 },
+    async () => {
+      vi.stubGlobal('fetch', () => Promise.reject(new Error('hors ligne')));
+      const { pdf: blob, emojiMissing } = await noteToPdf({
+        title: 'Départ 🚀',
+        content: 'Bravo 🎉',
+        meta: [],
+      });
+      expect(emojiMissing).toBe(true);
+      expect(new TextDecoder().decode(await blob.slice(0, 5).arrayBuffer())).toBe('%PDF-');
+    },
+  );
 });

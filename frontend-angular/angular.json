@@ -23,6 +23,16 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "NotoEmoji_400Regular.ttf",
+                "input": "node_modules/@expo-google-fonts/noto-emoji/400Regular",
+                "output": "fonts"
+              },
+              {
+                "glob": "LICENSE_FONT",
+                "input": "node_modules/@expo-google-fonts/noto-emoji",
+                "output": "fonts/noto-emoji"
               }
             ],
             "styles": [

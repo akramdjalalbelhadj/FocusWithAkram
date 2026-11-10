@@ -12,6 +12,77 @@ export interface PdfNote {
   meta: string[];
   /** Document ProseMirror (meme analyse Markdown que l'editeur et l'apercu). */
   doc: JSONContent;
+  /**
+   * Police d'emojis enregistree aupres de pdfmake sous le nom `EMOJI_FONT` : les emojis y sont ecrits (Roboto et
+   * Courier n'en ont pas). Absente : les emojis restent dans la police du texte (et n'apparaissent pas).
+   */
+  emojiFont?: boolean;
+}
+
+/** Nom pdfmake de la police d'emojis (Noto Emoji, monochrome : une police PDF n'a pas de couleurs). */
+export const EMOJI_FONT = 'NotoEmoji';
+
+/**
+ * Un emoji complet : touche (1️⃣), drapeau (deux indicateurs regionaux), ou pictogramme avec selecteur de
+ * variante, ton de peau et sequences liees par ZWJ (👨‍👩‍👧).
+ */
+const EMOJI =
+  /[0-9#*]️?⃣|\p{Regional_Indicator}{2}|\p{Extended_Pictographic}[️\p{Emoji_Modifier}]*(?:‍\p{Extended_Pictographic}[️\p{Emoji_Modifier}]*)*/gu;
+/** Pictogrammes que Roboto dessine deja (©, ®, ™, ‼...) : sans selecteur emoji, ils restent du texte. */
+const TEXT_SYMBOLS = /^[©®™‼⁉]$/;
+
+/** Le texte contient-il un emoji a ecrire avec la police d'emojis ? */
+export function hasEmoji(text: string): boolean {
+  return [...text.matchAll(EMOJI)].some((m) => !TEXT_SYMBOLS.test(m[0]));
+}
+
+/** Decoupe un texte en morceaux : les emojis a part, marques pour la police d'emojis. */
+export function splitEmoji(text: string): { text: string; emoji: boolean }[] {
+  const parts: { text: string; emoji: boolean }[] = [];
+  let last = 0;
+  for (const match of text.matchAll(EMOJI)) {
+    if (TEXT_SYMBOLS.test(match[0])) continue;
+    if (match.index > last) parts.push({ text: text.slice(last, match.index), emoji: false });
+    parts.push({ text: match[0], emoji: true });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), emoji: false });
+  return parts;
+}
+
+/**
+ * Valeur de `text` (chaine ou suite de morceaux) dont les emojis passent dans la police d'emojis. Chaque morceau
+ * n'est traite qu'une fois : un morceau emoji produit n'est jamais redecoupe.
+ */
+function emojiText(text: unknown): unknown {
+  const piece = (item: unknown): unknown[] => {
+    if (typeof item !== 'string' && (typeof item !== 'object' || item === null)) return [item];
+    const value = typeof item === 'string' ? item : (item as { text?: unknown }).text;
+    // Morceau compose (texte imbrique) : traite recursivement.
+    if (typeof value !== 'string') return [withEmojiFont(item)];
+    if (!hasEmoji(value)) return [item];
+    const style = typeof item === 'string' ? {} : item;
+    return splitEmoji(value).map((p) =>
+      p.emoji ? { ...style, text: p.text, font: EMOJI_FONT } : { ...style, text: p.text },
+    );
+  };
+  if (Array.isArray(text)) return text.flatMap(piece);
+  if (typeof text === 'string') return hasEmoji(text) ? piece(text) : text;
+  return withEmojiFont(text);
+}
+
+/** Applique la police d'emojis a tout le texte d'une definition (blocs, tableaux, colonnes...). */
+function withEmojiFont<T>(node: T): T {
+  if (Array.isArray(node)) return node.map(withEmojiFont) as T;
+  if (!node || typeof node !== 'object') return node;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node)) {
+    // Dessins (canvas) et fonctions de mise en page : rien a ecrire.
+    if (key === 'canvas' || typeof value === 'function') out[key] = value;
+    else if (key === 'text') out[key] = emojiText(value);
+    else out[key] = withEmojiFont(value);
+  }
+  return out as T;
 }
 
 /** Couleurs du theme clair de l'application : un PDF s'imprime et se lit sur fond blanc. */
@@ -76,12 +147,16 @@ export function notePdfDefinition(note: PdfNote): TDocumentDefinitions {
   // Une idee vide est analysee en un paragraphe vide : elle est signalee comme pas encore developpee.
   const empty = !textOf(note.doc).trim() && nodes.every((n) => n.type === 'paragraph');
   const body = empty ? [] : blocks(nodes, false);
+  const emoji = note.emojiFont ? withEmojiFont : <T>(node: T) => node;
+  // Titre court en pied de page, coupe sur des caracteres entiers (un emoji n'est jamais coupe en deux).
+  const chars = [...note.title];
+  const shortTitle = chars.length > 70 ? chars.slice(0, 69).join('') + '…' : note.title;
   return {
     info: { title: note.title, creator: 'FocusWithAkram', producer: 'FocusWithAkram' },
     pageSize: 'A4',
     pageMargins: [48, 48, 48, 56],
     defaultStyle: { font: 'Roboto', fontSize: 10.5, lineHeight: 1.35, color: C.fg },
-    content: [
+    content: emoji([
       { text: note.title, fontSize: 22, bold: true, margin: [0, 0, 0, 4] },
       ...(note.meta.length
         ? [{ text: note.meta.join('   ·   '), fontSize: 9, color: C.muted, margin: [0, 0, 0, 8] }]
@@ -90,16 +165,17 @@ export function notePdfDefinition(note: PdfNote): TDocumentDefinitions {
       ...(body.length
         ? body
         : [{ text: 'Pas encore développée.', italics: true, color: C.subtle }]),
-    ] as Content[],
-    footer: (page: number, pages: number) => ({
-      columns: [
-        { text: note.title.length > 70 ? note.title.slice(0, 69) + '…' : note.title },
-        { text: `${page} / ${pages}`, alignment: 'right', width: 'auto' },
-      ],
-      margin: [48, 18, 48, 0],
-      fontSize: 8,
-      color: C.subtle,
-    }),
+    ] as Content[]),
+    footer: (page: number, pages: number) =>
+      emoji({
+        columns: [
+          { text: shortTitle },
+          { text: `${page} / ${pages}`, alignment: 'right', width: 'auto' },
+        ],
+        margin: [48, 18, 48, 0],
+        fontSize: 8,
+        color: C.subtle,
+      }) as Content,
   };
 }
 

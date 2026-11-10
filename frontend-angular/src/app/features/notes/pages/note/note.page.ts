@@ -373,9 +373,15 @@ export class NotePage {
     ];
     try {
       const { noteToPdf } = await import('../../util/note-pdf-export');
-      const pdf = await noteToPdf({ title, content: this.content(), meta });
+      const { pdf, emojiMissing } = await noteToPdf({ title, content: this.content(), meta });
       saveBlob(pdf, noteFileName(title, 'pdf'));
-      this.toast.success('Note exportée en PDF.');
+      if (emojiMissing) {
+        this.toast.info(
+          'Note exportée en PDF, sans les émojis : leur police n’a pas pu être chargée.',
+        );
+      } else {
+        this.toast.success('Note exportée en PDF.');
+      }
     } catch (e) {
       this.toast.errorFrom(e, 'Export PDF impossible. Réessayez, ou exportez en Markdown.');
     } finally {
