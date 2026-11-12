@@ -1,0 +1,1 @@
+D:/Projet/backup_Project/FocusWithAkram/backend/data/migration-20261107-204442/pg-14.22.0/bin/postgres.exe "-D" "D:/Projet/backup_Project/FocusWithAkram/backend/data/postgres" "-p" "15433" "-c" "listen_addresses=localhost"
