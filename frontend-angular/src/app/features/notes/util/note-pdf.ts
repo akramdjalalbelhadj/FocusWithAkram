@@ -3,6 +3,7 @@ import type { Content, Decoration, TDocumentDefinitions } from 'pdfmake/interfac
 import type { CalloutType } from '../editor/callout';
 import { CALLOUT_META } from '../editor/callout';
 import { noteLowlight } from '../editor/lowlight';
+import { toPdfSafe } from './ascii';
 import { HighlightColor, isHighlightColor } from './highlight';
 
 /** Idee a mettre en page : titre, lignes d'information deja formatees, contenu analyse par l'editeur. */
@@ -236,7 +237,7 @@ function block(node: JSONContent, tight: boolean): Content | null {
       return box(
         [
           {
-            text: code(textOf(node), node.attrs?.['language'] as string | null),
+            text: code(toPdfSafe(textOf(node)), node.attrs?.['language'] as string | null),
             font: 'Courier',
             fontSize: 8.5,
             lineHeight: 1.2,

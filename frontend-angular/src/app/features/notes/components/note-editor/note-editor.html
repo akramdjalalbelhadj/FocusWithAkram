@@ -115,7 +115,7 @@
           <button
             type="button"
             class="note-tool note-tool-text"
-            title="Insérer une alerte, un tableau, un bloc de code…"
+            title="Insérer une alerte, un tableau, un bloc de code, un schéma ASCII…"
             [disabled]="visualLocked()"
             [cdkMenuTriggerFor]="insertMenu"
             (mousedown)="$event.preventDefault()"
@@ -275,6 +275,18 @@
     <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="insert('hr')">
       <ff-icon name="minus" [size]="16" />Séparateur
     </button>
+    <div class="menu-sep" role="separator"></div>
+    <p class="note-menu-heading" aria-hidden="true">Schémas ASCII</p>
+    @if (asciiAtCursor()) {
+      <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="editAsciiAtCursor()">
+        <ff-icon name="pencil" [size]="16" />Modifier ce schéma
+      </button>
+    }
+    @for (a of asciiItems; track a.kind) {
+      <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="insertAscii(a.kind)">
+        <ff-icon [name]="a.icon" [size]="16" />{{ a.label }}
+      </button>
+    }
     @if (inTable()) {
       <div class="menu-sep" role="separator"></div>
       <p class="note-menu-heading" aria-hidden="true">Tableau</p>

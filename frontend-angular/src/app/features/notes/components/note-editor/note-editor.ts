@@ -27,7 +27,16 @@ import { Editor } from '@tiptap/core';
 import { NoteEditorMode } from '../../../../core/api/models';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { CALLOUT_META, CALLOUT_TYPES, CalloutType } from '../../editor/callout';
+import { ASCII_EDIT_EVENT, AsciiEditRequest } from '../../editor/code-block';
 import { noteExtensions } from '../../editor/note-extensions';
+import {
+  ASCII_LANGUAGE,
+  AsciiFenceRange,
+  AsciiKind,
+  asciiFence,
+  detectAsciiKind,
+  findAsciiFence,
+} from '../../util/ascii';
 import {
   MarkdownAction,
   TextEdit,
@@ -49,6 +58,7 @@ import {
   applyHighlight,
   isHighlightColor,
 } from '../../util/highlight';
+import { AsciiStudioComponent, AsciiStudioData } from '../ascii-studio/ascii-studio';
 import { EmojiPickerComponent } from '../emoji-picker/emoji-picker';
 import { MarkdownHelpPanelComponent } from '../markdown-help/markdown-help.panel';
 
@@ -97,6 +107,20 @@ const CALLOUT_ICON: Record<CalloutType, string> = {
 const CARET_MARGIN = 12;
 
 type TableAction = 'addRowAfter' | 'addColumnAfter' | 'deleteRow' | 'deleteColumn' | 'deleteTable';
+
+/** Schemas du menu « Insérer », ouverts dans l'atelier ASCII. */
+const ASCII_ITEMS: readonly { kind: AsciiKind; label: string; icon: string }[] = [
+  { kind: 'tree', label: 'Arborescence de dossiers', icon: 'folder-tree' },
+  { kind: 'table', label: 'Tableau ASCII', icon: 'table' },
+  { kind: 'banner', label: 'Bannière', icon: 'type' },
+];
+
+/** Schema ASCII sous le curseur : bloc du mode visuel (position) ou du Markdown (plage du texte). */
+interface AsciiAtCursor {
+  text: string;
+  pos?: number;
+  range?: AsciiFenceRange;
+}
 
 /**
  * Remplace le texte de la zone de saisie par la plus petite modification possible, via l'edition native du
@@ -161,6 +185,7 @@ export class NoteEditorComponent {
   private readonly injector = inject(Injector);
 
   protected readonly toolbar = TOOLBAR;
+  protected readonly asciiItems = ASCII_ITEMS;
   protected readonly callouts = CALLOUT_TYPES.map((type) => ({
     type,
     label: CALLOUT_META[type].label,
@@ -224,6 +249,8 @@ export class NoteEditorComponent {
   private readonly linkInput = viewChild<ElementRef<HTMLInputElement>>('linkInput');
 
   private rich: Editor | null = null;
+  /** Conteneur de l'editeur visuel, qui recoit les demandes « Modifier » des schemas ASCII. */
+  private richHostEl: HTMLElement | null = null;
   private preview: Editor | null = null;
   /** Dernier Markdown connu de l'editeur visuel (emis par lui ou charge dans lui). */
   private richMarkdown: string | null = null;
@@ -539,6 +566,112 @@ export class NoteEditorComponent {
     );
   }
 
+  // ---- Schemas ASCII -----------------------------------------------------------------------
+
+  /** Le curseur est-il dans un schema ASCII (le menu propose alors de le modifier) ? */
+  protected asciiAtCursor(): boolean {
+    this.tick();
+    return !!this.findAsciiAtCursor();
+  }
+
+  /** Nouveau schema : atelier ouvert sur l'onglet choisi, insere a la position du curseur. */
+  protected insertAscii(kind: AsciiKind): void {
+    this.openAsciiStudio({ kind }, (text) => {
+      if (this.mode() !== 'RICH') {
+        this.insertSnippet(asciiFence(text));
+        return;
+      }
+      const ed = this.rich;
+      if (!ed) return;
+      const block = {
+        type: 'codeBlock',
+        attrs: { language: ASCII_LANGUAGE },
+        content: [{ type: 'text', text }],
+      };
+      // Dans un bloc de code, le schema va apres le bloc plutot que dedans.
+      const { $from } = ed.state.selection;
+      if ($from.parent.type.spec.code) ed.chain().focus().insertContentAt($from.after(), block).run();
+      else ed.chain().focus().insertContent(block).run();
+    });
+  }
+
+  /** Modifie le schema ASCII sous le curseur. */
+  protected editAsciiAtCursor(): void {
+    const at = this.findAsciiAtCursor();
+    if (at) this.editAscii(at);
+  }
+
+  private editAscii(at: AsciiAtCursor): void {
+    this.openAsciiStudio({ kind: detectAsciiKind(at.text), text: at.text }, (text) => {
+      if (at.pos !== undefined) {
+        this.replaceRichAscii(at.pos, text);
+      } else if (at.range) {
+        const { from, to } = at.range;
+        const fence = asciiFence(text);
+        this.editText(
+          (value) => ({
+            text: value.slice(0, from) + fence + value.slice(to),
+            start: from + fence.length,
+            end: from + fence.length,
+          }),
+          true,
+        );
+      }
+    });
+  }
+
+  private findAsciiAtCursor(): AsciiAtCursor | null {
+    if (this.mode() === 'RICH') {
+      const ed = this.rich;
+      if (!ed || this.visualLocked()) return null;
+      const { $from } = ed.state.selection;
+      const node = $from.parent;
+      if (node.type.name !== 'codeBlock' || node.attrs['language'] !== ASCII_LANGUAGE) return null;
+      return { text: node.textContent, pos: $from.before() };
+    }
+    const area = this.textarea()?.nativeElement;
+    if (!area) return null;
+    const range = findAsciiFence(area.value, area.selectionStart);
+    return range ? { text: range.body, range } : null;
+  }
+
+  private openAsciiStudio(data: AsciiStudioData, apply: (text: string) => void): void {
+    if (this.visualLocked()) return;
+    if (this.mode() === 'MARKDOWN') this.saveSelection();
+    const ref = this.dialog.open<string>(AsciiStudioComponent, {
+      data,
+      backdropClass: 'ff-backdrop',
+      positionStrategy: this.overlay.position().global().right('0').top('0'),
+      height: '100dvh',
+      maxWidth: '100vw',
+      panelClass: 'ff-side-panel',
+    });
+    ref.closed.subscribe((text) => {
+      if (text) apply(text);
+      else if (this.mode() === 'RICH') this.rich?.commands.focus();
+      else if (this.tab() === 'write') this.restoreSelection();
+    });
+  }
+
+  /** Remplace le texte du bloc ```ascii a la position `pos` (annulable par Ctrl+Z). */
+  private replaceRichAscii(pos: number, text: string): void {
+    const ed = this.rich;
+    const node = ed?.state.doc.nodeAt(pos);
+    if (!ed || !node || node.type.name !== 'codeBlock') return;
+    ed.chain()
+      .focus()
+      .command(({ tr }) => {
+        tr.replaceWith(pos + 1, pos + 1 + node.content.size, ed.schema.text(text));
+        return true;
+      })
+      .run();
+  }
+
+  private readonly onAsciiEdit = (event: Event): void => {
+    const { pos, text } = (event as CustomEvent<AsciiEditRequest>).detail;
+    this.editAscii({ pos, text });
+  };
+
   // ---- Saisie ------------------------------------------------------------------------------
 
   protected onInput(event: Event): void {
@@ -633,6 +766,8 @@ export class NoteEditorComponent {
 
   private createRich(host: HTMLElement, value: string): void {
     this.richMarkdown = value;
+    host.addEventListener(ASCII_EDIT_EVENT, this.onAsciiEdit);
+    this.richHostEl = host;
     this.rich = new Editor({
       element: host,
       extensions: noteExtensions({
@@ -685,6 +820,8 @@ export class NoteEditorComponent {
   }
 
   private destroyRich(): void {
+    this.richHostEl?.removeEventListener(ASCII_EDIT_EVENT, this.onAsciiEdit);
+    this.richHostEl = null;
     this.rich?.destroy();
     this.rich = null;
     this.richMarkdown = null;

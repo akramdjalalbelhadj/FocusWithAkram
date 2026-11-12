@@ -112,6 +112,19 @@ import {
   SquareCode,
   Strikethrough,
   Table,
+  ArrowDown,
+  ArrowUp,
+  File,
+  FilePlus,
+  FolderPlus,
+  FolderTree,
+  ListIndentDecrease,
+  ListIndentIncrease,
+  Terminal,
+  TextAlignCenter,
+  TextAlignEnd,
+  TextAlignStart,
+  Type,
 } from 'lucide';
 
 const ICONS: Record<string, IconNode> = {
@@ -228,6 +241,20 @@ const ICONS: Record<string, IconNode> = {
   'book-open': BookOpen,
   'message-warning': MessageSquareWarning,
   'octagon-alert': OctagonAlert,
+  // Schemas ASCII
+  'arrow-up': ArrowUp,
+  'arrow-down': ArrowDown,
+  file: File,
+  'file-plus': FilePlus,
+  'folder-plus': FolderPlus,
+  'folder-tree': FolderTree,
+  indent: ListIndentIncrease,
+  outdent: ListIndentDecrease,
+  terminal: Terminal,
+  'align-left': TextAlignStart,
+  'align-center': TextAlignCenter,
+  'align-right': TextAlignEnd,
+  type: Type,
 };
 
 /** Icone Lucide inline. Le balisage provient de donnees statiques de la bibliotheque, jamais de l'utilisateur. */

@@ -99,7 +99,7 @@
   border-color: var(--line-strong);
 }
 
-.note-prose .note-code-copy {
+.note-prose :is(.note-code-copy, .note-code-ascii) {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -110,14 +110,27 @@
   font-weight: 550;
 }
 
-.note-prose .note-code-copy:hover {
+.note-prose :is(.note-code-copy, .note-code-ascii):hover {
   background: var(--surface);
   color: var(--fg);
 }
 
-.note-prose :is(.note-code-copy, select.note-code-lang):focus-visible {
+.note-prose :is(.note-code-copy, .note-code-ascii, select.note-code-lang):focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 1px;
+}
+
+/* Schema ASCII : bouton « Modifier » et traits jointifs (interligne serre). */
+.note-prose .note-code-ascii {
+  margin-left: auto;
+}
+
+.note-prose .note-code-ascii[hidden] {
+  display: none;
+}
+
+.note-prose .note-code-ascii-block pre code {
+  line-height: 1.25;
 }
 
 .note-prose .note-code pre {

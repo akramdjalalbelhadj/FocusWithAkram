@@ -2,6 +2,7 @@ import { Editor } from '@tiptap/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { visualLosses } from '../util/markdown-blocks';
 import { MARKDOWN_HELP } from '../util/markdown-help';
+import { ASCII_EDIT_EVENT } from './code-block';
 import { noteExtensions } from './note-extensions';
 
 let editors: Editor[] = [];
@@ -165,6 +166,25 @@ describe('compatibilite Markdown', () => {
         expect(visualLosses(ex.markdown, roundTrip(ex.markdown)), ex.title).toEqual([]);
       }
     }
+  });
+
+  it('conserve un schema ```ascii et propose « Modifier » dans l editeur visuel seulement', () => {
+    const md = '```ascii\nprojet/\n├── src/\n│   └── main.ts\n└── README.md\n```';
+    expect(roundTrip(md).trimEnd()).toBe(md);
+    const ed = load(md);
+    expect(ed.view.dom.querySelector('select.note-code-lang')!.querySelector('option:checked')!.textContent).toBe(
+      'Schéma ASCII',
+    );
+    const edit = ed.view.dom.querySelector<HTMLButtonElement>('.note-code-ascii')!;
+    expect(edit.hidden).toBe(false);
+    let request: unknown = null;
+    ed.view.dom.addEventListener(ASCII_EDIT_EVENT, (e) => (request = (e as CustomEvent).detail));
+    edit.click();
+    expect(request).toEqual({ pos: 0, text: 'projet/\n├── src/\n│   └── main.ts\n└── README.md' });
+    // Autre langage : pas de bouton ; apercu : pas de bouton.
+    const other = load('```sql\nSELECT 1;\n```');
+    expect(other.view.dom.querySelector<HTMLButtonElement>('.note-code-ascii')!.hidden).toBe(true);
+    expect(load(md, false).view.dom.querySelector('.note-code-ascii')).toBeNull();
   });
 });
 

@@ -30,6 +30,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-10 | Notes & idées : **barre d'outils collée** en haut de l'écran pendant la saisie d'un long texte ; **surlignage** en quatre couleurs (jaune `==texte==`, rouge, bleu ciel, violet `<mark data-color>`), une seule couleur par passage | Lot 18 ; [cahier des charges FWA-F026 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **export en PDF** à côté du Markdown, derrière un seul bouton « Exporter » ; PDF produit dans le navigateur (pdfmake), sans serveur | Lot 19 ; [cahier des charges FWA-F033 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **liste d'émojis** dans la barre d'outils (catégories, recherche en français, récents), insertion à la position du curseur | Lot 20 ; [cahier des charges FWA-F026](../produit/cahier-des-charges.md) |
+| 2026-11-12 | Notes & idées : **schémas ASCII** (bloc ```` ```ascii ````) — arborescence de dossiers modifiable dans les deux sens (texte ↔ hiérarchie ↔ commandes `mkdir`/`touch` ou `New-Item`), tableau encadré (grille ↔ texte), bannière | Lot 21 ; [cahier des charges FWA-F026](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
 
@@ -55,6 +56,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 18 | Éditeur des idées : barre d'outils collée et surlignage en quatre couleurs (Angular ; extrait des cartes côté serveur) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 19 | Export d'une idée en PDF ; un seul bouton « Exporter » (Markdown ou PDF) (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 20 | Liste d'émojis dans la barre d'outils de l'éditeur (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
+| 21 | Schémas ASCII dans les notes : arborescence ↔ commandes, tableau, bannière (Angular seulement) | Livré le 12 novembre 2026, à valider par le propriétaire |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -352,6 +354,21 @@ Vérifications (10 novembre 2026) : 264 tests backend sans échec, 194 tests uni
 | Insertion | À la position du curseur en mode Visuel, à la place de la sélection en mode Markdown (sélection mémorisée pendant que le focus est dans la liste) | E2E « émojis » (contenu lu par l'API) |
 
 Défauts trouvés par les tests et corrigés : « coeur » ne trouvait pas « cœur » (ligature), et le nom de catégorie élargissait trop la recherche. Vérifications (10 novembre 2026) : 215 tests unitaires Angular, lint et build de production Angular (chargement initial inchangé) ; `notes.spec.ts` à sept scénarios sans échec sur backend et base jetables. Hors périmètre : React et Krimou (voir § 4).
+
+### Lot 21 — Schémas ASCII
+
+**Livré le 12 novembre 2026**, à valider par le propriétaire. Demande : un autre type d'écriture dans les notes, l'ASCII — arborescences, tableaux, bannières, et arborescence ↔ commandes `mkdir`/`touch` ; l'arborescence se modifie dans les deux sens, par le texte ou par la hiérarchie dossiers/fichiers.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Format | Bloc de code ```` ```ascii ```` (langage « Schéma ASCII » du bloc de code), aucun changement d'API ni de sauvegarde ; repérage du bloc sous le curseur en Markdown sans confusion avec les autres blocs ; clôture allongée si le schéma contient des ```` ``` ```` (`util/ascii.ts`) | `ascii.spec.ts` ; `note-extensions.spec.ts` (aller-retour Markdown) |
+| Arborescence | Analyse de la sortie de `tree`, des traits ASCII, des listes indentées ou à puces (niveaux par colonne), commentaires alignés ; édition de la hiérarchie sur copie (ajout, renommage, dossier ↔ fichier, niveau, déplacement, suppression) ; commandes Bash (`mkdir -p` des dossiers feuilles puis `touch`) ou PowerShell (`New-Item`, fichier jamais écrasé) avec guillemets ; lecture des commandes (`;`, `&&`, tube, guillemets, accolades, `cd`, `-Path`/`-Name`, redirection `>`), lignes inconnues signalées (`util/ascii-tree.ts`) | `ascii.spec.ts` (allers-retours texte ↔ commandes dans les deux terminaux) |
+| Tableau | Quatre cadres, en-tête et traits entre lignes reconnus à la relecture, alignement déduit des marges ou de `:--`/`:-:`/`--:` ; import Markdown et tableur ; largeur des émojis (`util/ascii-table.ts`) | `ascii.spec.ts` (16 allers-retours style × options) |
+| Bannière | Police maison 5 lignes (A–Z, 0–9, ponctuation ; accents retirés) en `█`, `#` ou lettres ; cadres ASCII, arrondi, double (`util/ascii-banner.ts`) | `ascii.spec.ts` |
+| Atelier | `ff-ascii-studio`, panneau latéral à trois onglets ; vues synchronisées (le texte saisi reste tel quel), focus qui suit l'élément, raccourcis Entrée / Tab / Maj+Tab / Alt+flèches ; bouton **Modifier** du bloc en mode Visuel (événement DOM `note-ascii-edit`), **Insérer → Modifier ce schéma** dans les deux modes, annulable par Ctrl+Z | `ascii-studio.spec.ts` (4 tests) ; contrôle Playwright manuel (Visuel, Markdown, 390 px) |
+| PDF | Traits et blocs Unicode remplacés caractère pour caractère (barre verticale, `-`, `=`, `+`, `#`) : Courier ne les dessine pas | `ascii.spec.ts` |
+
+Vérifications (12 novembre 2026) : 235 tests unitaires Angular, lint et build de production Angular (chargement initial inchangé). Hors périmètre : React et Krimou (voir § 4).
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

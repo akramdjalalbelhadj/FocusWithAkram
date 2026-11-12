@@ -1,8 +1,18 @@
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import type { Node as PmNode } from '@tiptap/pm/model';
-import { Check, Copy } from 'lucide';
+import { Check, Copy, Pencil } from 'lucide';
+import { ASCII_LANGUAGE } from '../util/ascii';
 import { iconElement } from './dom-icon';
 import { CODE_LANGUAGES, languageLabel, noteLowlight } from './lowlight';
+
+/** Evenement DOM emis par le bouton « Modifier » d'un bloc ```ascii (bouillonne jusqu'a l'editeur). */
+export const ASCII_EDIT_EVENT = 'note-ascii-edit';
+
+export interface AsciiEditRequest {
+  /** Position du bloc dans le document. */
+  pos: number;
+  text: string;
+}
 
 /** Copie un texte dans le presse-papiers ; repli sur une zone de texte temporaire (contexte non securise). */
 export async function copyText(text: string): Promise<boolean> {
@@ -84,6 +94,28 @@ export const NoteCodeBlock = CodeBlockLowlight.extend({
       });
 
       bar.append(language, copy);
+      // Schema ASCII : « Modifier » ouvre l'atelier ASCII (evenement capte par l'editeur de la note).
+      let edit: HTMLButtonElement | null = null;
+      if (editor.isEditable) {
+        edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'note-code-ascii';
+        const editLabel = document.createElement('span');
+        editLabel.textContent = 'Modifier';
+        edit.replaceChildren(iconElement(Pencil), editLabel);
+        edit.setAttribute('aria-label', 'Modifier le schéma ASCII');
+        edit.addEventListener('click', () => {
+          const pos = typeof getPos === 'function' ? getPos() : undefined;
+          if (typeof pos !== 'number') return;
+          dom.dispatchEvent(
+            new CustomEvent<AsciiEditRequest>(ASCII_EDIT_EVENT, {
+              bubbles: true,
+              detail: { pos, text: current.textContent },
+            }),
+          );
+        });
+        bar.insertBefore(edit, copy);
+      }
       const pre = document.createElement('pre');
       const code = document.createElement('code');
       pre.appendChild(code);
@@ -92,6 +124,8 @@ export const NoteCodeBlock = CodeBlockLowlight.extend({
       const render = () => {
         const lang = (current.attrs['language'] as string | null) ?? '';
         code.className = lang ? `language-${lang}` : '';
+        dom.classList.toggle('note-code-ascii-block', lang === ASCII_LANGUAGE);
+        if (edit) edit.hidden = lang !== ASCII_LANGUAGE;
         if (language instanceof HTMLSelectElement) {
           const options = [{ id: '', label: 'Texte' }, ...CODE_LANGUAGES];
           // Un langage saisi a la main (alias, langage non colore) reste propose pour ne pas etre perdu.

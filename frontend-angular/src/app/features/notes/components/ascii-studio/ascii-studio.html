@@ -1,0 +1,480 @@
+<aside
+  class="ascii-studio h-full w-[min(64rem,100vw)] bg-surface border-l border-line shadow-modal flex flex-col anim-slide"
+  role="dialog"
+  aria-labelledby="ascii-title"
+>
+  <header class="ascii-header">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="ref.close()">
+      <ff-icon name="arrow-left" [size]="16" />Retour
+    </button>
+    <div class="min-w-0">
+      <h2 id="ascii-title" class="font-bold text-lg">Schéma ASCII</h2>
+      <p class="text-sm text-muted">
+        Arborescence de dossiers, tableau encadré ou bannière : le schéma est rangé dans la note
+        comme un bloc <code>```ascii</code>, lisible partout.
+      </p>
+    </div>
+  </header>
+
+  <div class="ascii-tabs" role="tablist" aria-label="Type de schéma">
+    @for (k of kinds; track k.id) {
+      <button
+        type="button"
+        role="tab"
+        class="segmented-item"
+        [id]="'ascii-tab-' + k.id"
+        [attr.aria-selected]="kind() === k.id"
+        [attr.aria-pressed]="kind() === k.id"
+        [attr.aria-controls]="'ascii-panel-' + k.id"
+        [tabIndex]="kind() === k.id ? 0 : -1"
+        (click)="kind.set(k.id)"
+        (keydown)="onTabKeydown($event)"
+      >
+        <ff-icon [name]="k.icon" [size]="16" />{{ k.label }}
+      </button>
+    }
+  </div>
+
+  <div class="ascii-body">
+    @switch (kind()) {
+      @case ('tree') {
+        <section
+          id="ascii-panel-tree"
+          role="tabpanel"
+          aria-labelledby="ascii-tab-tree"
+          class="ascii-panel"
+        >
+          <div class="ascii-options">
+            <div class="segmented" role="group" aria-label="Traits de l’arborescence">
+              <button
+                type="button"
+                class="segmented-item"
+                [attr.aria-pressed]="treeStyle() === 'unicode'"
+                (click)="setTreeStyle('unicode')"
+              >
+                Traits <code>├──</code>
+              </button>
+              <button
+                type="button"
+                class="segmented-item"
+                [attr.aria-pressed]="treeStyle() === 'ascii'"
+                (click)="setTreeStyle('ascii')"
+              >
+                ASCII <code>|--</code>
+              </button>
+            </div>
+            <p class="field-hint">
+              Modifiez le texte ou la hiérarchie : l’autre suit. Un nom terminé par « / » est un
+              dossier.
+            </p>
+          </div>
+
+          <div class="ascii-split">
+            <div class="ascii-col">
+              <label class="field-label" for="ascii-tree-text">Texte</label>
+              <textarea
+                id="ascii-tree-text"
+                class="input ascii-code"
+                spellcheck="false"
+                rows="14"
+                [value]="treeText()"
+                (input)="onTreeText(value($event))"
+              ></textarea>
+            </div>
+
+            <div class="ascii-col">
+              <span class="field-label" id="ascii-hierarchy-label">Dossiers et fichiers</span>
+              <ul class="ascii-hierarchy" aria-labelledby="ascii-hierarchy-label">
+                @for (f of flat(); track pathKey(f.path)) {
+                  <li class="ascii-node" [style.padding-left.rem]="f.depth * 1.25">
+                    <button
+                      type="button"
+                      class="ascii-icon-btn ascii-kind"
+                      [attr.aria-label]="
+                        (f.node.dir ? 'Dossier' : 'Fichier') +
+                        ' ' +
+                        f.node.name +
+                        (f.node.dir ? ' : en faire un fichier' : ' : en faire un dossier')
+                      "
+                      [title]="
+                        f.node.dir ? 'Dossier (cliquer : fichier)' : 'Fichier (cliquer : dossier)'
+                      "
+                      [disabled]="f.node.dir && f.node.children.length > 0"
+                      (click)="edit({ kind: 'toggle-dir', path: f.path })"
+                    >
+                      <ff-icon [name]="f.node.dir ? 'folder' : 'file'" [size]="16" />
+                    </button>
+                    <input
+                      class="ascii-name"
+                      [attr.data-tree-path]="pathKey(f.path)"
+                      [attr.aria-label]="'Nom, niveau ' + (f.depth + 1)"
+                      [value]="f.node.name"
+                      spellcheck="false"
+                      (input)="edit({ kind: 'rename', path: f.path, name: value($event) }, false)"
+                      (keydown)="onNameKeydown($event, f)"
+                    />
+                    <input
+                      class="ascii-comment"
+                      placeholder="commentaire"
+                      [attr.aria-label]="'Commentaire de ' + f.node.name"
+                      [value]="f.node.comment ?? ''"
+                      (change)="
+                        edit({ kind: 'comment', path: f.path, comment: value($event) }, false)
+                      "
+                    />
+                    <span class="ascii-node-actions">
+                      @if (f.node.dir) {
+                        <button
+                          type="button"
+                          class="ascii-icon-btn"
+                          [attr.aria-label]="'Ajouter un fichier dans ' + f.node.name"
+                          title="Ajouter un fichier dedans"
+                          (click)="edit({ kind: 'add-child', path: f.path, dir: false })"
+                        >
+                          <ff-icon name="file-plus" [size]="15" />
+                        </button>
+                        <button
+                          type="button"
+                          class="ascii-icon-btn"
+                          [attr.aria-label]="'Ajouter un dossier dans ' + f.node.name"
+                          title="Ajouter un dossier dedans"
+                          (click)="edit({ kind: 'add-child', path: f.path, dir: true })"
+                        >
+                          <ff-icon name="folder-plus" [size]="15" />
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="ascii-icon-btn"
+                        [attr.aria-label]="'Remonter ' + f.node.name + ' d’un niveau'"
+                        title="Niveau précédent (Maj+Tab)"
+                        [disabled]="f.depth === 0"
+                        (click)="edit({ kind: 'outdent', path: f.path })"
+                      >
+                        <ff-icon name="outdent" [size]="15" />
+                      </button>
+                      <button
+                        type="button"
+                        class="ascii-icon-btn"
+                        [attr.aria-label]="'Ranger ' + f.node.name + ' dans le dossier au-dessus'"
+                        title="Ranger dans le dossier au-dessus (Tab)"
+                        [disabled]="!f.canIndent"
+                        (click)="edit({ kind: 'indent', path: f.path })"
+                      >
+                        <ff-icon name="indent" [size]="15" />
+                      </button>
+                      <button
+                        type="button"
+                        class="ascii-icon-btn"
+                        [attr.aria-label]="'Monter ' + f.node.name"
+                        title="Monter (Alt+↑)"
+                        [disabled]="f.path[f.path.length - 1] === 0"
+                        (click)="edit({ kind: 'move', path: f.path, delta: -1 })"
+                      >
+                        <ff-icon name="arrow-up" [size]="15" />
+                      </button>
+                      <button
+                        type="button"
+                        class="ascii-icon-btn"
+                        [attr.aria-label]="'Descendre ' + f.node.name"
+                        title="Descendre (Alt+↓)"
+                        (click)="edit({ kind: 'move', path: f.path, delta: 1 })"
+                      >
+                        <ff-icon name="arrow-down" [size]="15" />
+                      </button>
+                      <button
+                        type="button"
+                        class="ascii-icon-btn danger"
+                        [attr.aria-label]="
+                          'Supprimer ' + f.node.name + (f.node.dir ? ' et son contenu' : '')
+                        "
+                        title="Supprimer"
+                        (click)="edit({ kind: 'remove', path: f.path })"
+                      >
+                        <ff-icon name="trash" [size]="15" />
+                      </button>
+                    </span>
+                  </li>
+                } @empty {
+                  <li class="ascii-empty">Aucun élément : ajoutez un dossier ou un fichier.</li>
+                }
+              </ul>
+              <div class="ascii-tree-add">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  (click)="edit({ kind: 'add-root', dir: true })"
+                >
+                  <ff-icon name="folder-plus" [size]="15" />Dossier
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  (click)="edit({ kind: 'add-root', dir: false })"
+                >
+                  <ff-icon name="file-plus" [size]="15" />Fichier
+                </button>
+              </div>
+              <p class="field-hint">
+                Entrée : nouvel élément · Tab / Maj+Tab : niveau · Alt+↑ / Alt+↓ : déplacer
+              </p>
+            </div>
+          </div>
+
+          <div class="ascii-commands">
+            <div class="ascii-commands-head">
+              <label class="field-label" for="ascii-commands">
+                <ff-icon name="terminal" [size]="15" />Commandes pour créer les dossiers et fichiers
+              </label>
+              <div class="flex items-center gap-2">
+                <div class="segmented" role="group" aria-label="Terminal">
+                  <button
+                    type="button"
+                    class="segmented-item"
+                    [attr.aria-pressed]="shell() === 'bash'"
+                    (click)="setShell('bash')"
+                  >
+                    Bash
+                  </button>
+                  <button
+                    type="button"
+                    class="segmented-item"
+                    [attr.aria-pressed]="shell() === 'powershell'"
+                    (click)="setShell('powershell')"
+                  >
+                    PowerShell
+                  </button>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="copy('commands')">
+                  <ff-icon [name]="copied() === 'commands' ? 'check' : 'copy'" [size]="14" />{{
+                    copied() === 'commands' ? 'Copié' : 'Copier'
+                  }}
+                </button>
+              </div>
+            </div>
+            <textarea
+              id="ascii-commands"
+              class="input ascii-code"
+              spellcheck="false"
+              rows="6"
+              aria-describedby="ascii-commands-hint"
+              [value]="commandsText()"
+              (input)="onCommands(value($event))"
+            ></textarea>
+            <p id="ascii-commands-hint" class="field-hint">
+              Collez aussi vos propres commandes (mkdir, touch, New-Item, cd, accolades
+              <code>src/&#123;app,lib&#125;</code>) : l’arborescence est reconstruite.
+            </p>
+            @if (ignored().length) {
+              <p class="field-hint ascii-warn" role="status">
+                {{ ignored().length }} ligne(s) ignorée(s), sans dossier ni fichier :
+                <code>{{ ignored().join(' · ') }}</code>
+              </p>
+            }
+          </div>
+        </section>
+      }
+
+      @case ('table') {
+        <section
+          id="ascii-panel-table"
+          role="tabpanel"
+          aria-labelledby="ascii-tab-table"
+          class="ascii-panel"
+        >
+          <div class="ascii-options">
+            <label class="ascii-inline">
+              <span class="text-sm font-semibold">Style</span>
+              <select
+                class="input ascii-select"
+                [value]="tableStyle()"
+                (change)="setTableStyle(value($event))"
+              >
+                @for (s of tableStyles; track s.id) {
+                  <option [value]="s.id" [selected]="s.id === tableStyle()">{{ s.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="ascii-inline">
+              <input
+                type="checkbox"
+                [checked]="table().header"
+                (change)="setHeader(checked($event))"
+              />Ligne d’en-tête
+            </label>
+            <label class="ascii-inline">
+              <input
+                type="checkbox"
+                [checked]="table().rowLines"
+                (change)="setRowLines(checked($event))"
+              />Trait entre les lignes
+            </label>
+            <span class="flex gap-2 ml-auto">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="addRow()">
+                <ff-icon name="plus" [size]="15" />Ligne
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="addColumn()">
+                <ff-icon name="plus" [size]="15" />Colonne
+              </button>
+            </span>
+          </div>
+
+          <div class="ascii-grid-wrap">
+            <table class="ascii-grid">
+              <thead>
+                <tr>
+                  @for (a of table().align; track $index; let c = $index) {
+                    <th scope="col">
+                      <span class="ascii-col-tools">
+                        @for (opt of aligns; track opt.id) {
+                          <button
+                            type="button"
+                            class="ascii-icon-btn"
+                            [attr.aria-label]="'Colonne ' + (c + 1) + ' alignée ' + opt.label"
+                            [attr.aria-pressed]="a === opt.id"
+                            [title]="'Aligner ' + opt.label"
+                            (click)="setAlign(c, opt.id)"
+                          >
+                            <ff-icon [name]="opt.icon" [size]="14" />
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="ascii-icon-btn danger"
+                          [attr.aria-label]="'Supprimer la colonne ' + (c + 1)"
+                          title="Supprimer la colonne"
+                          [disabled]="table().align.length <= 1"
+                          (click)="removeColumn(c)"
+                        >
+                          <ff-icon name="x" [size]="14" />
+                        </button>
+                      </span>
+                    </th>
+                  }
+                  <th><span class="sr-only-text">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of table().rows; track $index; let r = $index) {
+                  <tr [class.ascii-grid-head]="r === 0 && table().header">
+                    @for (cell of row; track $index; let c = $index) {
+                      <td>
+                        <input
+                          class="ascii-cell"
+                          [attr.data-cell]="r + '-' + c"
+                          [attr.aria-label]="'Ligne ' + (r + 1) + ', colonne ' + (c + 1)"
+                          [value]="cell"
+                          (input)="setCell(r, c, value($event))"
+                        />
+                      </td>
+                    }
+                    <td class="ascii-row-tools">
+                      <button
+                        type="button"
+                        class="ascii-icon-btn danger"
+                        [attr.aria-label]="'Supprimer la ligne ' + (r + 1)"
+                        title="Supprimer la ligne"
+                        [disabled]="table().rows.length <= 1"
+                        (click)="removeRow(r)"
+                      >
+                        <ff-icon name="x" [size]="14" />
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <label class="field-label" for="ascii-table-text">Texte</label>
+          <textarea
+            id="ascii-table-text"
+            class="input ascii-code"
+            spellcheck="false"
+            rows="10"
+            aria-describedby="ascii-table-hint"
+            [attr.aria-invalid]="tableError()"
+            [value]="tableText()"
+            (input)="onTableText(value($event))"
+          ></textarea>
+          @if (tableError()) {
+            <p class="field-error" role="alert">
+              Tableau non reconnu : séparez les cellules par « | » (ou par des tabulations).
+            </p>
+          }
+          <p id="ascii-table-hint" class="field-hint">
+            Modifiez la grille ou le texte : l’autre suit. Collez aussi un tableau Markdown ou des
+            cellules copiées d’un tableur.
+          </p>
+        </section>
+      }
+
+      @case ('banner') {
+        <section
+          id="ascii-panel-banner"
+          role="tabpanel"
+          aria-labelledby="ascii-tab-banner"
+          class="ascii-panel"
+        >
+          <div class="ascii-split">
+            <div class="ascii-col">
+              <label class="field-label" for="ascii-banner-text">Texte</label>
+              <textarea
+                id="ascii-banner-text"
+                class="input"
+                rows="3"
+                aria-describedby="ascii-banner-hint"
+                [value]="bannerInput()"
+                (input)="bannerInput.set(value($event))"
+              ></textarea>
+              <p id="ascii-banner-hint" class="field-hint">
+                Une bannière par ligne. Gros caractères : lettres sans accents, chiffres et
+                ponctuation.
+              </p>
+            </div>
+            <fieldset class="ascii-col">
+              <legend class="field-label">Style</legend>
+              @for (s of bannerStyles; track s.id) {
+                <label class="ascii-inline">
+                  <input
+                    type="radio"
+                    name="ascii-banner-style"
+                    [value]="s.id"
+                    [checked]="bannerStyle() === s.id"
+                    (change)="setBannerStyle(s.id)"
+                  />{{ s.label }}
+                </label>
+              }
+            </fieldset>
+          </div>
+        </section>
+      }
+    }
+
+    <div class="ascii-preview">
+      <span class="field-label">Aperçu</span>
+      <pre class="ascii-code" tabindex="0" aria-label="Aperçu du schéma">{{ result() || ' ' }}</pre>
+    </div>
+  </div>
+
+  <footer class="ascii-footer">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="copy('result')">
+      <ff-icon [name]="copied() === 'result' ? 'check' : 'copy'" [size]="14" />{{
+        copied() === 'result' ? 'Copié' : 'Copier'
+      }}
+    </button>
+    <span class="flex gap-2 ml-auto">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="ref.close()">Annuler</button>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="!result().trim()"
+        (click)="submit()"
+      >
+        <ff-icon [name]="editing ? 'check' : 'plus'" [size]="15" />{{
+          editing ? 'Mettre à jour' : 'Insérer dans la note'
+        }}
+      </button>
+    </span>
+  </footer>
+</aside>

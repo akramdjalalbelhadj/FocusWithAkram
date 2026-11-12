@@ -23,6 +23,8 @@ export const CODE_LANGUAGES: readonly { id: string; label: string }[] = [
   { id: 'css', label: 'CSS' },
   { id: 'bash', label: 'Bash' },
   { id: 'python', label: 'Python' },
+  // Schema ASCII (arborescence, tableau, banniere) : texte brut, modifiable dans l'atelier ASCII.
+  { id: 'ascii', label: 'Schéma ASCII' },
 ];
 
 const lowlight = createLowlight({

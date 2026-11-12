@@ -1,0 +1,325 @@
+.ascii-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.ascii-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.ascii-body {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem 1.25rem 1.25rem;
+  overflow-y: auto;
+}
+
+.ascii-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ascii-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.ascii-options .field-hint {
+  margin: 0;
+}
+
+.ascii-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.ascii-col {
+  min-width: 0;
+}
+
+fieldset.ascii-col {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ascii-code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  /* Interligne serre : les traits verticaux │ ║ se rejoignent d'une ligne a l'autre. */
+  line-height: 1.25;
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 4;
+}
+
+textarea.ascii-code {
+  overflow-wrap: normal;
+}
+
+.ascii-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+fieldset .ascii-inline {
+  display: flex;
+}
+
+.ascii-select {
+  width: auto;
+  min-height: 2rem;
+  padding-block: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* ---- Hierarchie ---- */
+
+.ascii-hierarchy {
+  max-height: 22rem;
+  margin: 0;
+  padding: 0.25rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ascii-node {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+  border-radius: 6px;
+}
+
+.ascii-node:hover,
+.ascii-node:focus-within {
+  background: var(--surface-2);
+}
+
+.ascii-name,
+.ascii-comment,
+.ascii-cell {
+  min-width: 0;
+  padding: 0.2rem 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.ascii-name {
+  flex: 1 1 8rem;
+}
+
+.ascii-comment {
+  flex: 0 1 7rem;
+  color: var(--muted);
+}
+
+.ascii-name:hover,
+.ascii-comment:hover,
+.ascii-cell:hover {
+  border-color: var(--line-strong);
+}
+
+.ascii-name:focus-visible,
+.ascii-comment:focus-visible,
+.ascii-cell:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  background: var(--surface);
+}
+
+.ascii-node-actions {
+  display: inline-flex;
+  flex: none;
+  gap: 0.1rem;
+  opacity: 0.35;
+}
+
+.ascii-node:hover .ascii-node-actions,
+.ascii-node:focus-within .ascii-node-actions {
+  opacity: 1;
+}
+
+.ascii-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.ascii-icon-btn:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--fg);
+}
+
+.ascii-icon-btn.danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ascii-icon-btn[aria-pressed='true'] {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.ascii-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ascii-icon-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.ascii-kind {
+  color: var(--brand);
+}
+
+.ascii-kind:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.ascii-empty {
+  padding: 0.75rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.ascii-tree-add {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ascii-commands {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.ascii-commands-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.ascii-commands-head .field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.ascii-warn {
+  color: var(--warning);
+}
+
+/* ---- Grille du tableau ---- */
+
+.ascii-grid-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+}
+
+.ascii-grid {
+  border-collapse: collapse;
+  min-width: 100%;
+}
+
+.ascii-grid :is(th, td) {
+  padding: 0.125rem;
+  border: 1px solid var(--line);
+}
+
+.ascii-grid th {
+  background: var(--surface-2);
+}
+
+.ascii-col-tools {
+  display: flex;
+  justify-content: center;
+  gap: 0.1rem;
+}
+
+.ascii-cell {
+  width: 100%;
+  min-width: 6rem;
+}
+
+.ascii-grid-head .ascii-cell {
+  font-weight: 700;
+}
+
+.ascii-row-tools {
+  width: 2rem;
+}
+
+/* ---- Apercu et validation ---- */
+
+.ascii-preview {
+  margin-top: 1rem;
+}
+
+.ascii-preview pre {
+  max-height: 18rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  overflow: auto;
+}
+
+.ascii-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 760px) {
+  .ascii-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ascii-node {
+    flex-wrap: wrap;
+    padding-block: 0.125rem;
+  }
+
+  .ascii-node-actions {
+    margin-left: auto;
+    opacity: 1;
+  }
+}

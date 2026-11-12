@@ -142,4 +142,27 @@ export const MARKDOWN_HELP: readonly HelpSection[] = [
       },
     ],
   },
+  {
+    id: 'ascii',
+    title: 'Schémas ASCII',
+    examples: [
+      {
+        title: 'Arborescence de dossiers',
+        hint: 'Menu Insérer › Arborescence : modifiez le texte ou la hiérarchie, et obtenez les commandes mkdir/touch.',
+        markdown:
+          '```ascii\nprojet/\n├── src/\n│   ├── app/\n│   └── main.ts      # point d’entrée\n└── README.md\n```',
+      },
+      {
+        title: 'Tableau ASCII',
+        hint: 'Menu Insérer › Tableau ASCII : grille et texte synchronisés, quatre styles de cadre.',
+        markdown:
+          '```ascii\n┌───────┬────────┐\n│ Tâche │ Statut │\n╞═══════╪════════╡\n│ API   │ fini   │\n│ Front │ ouvert │\n└───────┴────────┘\n```',
+      },
+      {
+        title: 'Bannière',
+        hint: 'Menu Insérer › Bannière : gros caractères ou texte encadré.',
+        markdown: '```ascii\n╭─────────────╮\n│  Sprint 12  │\n╰─────────────╯\n```',
+      },
+    ],
+  },
 ];
