@@ -37,6 +37,10 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
 
     boolean existsByTitleIgnoreCaseAndCreatedAt(String title, Instant createdAt);
 
+    /** Taches rattachees a l'un de ces projets (principal ou supplementaire). */
+    @Query("select distinct t from Task t left join t.extraProjects e where t.project.id in :ids or e.id in :ids")
+    List<Task> findByAnyProject(@Param("ids") Collection<UUID> ids);
+
     /** Import en mode remplacement : la tache deja presente qui ressemble a celle du fichier. */
     java.util.Optional<Task> findFirstByTitleIgnoreCaseAndCreatedAt(String title, Instant createdAt);
 

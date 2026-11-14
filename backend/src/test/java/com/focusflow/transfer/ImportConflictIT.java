@@ -64,7 +64,7 @@ class ImportConflictIT extends IntegrationTest {
         assertThat((Boolean) JsonPath.read(preview, "$.conflicts[0].folderExists")).isTrue();
         assertThat((Integer) JsonPath.read(preview, "$.conflicts[0].projectCount")).isEqualTo(2);
         assertThat((String) JsonPath.read(preview, "$.conflicts[0].existingProjects[0].name")).isEqualTo("APPLI A");
-        assertThat((String) JsonPath.read(preview, "$.conflicts[0].existingProjects[0].currentFolder")).isEqualTo("dmp");
+        assertThat((List<String>) JsonPath.read(preview, "$.conflicts[0].existingProjects[0].currentFolders")).containsExactly("dmp");
         assertThat((Integer) JsonPath.read(preview, "$.projectsIgnored")).isEqualTo(2);
         assertThat((Integer) JsonPath.read(preview, "$.projectsCreated")).isEqualTo(1);
         assertThat((Integer) JsonPath.read(body("/api/v1/projects"), "$.length()")).isEqualTo(1);
@@ -116,7 +116,7 @@ class ImportConflictIT extends IntegrationTest {
 
         mvc.perform(get("/api/v1/projects/" + a))
                 .andExpect(jsonPath("$.description").value("Version du fichier"))
-                .andExpect(jsonPath("$.folderId").exists());
+                .andExpect(jsonPath("$.folderIds.length()").value(1));
         mvc.perform(get("/api/v1/tasks/" + task))
                 .andExpect(jsonPath("$.title").value("Livrer A"))
                 .andExpect(jsonPath("$.project.name").value("Appli A"))

@@ -23,18 +23,41 @@
       <label class="field-label" for="pj-desc">Description</label>
       <textarea id="pj-desc" class="input" rows="2" formControlName="description"></textarea>
     </div>
-    <div>
-      <label class="field-label" for="pj-folder">Dossier</label
-      ><select id="pj-folder" class="input" formControlName="folderId">
-        <option value="">Sans dossier</option>
-        @for (f of folders(); track f.id) {
-          <option [value]="f.id">{{ f.name }}</option>
-        }
-      </select>
-      <p class="text-xs text-muted mt-1">
-        Le dossier sert seulement au rangement : les tâches restent liées au projet.
-      </p>
-    </div>
+    <fieldset>
+      <legend class="field-label">Dossiers</legend>
+      @if (folders().length) {
+        <div
+          class="rounded-lg border border-line divide-y divide-[var(--line)] max-h-40 overflow-y-auto"
+        >
+          @for (f of folders(); track f.id) {
+            <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-2">
+              <input
+                type="checkbox"
+                class="size-4 flex-none accent-[var(--brand)]"
+                [checked]="chosen().has(f.id)"
+                (change)="toggleFolder(f.id, $any($event.target).checked)"
+              />
+              <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span>
+              <span class="flex-1 min-w-0 truncate">{{ f.name }}</span>
+            </label>
+          }
+        </div>
+        <p class="text-xs text-muted mt-1" aria-live="polite">
+          @if (chosen().size) {
+            Un projet peut faire partie de plusieurs dossiers. Les dossiers servent au rangement :
+            les tâches restent liées au projet.
+          } @else {
+            Aucun dossier coché : le projet sera dans le dossier par défaut « Projets sans
+            dossier ».
+          }
+        </p>
+      } @else {
+        <p class="text-sm text-muted">
+          Aucun dossier pour l’instant : le projet sera dans le dossier par défaut « Projets sans
+          dossier ».
+        </p>
+      }
+    </fieldset>
     <fieldset>
       <legend class="field-label">Couleur</legend>
       <div class="flex flex-wrap gap-2" role="radiogroup">

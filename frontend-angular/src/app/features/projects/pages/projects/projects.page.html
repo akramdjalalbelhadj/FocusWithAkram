@@ -26,6 +26,16 @@
         [size]="14"
       />
     </button>
+    @if (folders().length) {
+      <button
+        type="button"
+        class="btn btn-secondary text-danger"
+        title="Supprimer un, plusieurs ou tous les dossiers"
+        (click)="deleteFolders()"
+      >
+        <ff-icon name="trash" [size]="16" />Supprimer des dossiers
+      </button>
+    }
     <button type="button" class="btn btn-primary" [cdkMenuTriggerFor]="newMenu">
       <ff-icon name="plus" />Nouveau<ff-icon name="chevron-down" [size]="14" />
     </button>
@@ -51,39 +61,37 @@
       Projets inactifs <span class="tabular-nums font-normal">{{ inactiveCount() }}</span>
     </button>
   </nav>
-  @if (folders().length) {
-    <nav class="segmented" aria-label="Dossiers de projets">
+  <nav class="segmented" aria-label="Dossiers de projets">
+    <button
+      type="button"
+      class="segmented-item"
+      [attr.aria-pressed]="folderFilter() === 'all'"
+      (click)="folderFilter.set('all')"
+    >
+      Tous <span class="tabular-nums font-normal">{{ count('all') }}</span>
+    </button>
+    @for (f of folders(); track f.id) {
       <button
         type="button"
         class="segmented-item"
-        [attr.aria-pressed]="folderFilter() === 'all'"
-        (click)="folderFilter.set('all')"
+        [attr.aria-pressed]="folderFilter() === f.id"
+        (click)="folderFilter.set(f.id)"
       >
-        Tous <span class="tabular-nums font-normal">{{ count('all') }}</span>
+        <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span
+        >{{ f.name }} <span class="tabular-nums font-normal">{{ count(f.id) }}</span>
       </button>
-      @for (f of folders(); track f.id) {
-        <button
-          type="button"
-          class="segmented-item"
-          [attr.aria-pressed]="folderFilter() === f.id"
-          (click)="folderFilter.set(f.id)"
-        >
-          <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span
-          >{{ f.name }} <span class="tabular-nums font-normal">{{ count(f.id) }}</span>
-        </button>
-      }
-      @if (count('none')) {
-        <button
-          type="button"
-          class="segmented-item"
-          [attr.aria-pressed]="folderFilter() === 'none'"
-          (click)="folderFilter.set('none')"
-        >
-          Sans dossier <span class="tabular-nums font-normal">{{ count('none') }}</span>
-        </button>
-      }
-    </nav>
-  }
+    }
+    <button
+      type="button"
+      class="segmented-item"
+      [attr.aria-pressed]="folderFilter() === 'none'"
+      title="Dossier par défaut : les projets qui ne sont dans aucun dossier"
+      (click)="folderFilter.set('none')"
+    >
+      <ff-icon name="inbox" [size]="14" />{{ DEFAULT_FOLDER }}
+      <span class="tabular-nums font-normal">{{ count('none') }}</span>
+    </button>
+  </nav>
 </div>
 
 <div class="flex flex-wrap gap-2 mb-4">
@@ -134,8 +142,8 @@
   <div class="space-y-3">
     @for (s of sections(); track s.folder?.id ?? 'none') {
       @let key = s.folder?.id ?? 'none';
-      @let showHeader = folders().length > 0;
-      @let open = !showHeader || isOpen(key);
+      @let showHeader = true;
+      @let open = sections().length === 1 || isOpen(key);
       <section [attr.aria-labelledby]="'pf-' + key">
         @if (showHeader) {
           <div class="card flex flex-wrap items-center gap-2 px-3 py-2" [class.mb-3]="open">
@@ -151,10 +159,10 @@
                 <span
                   class="size-7 rounded-lg grid place-items-center text-white flex-none"
                   [style.background]="s.folder?.color ?? 'var(--muted)'"
-                  ><ff-icon [name]="open ? 'folder-open' : 'folder'" [size]="15"
+                  ><ff-icon [name]="s.folder ? (open ? 'folder-open' : 'folder') : 'inbox'" [size]="15"
                 /></span>
                 <h2 [id]="'pf-' + key" class="font-bold truncate">
-                  {{ s.folder?.name ?? 'Sans dossier' }}
+                  {{ s.folder?.name ?? DEFAULT_FOLDER }}
                 </h2>
                 <span class="badge badge-todo tabular-nums">{{ s.projects.length }}</span>
               </button>
@@ -163,12 +171,26 @@
                 <span
                   class="size-7 rounded-lg grid place-items-center text-white flex-none"
                   [style.background]="s.folder?.color ?? 'var(--muted)'"
-                  ><ff-icon name="folder-open" [size]="15"
+                  ><ff-icon [name]="s.folder ? 'folder-open' : 'inbox'" [size]="15"
                 /></span>
                 <h2 [id]="'pf-' + key" class="font-bold truncate">
-                  {{ s.folder?.name ?? 'Sans dossier' }}
+                  {{ s.folder?.name ?? DEFAULT_FOLDER }}
                 </h2>
                 <span class="badge badge-todo tabular-nums">{{ s.projects.length }}</span>
+              </div>
+            }
+            @if (!s.folder) {
+              <div class="flex items-center gap-1">
+                <span
+                  class="badge badge-todo"
+                  title="Dossier par défaut des projets qui ne sont dans aucun dossier : il ne peut pas être supprimé"
+                  >Par défaut</span
+                >
+                @if (!inactive()) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="edit(null)">
+                    <ff-icon name="plus" [size]="14" />Projet
+                  </button>
+                }
               </div>
             }
             @if (s.folder; as f) {
@@ -209,6 +231,12 @@
                     <h3 class="font-bold truncate">{{ p.name }}</h3>
                     @if (p.description) {
                       <p class="text-sm text-muted line-clamp-2">{{ p.description }}</p>
+                    }
+                    @if (s.folder && otherFolders(p, s.folder); as others) {
+                      <p class="text-xs text-muted mt-0.5 truncate" [attr.title]="'Aussi dans : ' + others">
+                        <ff-icon name="folder" [size]="12" class="inline align-[-2px]" /> Aussi dans :
+                        {{ others }}
+                      </p>
                     }
                   </div>
                   @if (p.archived) {
@@ -270,7 +298,7 @@
                 </div>
               </article>
             }
-            @if (!inactive() && (s.folder || !folders().length)) {
+            @if (!inactive()) {
               <button
                 type="button"
                 class="card p-6 flex flex-col items-center justify-center gap-3 border-dashed min-h-48"
@@ -334,7 +362,7 @@
       <ff-icon name="download" [size]="16" />Exporter le dossier
     </button>
     <div class="menu-sep" role="separator"></div>
-    <button cdkMenuItem class="menu-item danger" (cdkMenuItemTriggered)="removeFolder(f)">
+    <button cdkMenuItem class="menu-item danger" (cdkMenuItemTriggered)="deleteFolders(f)">
       <ff-icon name="trash" [size]="16" />Supprimer le dossier
     </button>
   </div>
@@ -344,24 +372,22 @@
   <div cdkMenu class="menu anim-pop" [attr.aria-label]="'Actions pour ' + p.name">
     @if (folders().length) {
       <p class="px-3 pt-1 pb-0.5 text-xs font-semibold text-muted" aria-hidden="true">
-        Déplacer vers
+        Dossiers du projet
       </p>
       @for (f of folders(); track f.id) {
         <button
-          cdkMenuItem
+          cdkMenuItemCheckbox
           class="menu-item"
-          [disabled]="p.folderId === f.id"
-          [attr.aria-label]="'Déplacer vers ' + f.name"
-          (cdkMenuItemTriggered)="move(p, f)"
+          [cdkMenuItemChecked]="inFolder(p, f)"
+          [attr.aria-label]="(inFolder(p, f) ? 'Retirer de ' : 'Ajouter à ') + f.name"
+          (cdkMenuItemTriggered)="toggleFolder(p, f)"
         >
-          <ff-icon [name]="p.folderId === f.id ? 'check' : 'folder-input'" [size]="16" />{{
-            f.name
-          }}
+          <ff-icon [name]="inFolder(p, f) ? 'square-check' : 'square'" [size]="16" />{{ f.name }}
         </button>
       }
-      @if (folderName(p)) {
-        <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="move(p, null)">
-          <ff-icon name="x" [size]="16" />Sortir du dossier
+      @if (projectFolders(p).length) {
+        <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="unfile(p)">
+          <ff-icon name="inbox" [size]="16" />Remettre dans « {{ DEFAULT_FOLDER }} »
         </button>
       }
       <div class="menu-sep" role="separator"></div>

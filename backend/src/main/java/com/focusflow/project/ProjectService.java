@@ -33,10 +33,11 @@ public class ProjectService {
         for (Object[] row : repository.progressByProject()) {
             progress.put((UUID) row[0], new long[]{((Number) row[1]).longValue(), ((Number) row[2]).longValue()});
         }
+        Map<UUID, List<UUID>> links = folderLinks();
         return repository.findAllByOrderByNameAsc().stream()
                 .map(p -> {
                     long[] pr = progress.getOrDefault(p.getId(), new long[]{0, 0});
-                    return new ProjectView(p, pr[0], pr[1]);
+                    return new ProjectView(p, pr[0], pr[1], links.getOrDefault(p.getId(), List.of()));
                 })
                 .toList();
     }
@@ -48,7 +49,16 @@ public class ProjectService {
                 .filter(r -> r[0].equals(id)).findFirst()
                 .map(r -> new long[]{((Number) r[1]).longValue(), ((Number) r[2]).longValue()})
                 .orElse(new long[]{0, 0});
-        return new ProjectView(p, pr[0], pr[1]);
+        return new ProjectView(p, pr[0], pr[1], folderLinks().getOrDefault(id, List.of()));
+    }
+
+    /** Dossiers de chaque projet (identifiants, par nom de dossier). */
+    private Map<UUID, List<UUID>> folderLinks() {
+        Map<UUID, List<UUID>> links = new HashMap<>();
+        for (Object[] row : repository.folderLinks()) {
+            links.computeIfAbsent((UUID) row[0], k -> new java.util.ArrayList<>()).add((UUID) row[1]);
+        }
+        return links;
     }
 
     @Transactional(readOnly = true)
@@ -112,11 +122,17 @@ public class ProjectService {
         if (body.has("dueAt")) {
             p.setDueAt(body.instant("dueAt"));
         }
-        if (body.has("folderId")) {
+        if (body.has("folderIds")) {
+            List<UUID> ids = body.strings("folderIds").stream().map(UUID::fromString).distinct().toList();
+            p.setFolders(ids.stream().map(this::folder).toList());
+        } else if (body.has("folderId")) {
             UUID folderId = body.uuid("folderId");
-            p.setFolder(folderId == null ? null : folders.findById(folderId)
-                    .orElseThrow(() -> ApiException.notFound("Dossier", folderId)));
+            p.setFolders(folderId == null ? List.of() : List.of(folder(folderId)));
         }
+    }
+
+    private ProjectFolder folder(UUID id) {
+        return folders.findById(id).orElseThrow(() -> ApiException.notFound("Dossier", id));
     }
 
     private static String cleanName(String raw) {

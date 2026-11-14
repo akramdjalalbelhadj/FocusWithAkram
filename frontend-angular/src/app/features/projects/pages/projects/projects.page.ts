@@ -1,9 +1,14 @@
 import { Dialog } from '@angular/cdk/dialog';
-import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
+import { CdkMenu, CdkMenuItem, CdkMenuItemCheckbox, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { TransferApi } from '../../../../core/api/misc.api';
-import { ImportReport, Project, ProjectFolder } from '../../../../core/api/models';
+import {
+  FolderDeletionReport,
+  ImportReport,
+  Project,
+  ProjectFolder,
+} from '../../../../core/api/models';
 import { ProjectFoldersApi, ProjectsApi, TasksApi } from '../../../../core/api/tasks.api';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
@@ -22,6 +27,10 @@ import {
   ExportChoice,
   ExportDialogComponent,
 } from '../../components/export-dialog/export-dialog.component';
+import {
+  FolderDeleteDialogComponent,
+  FolderDeleteDialogData,
+} from '../../components/folder-delete-dialog/folder-delete-dialog.component';
 import { FolderDialogComponent } from '../../components/folder-dialog/folder-dialog.component';
 import { ImportDialogComponent } from '../../components/import-dialog/import-dialog.component';
 import {
@@ -31,7 +40,9 @@ import {
 import {
   FolderFilter,
   exportFileName,
-  folderOf,
+  foldersOf,
+  DEFAULT_FOLDER,
+  deletionLines,
   groupByFolder,
   importSummary,
   projectsOnly,
@@ -62,6 +73,7 @@ function readOpened(): Set<string> {
     SkeletonComponent,
     CdkMenu,
     CdkMenuItem,
+    CdkMenuItemCheckbox,
     CdkMenuTrigger,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -89,6 +101,7 @@ export class ProjectsPage {
   protected readonly taskPreview = new Loader(() => this.tasksApi.priorities('PRIORITIES'));
 
   protected readonly folders = computed(() => this.folderLoader.data() ?? []);
+  protected readonly DEFAULT_FOLDER = DEFAULT_FOLDER;
 
   protected previewTasks(projectId: string) {
     return (this.taskPreview.data() ?? []).filter((t) => t.project?.id === projectId).slice(0, 2);
@@ -132,11 +145,27 @@ export class ProjectsPage {
   protected count(filter: FolderFilter): number {
     const all = this.inMode();
     if (filter === 'all') return all.length;
-    return all.filter((p) => (folderOf(p, this.folders())?.id ?? 'none') === filter).length;
+    return all.filter((p) => {
+      const own = foldersOf(p, this.folders());
+      return filter === 'none' ? !own.length : own.some((f) => f.id === filter);
+    }).length;
   }
 
-  protected folderName(p: Project): string | null {
-    return folderOf(p, this.folders())?.name ?? null;
+  /** Dossiers du projet (pour le menu « Dossiers » de sa carte). */
+  protected projectFolders(p: Project): ProjectFolder[] {
+    return foldersOf(p, this.folders());
+  }
+
+  protected inFolder(p: Project, f: ProjectFolder): boolean {
+    return (p.folderIds ?? []).includes(f.id);
+  }
+
+  /** Autres dossiers d'un projet affiche dans la section `current` (« Aussi dans : … »). */
+  protected otherFolders(p: Project, current: ProjectFolder | null): string {
+    return foldersOf(p, this.folders())
+      .filter((f) => f.id !== current?.id)
+      .map((f) => f.name)
+      .join(', ');
   }
 
   /**
@@ -171,9 +200,16 @@ export class ProjectsPage {
 
   /** Modifie un projet, ou en cree un (dans le dossier filtre ou celui de la section). */
   protected async edit(p: Project | null, folderId: string | null = null): Promise<void> {
+    // Nouveau projet : coche d'avance le dossier de la section, ou celui filtre dans la barre.
     const filter = this.folderFilter();
     const data: ProjectDialogData =
-      p ?? { folderId: folderId ?? (filter === 'all' || filter === 'none' ? null : filter) };
+      p ?? {
+        folderIds: folderId
+          ? [folderId]
+          : filter === 'all' || filter === 'none'
+            ? []
+            : [filter],
+      };
     const saved = await firstValueFrom(
       this.dialog.open<Project>(ProjectDialogComponent, { data, backdropClass: 'ff-backdrop' })
         .closed,
@@ -183,7 +219,7 @@ export class ProjectsPage {
     if (!p) {
       // Un nouveau projet est actif : on le montre, dans son dossier ouvert.
       this.inactive.set(false);
-      this.reveal(saved.folderId ?? 'none');
+      (saved.folderIds?.length ? saved.folderIds : ['none']).forEach((k) => this.reveal(k));
     }
     this.refresh.bump();
   }
@@ -192,13 +228,27 @@ export class ProjectsPage {
     if (!this.opened().has(key)) this.toggleOpen(key);
   }
 
-  protected async move(p: Project, folder: ProjectFolder | null): Promise<void> {
-    if ((p.folderId ?? null) === (folder?.id ?? null)) return;
+  /** Ajoute le projet a un dossier, ou l'en retire (il garde ses autres dossiers). */
+  protected async toggleFolder(p: Project, folder: ProjectFolder): Promise<void> {
+    const ids = new Set(p.folderIds ?? []);
+    const adding = !ids.has(folder.id);
+    if (adding) ids.add(folder.id);
+    else ids.delete(folder.id);
+    await this.saveFolders(
+      p,
+      [...ids],
+      adding ? `« ${p.name} » ajouté à ${folder.name}.` : `« ${p.name} » retiré de ${folder.name}.`,
+    );
+  }
+
+  protected async unfile(p: Project): Promise<void> {
+    await this.saveFolders(p, [], `« ${p.name} » est remis dans « ${DEFAULT_FOLDER} ».`);
+  }
+
+  private async saveFolders(p: Project, folderIds: string[], message: string): Promise<void> {
     try {
-      await firstValueFrom(this.api.update(p.id, { folderId: folder?.id ?? null }));
-      this.toast.success(
-        folder ? `« ${p.name} » rangé dans ${folder.name}.` : `« ${p.name} » sorti de son dossier.`,
-      );
+      await firstValueFrom(this.api.update(p.id, { folderIds }));
+      this.toast.success(message);
       this.refresh.bump();
     } catch (e) {
       this.toast.errorFrom(e);
@@ -246,25 +296,26 @@ export class ProjectsPage {
     this.refresh.bump();
   }
 
-  protected async removeFolder(folder: ProjectFolder): Promise<void> {
-    const n = folder.projectCount;
-    const ok = await this.confirm({
-      title: 'Supprimer ce dossier ?',
-      message: n
-        ? `Le dossier « ${folder.name} » sera supprimé. Ses ${n} projet(s) et leurs tâches sont conservés, sans dossier.`
-        : `Le dossier vide « ${folder.name} » sera supprimé.`,
-      confirmLabel: 'Supprimer le dossier',
-      danger: true,
-    });
-    if (!ok) return;
-    try {
-      await firstValueFrom(this.foldersApi.delete(folder.id));
-      if (this.folderFilter() === folder.id) this.folderFilter.set('all');
-      this.toast.success('Dossier supprimé — ses projets sont conservés.');
-      this.refresh.bump();
-    } catch (e) {
-      this.toast.errorFrom(e);
-    }
+  /**
+   * Fenetre de suppression : un dossier (menu du dossier) ou plusieurs, tous coches par defaut (bouton
+   * « Supprimer des dossiers »), avec le sort de leurs projets.
+   */
+  protected async deleteFolders(only?: ProjectFolder): Promise<void> {
+    const data: FolderDeleteDialogData = {
+      folders: this.folders(),
+      selected: only ? [only.id] : undefined,
+    };
+    const report = await firstValueFrom(
+      this.dialog.open<FolderDeletionReport>(FolderDeleteDialogComponent, {
+        data,
+        backdropClass: 'ff-backdrop',
+      }).closed,
+    );
+    if (!report) return;
+    // Le dossier filtre a peut-etre disparu : retour a la vue « Tous ».
+    this.folderFilter.set('all');
+    this.toast.success(deletionLines(report).join(' '));
+    this.refresh.bump();
   }
 
   // ---- Export / import ---------------------------------------------------------------------

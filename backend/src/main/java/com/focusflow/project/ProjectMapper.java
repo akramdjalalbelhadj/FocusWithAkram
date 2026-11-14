@@ -10,6 +10,6 @@ public final class ProjectMapper {
         Project p = v.project();
         return new ProjectResponse(p.getId(), p.getName(), p.getDescription(), p.getColor(), p.getIcon(),
                 p.getDueAt(), p.isArchived(), p.getCreatedAt(), v.totalTasks(), v.doneTasks(),
-                p.getFolder() == null ? null : p.getFolder().getId());
+                v.folderIds());
     }
 }

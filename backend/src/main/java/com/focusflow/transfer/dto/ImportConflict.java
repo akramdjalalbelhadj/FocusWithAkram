@@ -9,12 +9,12 @@ import java.util.List;
  * @param folder           nom du dossier dans le fichier ; absent pour les projets sans dossier
  * @param folderExists     un dossier de ce nom existe deja
  * @param projectCount     nombre de projets de ce dossier dans le fichier
- * @param existingProjects projets du fichier qui existent deja, avec leur emplacement actuel
+ * @param existingProjects projets du fichier qui existent deja, avec leurs dossiers actuels
  */
 public record ImportConflict(String folder, boolean folderExists, int projectCount,
                              List<ExistingProject> existingProjects) {
 
-    /** Projet deja present : son nom, son dossier actuel (absent = sans dossier) et s'il est inactif. */
-    public record ExistingProject(String name, String currentFolder, boolean inactive) {
+    /** Projet deja present : son nom, ses dossiers actuels (vide = sans dossier) et s'il est inactif. */
+    public record ExistingProject(String name, List<String> currentFolders, boolean inactive) {
     }
 }

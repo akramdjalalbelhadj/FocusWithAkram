@@ -1,23 +1,40 @@
-import { ImportConflict, ImportReport, Project, ProjectFolder } from '../../../core/api/models';
+import {
+  FolderDeletionReport,
+  ImportConflict,
+  ImportReport,
+  Project,
+  ProjectFolder,
+} from '../../../core/api/models';
 
-/** Filtre de la page Projets : tous les dossiers, les projets sans dossier, ou un dossier. */
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+
+/**
+ * Dossier par defaut : il regroupe les projets qui n'ont aucun dossier. Il n'existe pas en base (le serveur
+ * reserve son nom), il est toujours affiche et ne peut etre ni renomme ni supprime.
+ */
+export const DEFAULT_FOLDER = 'Projets sans dossier';
+
+/** Filtre de la page Projets : tous les dossiers, le dossier par defaut (`none`), ou un dossier. */
 export type FolderFilter = 'all' | 'none' | string;
 
-/** Section affichee : un dossier (ou `null` = « Sans dossier ») et ses projets visibles. */
+/** Section affichee : un dossier (ou `null` = le dossier par defaut « Projets sans dossier »). */
 export interface FolderSection {
   folder: ProjectFolder | null;
   projects: Project[];
 }
 
-/** Dossier d'un projet, si ce dossier existe encore (sinon le projet est considere sans dossier). */
-export function folderOf(p: Project, folders: ProjectFolder[]): ProjectFolder | null {
-  return (p.folderId && folders.find((f) => f.id === p.folderId)) || null;
+/** Dossiers d'un projet qui existent encore, par nom (aucun : le projet est « sans dossier »). */
+export function foldersOf(p: Project, folders: ProjectFolder[]): ProjectFolder[] {
+  const ids = p.folderIds ?? [];
+  return folders
+    .filter((f) => ids.includes(f.id))
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 }
 
 /**
- * Regroupe les projets visibles par dossier : les dossiers par nom, puis « Sans dossier ».
- * Avec un filtre, une seule section. Un dossier vide n'apparait que si `keepEmpty` (gestion des dossiers)
- * ou s'il est le dossier filtre.
+ * Regroupe les projets visibles par dossier : les dossiers par nom, puis le dossier par defaut « Projets sans
+ * dossier ». Un projet range dans plusieurs dossiers apparait dans chacun. Avec un filtre, une seule section. Un
+ * dossier vide (y compris le dossier par defaut) n'apparait que si `keepEmpty` ou s'il est le dossier filtre.
  */
 export function groupByFolder(
   projects: Project[],
@@ -26,9 +43,11 @@ export function groupByFolder(
   keepEmpty: boolean,
 ): FolderSection[] {
   const byFolder = new Map<string | null, Project[]>();
+  const add = (key: string | null, p: Project) => byFolder.set(key, [...(byFolder.get(key) ?? []), p]);
   for (const p of projects) {
-    const key = folderOf(p, folders)?.id ?? null;
-    byFolder.set(key, [...(byFolder.get(key) ?? []), p]);
+    const own = foldersOf(p, folders);
+    if (own.length) own.forEach((f) => add(f.id, p));
+    else add(null, p);
   }
   if (filter === 'none') return [{ folder: null, projects: byFolder.get(null) ?? [] }];
   if (filter !== 'all') {
@@ -40,8 +59,54 @@ export function groupByFolder(
     .map((folder) => ({ folder, projects: byFolder.get(folder.id) ?? [] }))
     .filter((s) => keepEmpty || s.projects.length > 0);
   const loose = byFolder.get(null) ?? [];
-  if (loose.length) sections.push({ folder: null, projects: loose });
+  if (loose.length || keepEmpty) sections.push({ folder: null, projects: loose });
   return sections;
+}
+
+/** Ce que fera (ou a fait) une suppression de dossiers, ligne par ligne. */
+export function deletionLines(r: FolderDeletionReport): string[] {
+  const will = r.dryRun;
+  const lines = [
+    `${plural(r.foldersDeleted, 'dossier', 'dossiers')} ${will ? (r.foldersDeleted > 1 ? 'seront supprimés' : 'sera supprimé') : r.foldersDeleted > 1 ? 'supprimés' : 'supprimé'}.`,
+  ];
+  if (r.mode === 'KEEP_PROJECTS') {
+    lines.push(
+      r.projectsUnfiled
+        ? `${plural(r.projectsUnfiled, 'projet', 'projets')} ${will ? (r.projectsUnfiled > 1 ? 'passeront' : 'passera') : r.projectsUnfiled > 1 ? 'sont passés' : 'est passé'} dans « ${DEFAULT_FOLDER} » (avec leurs tâches).`
+        : `Aucun projet ne passe dans « ${DEFAULT_FOLDER} ».`,
+    );
+  } else {
+    lines.push(
+      r.projectsDeleted
+        ? `${plural(r.projectsDeleted, 'projet', 'projets')} ${will ? (r.projectsDeleted > 1 ? 'seront supprimés' : 'sera supprimé') : r.projectsDeleted > 1 ? 'supprimés' : 'supprimé'}.`
+        : 'Aucun projet supprimé.',
+    );
+    if (r.mode === 'DELETE_PROJECTS_AND_TASKS' && r.tasksDeleted) {
+      lines.push(
+        `${plural(r.tasksDeleted, 'tâche', 'tâches')} ${will ? (r.tasksDeleted > 1 ? 'seront supprimées' : 'sera supprimée') : r.tasksDeleted > 1 ? 'supprimées' : 'supprimée'} définitivement.`,
+      );
+    }
+    if (r.tasksKept) {
+      const many = r.tasksKept > 1;
+      const kept = `${plural(r.tasksKept, 'tâche', 'tâches')} ${will ? (many ? 'seront gardées' : 'sera gardée') : many ? 'gardées' : 'gardée'}`;
+      lines.push(
+        r.mode === 'DELETE_PROJECTS'
+          ? `${kept}, sans ces projets.`
+          : `${kept} car ${many ? 'elles font' : 'elle fait'} aussi partie d’un projet conservé.`,
+      );
+    }
+  }
+  if (r.keptProjects.length) {
+    const list = r.keptProjects
+      .slice(0, 5)
+      .map((k) => `${k.name} (aussi dans ${k.otherFolders.map((f) => `« ${f} »`).join(', ')})`)
+      .join(', ');
+    const more = r.keptProjects.length - 5;
+    lines.push(
+      `${plural(r.keptProjects.length, 'projet conservé', 'projets conservés')} car ${r.keptProjects.length > 1 ? 'ils font' : 'il fait'} aussi partie d’un autre dossier : ${list}${more > 0 ? ` et ${plural(more, 'autre', 'autres')}` : ''}.`,
+    );
+  }
+  return lines;
 }
 
 /**
@@ -64,7 +129,6 @@ export function projectsOnly(file: unknown): Record<string, unknown> {
   return kept;
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
 /**
  * Ce que fait (ou fera, en apercu) un import de projets, ligne par ligne, en langage simple.
@@ -114,7 +178,7 @@ const MAX_LISTED = 5;
 
 /** Titre d'un conflit : le dossier du fichier, ou ses projets sans dossier. */
 export function conflictTitle(c: ImportConflict): string {
-  return c.folder ? `Dossier « ${c.folder} »` : 'Projets sans dossier';
+  return c.folder ? `Dossier « ${c.folder} »` : DEFAULT_FOLDER;
 }
 
 /** Explication d'un conflit : ce qui existe deja, et ou se trouvent aujourd'hui les projets concernes. */
@@ -127,7 +191,9 @@ export function conflictDetail(c: ImportConflict): string {
     const more = n - shown.length;
     const list = shown
       .map((p) => {
-        const where = p.currentFolder ? `dans « ${p.currentFolder} »` : 'sans dossier';
+        const where = p.currentFolders?.length
+          ? `dans ${p.currentFolders.map((f) => `« ${f} »`).join(', ')}`
+          : `dans « ${DEFAULT_FOLDER} »`;
         return `${p.name} (${where}${p.inactive ? ', inactif' : ''})`;
       })
       .join(', ')

@@ -33,7 +33,7 @@ class ProjectFolderIT extends IntegrationTest {
         mvc.perform(get("/api/v1/project-folders"))
                 .andExpect(jsonPath("$[0].name").value("DMP"))
                 .andExpect(jsonPath("$[0].projectCount").value(1));
-        mvc.perform(get("/api/v1/projects/" + app)).andExpect(jsonPath("$.folderId").value(dmp));
+        mvc.perform(get("/api/v1/projects/" + app)).andExpect(jsonPath("$.folderIds[0]").value(dmp));
         mvc.perform(get("/api/v1/tasks/" + task)).andExpect(jsonPath("$.project.id").value(app));
 
         // Nom unique sans tenir compte de la casse ; couleur validee.
@@ -46,11 +46,11 @@ class ProjectFolderIT extends IntegrationTest {
         mvc.perform(patch("/api/v1/project-folders/" + dmp).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"DMP 2026\"}")).andExpect(jsonPath("$.name").value("DMP 2026"));
         mvc.perform(patch("/api/v1/projects/" + app).contentType(MediaType.APPLICATION_JSON).content("{\"folderId\":null}"))
-                .andExpect(jsonPath("$.folderId").doesNotExist());
+                .andExpect(jsonPath("$.folderIds.length()").value(0));
         mvc.perform(patch("/api/v1/projects/" + app).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"folderId\":\"" + dmp + "\"}")).andExpect(jsonPath("$.folderId").value(dmp));
+                .content("{\"folderId\":\"" + dmp + "\"}")).andExpect(jsonPath("$.folderIds[0]").value(dmp));
         mvc.perform(delete("/api/v1/project-folders/" + dmp)).andExpect(status().isNoContent());
-        mvc.perform(get("/api/v1/projects/" + app)).andExpect(jsonPath("$.folderId").doesNotExist());
+        mvc.perform(get("/api/v1/projects/" + app)).andExpect(jsonPath("$.folderIds.length()").value(0));
         mvc.perform(get("/api/v1/tasks/" + task)).andExpect(jsonPath("$.project.id").value(app));
     }
 
@@ -74,7 +74,7 @@ class ProjectFolderIT extends IntegrationTest {
 
         String file = mvc.perform(get("/api/v1/export/projects").param("folderId", dmp))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat((Integer) JsonPath.read(file, "$.version")).isEqualTo(6);
+        assertThat((Integer) JsonPath.read(file, "$.version")).isEqualTo(7);
         assertThat((List<String>) JsonPath.read(file, "$.folders[*].name")).containsExactly("DMP");
         assertThat((List<String>) JsonPath.read(file, "$.projects[*].name")).containsExactly("Appli A", "Appli B");
         assertThat((List<String>) JsonPath.read(file, "$.tasks[*].title")).containsExactlyInAnyOrder("Commune", "Seule B");
@@ -127,8 +127,8 @@ class ProjectFolderIT extends IntegrationTest {
                 .andExpect(jsonPath("$.items[0].project.name").value("Appli B"))
                 .andExpect(jsonPath("$.items[0].projects[1].name").value("Appli A"));
         String projects = mvc.perform(get("/api/v1/projects")).andReturn().getResponse().getContentAsString();
-        assertThat((List<Object>) JsonPath.read(projects, "$[?(@.name == 'Appli A')].folderId")).hasSize(1).doesNotContainNull();
-        assertThat((List<Object>) JsonPath.read(projects, "$[?(@.name == 'Appli B')].folderId")).hasSize(1).allMatch(java.util.Objects::isNull);
+        assertThat((List<Object>) JsonPath.read(projects, "$[?(@.name == 'Appli A')].folderIds[0]")).hasSize(1).doesNotContainNull();
+        assertThat((List<Object>) JsonPath.read(projects, "$[?(@.name == 'Appli B')].folderIds[0]")).isEmpty();
     }
 
     @Test

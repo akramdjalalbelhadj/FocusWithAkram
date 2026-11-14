@@ -33,7 +33,13 @@ public class ProjectWriteRequest extends PatchRequest {
         set("dueAt", value);
     }
 
-    /** Dossier de rangement ; null retire le projet de son dossier. */
+    /** Dossiers du projet (remplace la liste ; vide ou null : sans dossier). */
+    @JsonSetter("folderIds")
+    public void setFolderIds(java.util.List<UUID> value) {
+        set("folderIds", value);
+    }
+
+    /** Ancienne forme (lot 23) : un seul dossier ; null retire le projet de tous ses dossiers. */
     @JsonSetter("folderId")
     public void setFolderId(UUID value) {
         set("folderId", value);

@@ -35,12 +35,12 @@ export class ExportDialogComponent {
   protected readonly withTasks = signal(true);
   protected readonly selected = signal<Set<string>>(new Set());
   protected readonly loose = this.data.projects.filter(
-    (p) => !p.folderId || !this.data.folders.some((f) => f.id === p.folderId),
+    (p) => !(p.folderIds ?? []).some((id) => this.data.folders.some((f) => f.id === id)),
   );
   protected readonly LOOSE = LOOSE;
 
   protected countIn(folder: ProjectFolder): number {
-    return this.data.projects.filter((p) => p.folderId === folder.id).length;
+    return this.data.projects.filter((p) => (p.folderIds ?? []).includes(folder.id)).length;
   }
 
   protected toggle(key: string, on: boolean): void {
@@ -68,7 +68,7 @@ export class ExportDialogComponent {
     if (this.kind() !== 'folders') return this.data.projects.length;
     const sel = this.selected();
     return this.data.projects.filter((p) =>
-      this.loose.includes(p) ? sel.has(LOOSE) : sel.has(p.folderId ?? ''),
+      this.loose.includes(p) ? sel.has(LOOSE) : (p.folderIds ?? []).some((id) => sel.has(id)),
     ).length;
   });
 

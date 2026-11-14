@@ -19,6 +19,8 @@ import java.util.List;
  *   <li>v6 : dossiers de projets ({@code folders}, {@code ProjectData.folderId}) et tous les projets d'une tache
  *       ({@code TaskData.projectIds}). L'export de projets choisis produit ce meme format, limite aux dossiers,
  *       projets, taches et sessions concernes.</li>
+ *   <li>v7 : un projet peut faire partie de plusieurs dossiers ({@code ProjectData.folderIds}) ; {@code folderId}
+ *       reste ecrit (premier dossier) et un fichier v6 est toujours lu.</li>
  * </ul>
  * Une sauvegarde d'une version anterieure reste importable : les sections absentes sont ignorees.
  */
@@ -27,7 +29,7 @@ public record BackupFile(int version, Instant exportedAt, List<ProjectData> proj
                          FinanceBackupData finance, NotesBackupData notes,
                          List<FolderData> folders) {
 
-    public static final int CURRENT_VERSION = 6;
+    public static final int CURRENT_VERSION = 7;
     public static final int OLDEST_SUPPORTED_VERSION = 1;
 
 }

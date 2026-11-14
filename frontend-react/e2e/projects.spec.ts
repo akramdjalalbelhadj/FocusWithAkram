@@ -61,6 +61,17 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     await folderDialog.getByRole("button", { name: "Créer" }).click();
     await expect(folderDialog).toBeHidden();
     const bar = page.getByRole("navigation", { name: "Dossiers de projets" });
+    // Le dossier par defaut existe toujours, ne se renomme ni ne se supprime, et son nom est reserve.
+    await expect(bar.getByRole("button", { name: /^Projets sans dossier \d+$/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Projets sans dossier", level: 2 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Actions du dossier Projets sans dossier" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Nouveau", exact: true }).click();
+    await page.getByRole("menuitem", { name: /^Dossier/ }).click();
+    await folderDialog.getByLabel("Nom").fill("projets sans dossier");
+    await folderDialog.getByRole("button", { name: "Créer" }).click();
+    await expect(folderDialog).toContainText("est le dossier par defaut");
+    await folderDialog.getByRole("button", { name: "Annuler" }).click();
+
     // Le nouveau dossier est ferme dans la vue « Tous ».
     await expect(page.getByRole("button", { name: new RegExp(`^${dmp} 0$`), expanded: false })).toBeVisible();
     await bar.getByRole("button", { name: new RegExp(`^${dmp} 0$`) }).click();
@@ -71,8 +82,9 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     const projectDialog = page.getByRole("dialog", { name: "Nouveau projet" });
     await expect(projectDialog.getByLabel("Icône")).toHaveCount(0);
     await expect(projectDialog.getByText("Échéance")).toHaveCount(0);
-    await expect(projectDialog.getByLabel("Dossier")).toHaveValue(/.+/);
-    await expect(projectDialog.getByLabel("Dossier").locator("option:checked")).toHaveText(dmp);
+    // Le dossier filtre est deja coche ; un projet peut en avoir plusieurs.
+    await expect(projectDialog.getByRole("checkbox", { name: dmp, exact: true })).toBeChecked();
+    await expect(projectDialog.getByRole("checkbox", { name: mes, exact: true })).not.toBeChecked();
     await projectDialog.getByLabel("Nom").fill(`Appli A ${s}`);
     await projectDialog.getByRole("button", { name: "Créer" }).click();
     await expect(projectDialog).toBeHidden();
@@ -83,12 +95,21 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     const appA = projects.find((p: { name: string }) => p.name === `Appli A ${s}`);
     await post(request, "tasks", { title: `Corriger ${s}`, projectIds: [appA.id, appB.id] });
 
-    // Deplacer « Appli B » de MES vers DMP par le menu de sa carte.
+    // « Appli B » (dans MES) est ajoute aussi a DMP par le menu de sa carte : il est dans les deux dossiers.
     await bar.getByRole("button", { name: new RegExp(`^${mes} `) }).click();
     await page.getByRole("button", { name: `Autres actions pour Appli B ${s}` }).click();
-    await page.getByRole("menuitem", { name: `Déplacer vers ${dmp}` }).click();
-    await expect(page.getByText(`« Appli B ${s} » rangé dans ${dmp}.`)).toBeVisible();
+    await page.getByRole("menuitemcheckbox", { name: `Ajouter à ${dmp}` }).click();
+    await expect(page.getByText(`« Appli B ${s} » ajouté à ${dmp}.`)).toBeVisible();
     await expect(bar.getByRole("button", { name: new RegExp(`^${dmp} 2$`) })).toBeVisible();
+    await expect(bar.getByRole("button", { name: new RegExp(`^${mes} 2$`) })).toBeVisible();
+    await bar.getByRole("button", { name: new RegExp(`^${dmp} `) }).click();
+    await expect(page.getByText(`Aussi dans : ${mes}`)).toBeVisible();
+    // Puis retire de MES : il ne reste que dans DMP.
+    await page.getByRole("button", { name: `Autres actions pour Appli B ${s}` }).click();
+    await expect(page.getByRole("menuitemcheckbox", { name: `Retirer de ${dmp}` })).toBeVisible();
+    await page.getByRole("menuitemcheckbox", { name: `Retirer de ${mes}` }).click();
+    await expect(page.getByText(`« Appli B ${s} » retiré de ${mes}.`)).toBeVisible();
+    await expect(bar.getByRole("button", { name: new RegExp(`^${mes} 1$`) })).toBeVisible();
 
     // Vue « Tous » : dossiers fermes par defaut ; DMP, ouvert a la creation de son projet, le reste.
     await bar.getByRole("button", { name: /^Tous / }).click();
@@ -153,7 +174,7 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     const file = test.info().outputPath("dmp.json");
     await download.saveAs(file);
     const exported = JSON.parse(await fs.readFile(file, "utf8"));
-    expect(exported.version).toBe(6);
+    expect(exported.version).toBe(7);
     expect(exported.folders.map((f: { name: string }) => f.name)).toEqual([dmp]);
     expect(exported.projects.map((p: { name: string }) => p.name).sort()).toEqual([`Appli A ${s}`, `Appli B ${s}`]);
     expect(exported.tasks.map((t: { title: string }) => t.title)).toEqual([`Corriger ${s}`]);
@@ -202,13 +223,17 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     const after = await (await request.get(api + "tasks", { params: { q: `Corriger ${s}` } })).json();
     expect(after.totalItems).toBe(1);
 
-    // Suppression du dossier : projets conserves, sans dossier.
+    // Suppression du dossier par son menu : seul ce dossier est coche ; par defaut, les projets sont gardes.
     await page.getByRole("button", { name: `Actions du dossier ${dmp}` }).click();
     await page.getByRole("menuitem", { name: "Supprimer le dossier" }).click();
-    await page.getByRole("alertdialog", { name: "Supprimer ce dossier ?" })
-      .getByRole("button", { name: "Supprimer le dossier" }).click();
-    await expect(page.getByText("Dossier supprimé — ses projets sont conservés.")).toBeVisible();
-    await bar.getByRole("button", { name: /^Sans dossier/ }).click();
+    const delDialog = page.getByRole("dialog", { name: "Supprimer des dossiers" });
+    await expect(delDialog).toContainText("Par défaut, ne peut pas être supprimé");
+    await expect(delDialog.getByRole("checkbox", { name: new RegExp(`^${dmp} `) })).toBeChecked();
+    await expect(delDialog).toContainText("1 dossier sera supprimé.");
+    await expect(delDialog).toContainText("2 projets passeront dans « Projets sans dossier » (avec leurs tâches).");
+    await delDialog.getByRole("button", { name: "Supprimer le dossier" }).click();
+    await expect(page.getByText("1 dossier supprimé. 2 projets sont passés dans « Projets sans dossier »")).toBeVisible();
+    await bar.getByRole("button", { name: /^Projets sans dossier/ }).click();
     await expect(page.getByRole("heading", { name: `Appli A ${s}` })).toBeVisible();
 
     // Telephone : aucun debordement horizontal.
@@ -217,6 +242,57 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     await expect(page.getByRole("heading", { name: "Projets", level: 1 })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
+    expect(errors).toEqual([]);
+  } finally {
+    await cleanup(request, s);
+  }
+});
+
+test("Projets : supprimer des dossiers sans perdre un projet rangé aussi ailleurs", async ({ page, request }) => {
+  // Dossier A {X, Y}, dossier B {Y, Z} ; taches tX (X) et tXZ (X et Z). On supprime A avec ses projets et taches :
+  // X et tX disparaissent, Y reste (il est aussi dans B), tXZ reste avec Z.
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  const s = String(Date.now()).slice(-6);
+  const [A, B] = [`A ${s}`, `B ${s}`];
+  try {
+    const a = await post(request, "project-folders", { name: A });
+    const b = await post(request, "project-folders", { name: B });
+    const x = await post(request, "projects", { name: `X ${s}`, folderIds: [a.id] });
+    const y = await post(request, "projects", { name: `Y ${s}`, folderIds: [a.id, b.id] });
+    const z = await post(request, "projects", { name: `Z ${s}`, folderIds: [b.id] });
+    await post(request, "tasks", { title: `tX ${s}`, projectId: x.id });
+    await post(request, "tasks", { title: `tXZ ${s}`, projectIds: [x.id, z.id] });
+
+    await page.goto("/projects");
+    await page.getByRole("button", { name: "Supprimer des dossiers" }).click();
+    const del = page.getByRole("dialog", { name: "Supprimer des dossiers" });
+    // Par defaut tous les dossiers sont coches ; on ne garde que A.
+    await expect(del.getByRole("button", { name: "Tout désélectionner" })).toBeVisible();
+    await del.getByRole("button", { name: "Tout désélectionner" }).click();
+    await expect(del).toContainText("Aucun dossier sélectionné.");
+    await expect(del.getByRole("button", { name: /^Supprimer/ })).toBeDisabled();
+    await del.getByRole("checkbox", { name: new RegExp(`^${A} `) }).check();
+    await expect(del.getByRole("radio", { name: /^Garder les projets/ })).toBeChecked();
+    await expect(del).toContainText("1 projet passera dans « Projets sans dossier » (avec leurs tâches).");
+    await del.getByRole("radio", { name: /^Supprimer les projets et leurs tâches/ }).check();
+    await expect(del).toContainText("1 projet sera supprimé.");
+    await expect(del).toContainText("1 tâche sera supprimée définitivement.");
+    await expect(del).toContainText("1 tâche sera gardée car elle fait aussi partie d’un projet conservé.");
+    await expect(del).toContainText(`1 projet conservé car il fait aussi partie d’un autre dossier : Y ${s} (aussi dans « ${B} »).`);
+    await axe(page, "suppression de dossiers");
+    await del.getByRole("button", { name: "Supprimer le dossier" }).click();
+    await expect(del).toBeHidden();
+
+    const names = (await (await request.get(api + "projects")).json()).map((p: { name: string }) => p.name);
+    expect(names).toContain(`Y ${s}`);
+    expect(names).toContain(`Z ${s}`);
+    expect(names).not.toContain(`X ${s}`);
+    const yNow = await (await request.get(api + `projects/${y.id}`)).json();
+    expect(yNow.folderIds).toEqual([b.id]);
+    const tasks = await (await request.get(api + "tasks", { params: { q: s, size: 50 } })).json();
+    expect(tasks.items.map((t: { title: string }) => t.title)).toEqual([`tXZ ${s}`]);
+    expect(tasks.items[0].projects.map((p: { name: string }) => p.name)).toEqual([`Z ${s}`]);
     expect(errors).toEqual([]);
   } finally {
     await cleanup(request, s);

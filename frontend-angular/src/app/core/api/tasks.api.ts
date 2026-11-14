@@ -8,6 +8,8 @@ import {
   Matrix,
   Page,
   PriorityMode,
+  FolderDeletionMode,
+  FolderDeletionReport,
   Project,
   ProjectFolder,
   Quadrant,
@@ -222,5 +224,18 @@ export class ProjectFoldersApi {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${BASE}/project-folders/${id}`);
+  }
+
+  /** Lot 27 : supprime des dossiers avec le sort de leurs projets ; `dryRun` : apercu sans ecriture. */
+  deleteMany(
+    folderIds: string[],
+    mode: FolderDeletionMode,
+    dryRun: boolean,
+  ): Observable<FolderDeletionReport> {
+    return this.http.post<FolderDeletionReport>(
+      `${BASE}/project-folders/deletion`,
+      { folderIds, mode },
+      { params: { dryRun } },
+    );
   }
 }

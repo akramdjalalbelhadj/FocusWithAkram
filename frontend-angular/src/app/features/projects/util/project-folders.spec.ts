@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ImportReport, Project, ProjectFolder } from '../../../core/api/models';
 import {
   conflictDetail,
+  deletionLines,
+  foldersOf,
   conflictTitle,
   exportFileName,
   groupByFolder,
@@ -17,7 +19,7 @@ const folder = (id: string, name: string): ProjectFolder => ({
   createdAt: '2026-11-14T10:00:00Z',
   projectCount: 0,
 });
-const project = (id: string, folderId?: string | null): Project => ({
+const project = (id: string, ...folderIds: string[]): Project => ({
   id,
   name: id,
   description: null,
@@ -28,7 +30,7 @@ const project = (id: string, folderId?: string | null): Project => ({
   createdAt: '2026-11-14T10:00:00Z',
   totalTasks: 0,
   doneTasks: 0,
-  folderId,
+  folderIds,
 });
 
 const names = (sections: ReturnType<typeof groupByFolder>) =>
@@ -37,6 +39,35 @@ const names = (sections: ReturnType<typeof groupByFolder>) =>
 describe('dossiers de projets', () => {
   const folders = [folder('m', 'MES'), folder('d', 'DMP'), folder('v', 'Vide')];
   const projects = [project('a1', 'd'), project('l1', 'm'), project('a2', 'd'), project('x'), project('o', 'supprime')];
+
+  it('montre un projet de plusieurs dossiers dans chacun', () => {
+    const shared = [project('y', 'd', 'm'), project('x', 'd'), project('z', 'm')];
+    expect(names(groupByFolder(shared, folders, 'all', false))).toEqual(['DMP:y,x', 'MES:y,z']);
+    expect(names(groupByFolder(shared, folders, 'm', false))).toEqual(['MES:y,z']);
+    expect(foldersOf(shared[0], folders).map((f) => f.name)).toEqual(['DMP', 'MES']);
+  });
+
+  it('décrit une suppression de dossiers', () => {
+    const base = {
+      dryRun: true,
+      foldersDeleted: 1,
+      projectsUnfiled: 0,
+      projectsDeleted: 1,
+      keptProjects: [{ name: 'Y', otherFolders: ['B'] }],
+      tasksDeleted: 1,
+      tasksKept: 1,
+    };
+    expect(deletionLines({ ...base, mode: 'DELETE_PROJECTS_AND_TASKS' })).toEqual([
+      '1 dossier sera supprimé.',
+      '1 projet sera supprimé.',
+      '1 tâche sera supprimée définitivement.',
+      '1 tâche sera gardée car elle fait aussi partie d’un projet conservé.',
+      '1 projet conservé car il fait aussi partie d’un autre dossier : Y (aussi dans « B »).',
+    ]);
+    expect(
+      deletionLines({ ...base, mode: 'KEEP_PROJECTS', projectsUnfiled: 2, dryRun: false })[1],
+    ).toBe('2 projets sont passés dans « Projets sans dossier » (avec leurs tâches).');
+  });
 
   it('regroupe par dossier (ordre alphabétique) puis « Sans dossier »', () => {
     expect(names(groupByFolder(projects, folders, 'all', false))).toEqual([
@@ -48,6 +79,9 @@ describe('dossiers de projets', () => {
 
   it('montre les dossiers vides seulement si demandé', () => {
     expect(names(groupByFolder(projects, folders, 'all', true))).toContain('Vide:');
+    // Le dossier par defaut est toujours present quand les dossiers vides sont montres.
+    expect(names(groupByFolder([project('a1', 'd')], folders, 'all', true)).at(-1)).toBe('—:');
+    expect(names(groupByFolder([project('a1', 'd')], folders, 'all', false))).toEqual(['DMP:a1']);
   });
 
   it('filtre un dossier ou les projets sans dossier', () => {
@@ -121,17 +155,17 @@ describe('dossiers de projets', () => {
       folderExists: true,
       projectCount: 20,
       existingProjects: [
-        { name: 'Appli A', currentFolder: 'DMP', inactive: false },
-        { name: 'Appli B', currentFolder: null, inactive: true },
+        { name: 'Appli A', currentFolders: ['DMP'], inactive: false },
+        { name: 'Appli B', currentFolders: [], inactive: true },
       ],
     };
     expect(conflictTitle(c)).toBe('Dossier « DMP »');
     expect(conflictDetail(c)).toBe(
       'Un dossier de ce nom existe déjà dans l’application ; 2 de ses 20 projets existent déjà : ' +
-        'Appli A (dans « DMP »), Appli B (sans dossier, inactif).',
+        'Appli A (dans « DMP »), Appli B (dans « Projets sans dossier », inactif).',
     );
     expect(conflictTitle({ ...c, folder: null })).toBe('Projets sans dossier');
-    const many = Array.from({ length: 8 }, (_, i) => ({ name: `P${i}`, currentFolder: 'DMP', inactive: false }));
+    const many = Array.from({ length: 8 }, (_, i) => ({ name: `P${i}`, currentFolders: ['DMP'], inactive: false }));
     expect(conflictDetail({ ...c, folderExists: false, existingProjects: many })).toBe(
       '8 de ses 20 projets existent déjà : P0 (dans « DMP »), P1 (dans « DMP »), P2 (dans « DMP »), ' +
         'P3 (dans « DMP »), P4 (dans « DMP ») et 3 autres.',

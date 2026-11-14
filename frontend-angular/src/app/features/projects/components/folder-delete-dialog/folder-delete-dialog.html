@@ -1,0 +1,170 @@
+<div
+  class="card w-[min(34rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] flex flex-col anim-pop shadow-modal overflow-hidden"
+  role="dialog"
+  aria-labelledby="fdel-title"
+  aria-describedby="fdel-desc"
+>
+  <header class="flex-none px-6 pt-6 pb-3">
+    <h2 id="fdel-title" class="text-lg font-bold">Supprimer des dossiers</h2>
+    <p id="fdel-desc" class="text-sm text-muted">
+      Choisissez les dossiers, puis ce que deviennent leurs projets. Un projet qui fait aussi
+      partie d’un autre dossier n’est jamais supprimé.
+    </p>
+  </header>
+
+  <!-- Seule cette zone defile : les boutons restent toujours visibles et cliquables. -->
+  <div class="flex-1 min-h-0 overflow-y-auto px-6 pb-4 space-y-4">
+    <section aria-labelledby="fdel-folders">
+      <div class="flex items-center justify-between gap-2 mb-1.5 text-sm">
+        <h3 id="fdel-folders" class="font-semibold">
+          Dossiers <span class="font-normal text-muted tabular-nums">
+            ({{ count() }} sur {{ data.folders.length }} sélectionné(s))</span
+          >
+        </h3>
+        <button
+          type="button"
+          class="font-semibold text-brand hover:underline"
+          (click)="toggleAll()"
+        >
+          {{ allChecked() ? 'Tout désélectionner' : 'Tout sélectionner' }}
+        </button>
+      </div>
+      <div
+        class="rounded-lg border border-line divide-y divide-[var(--line)] max-h-44 overflow-y-auto"
+        role="group"
+        aria-label="Dossiers à supprimer"
+      >
+        @for (f of data.folders; track f.id) {
+          <label class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-2">
+            <input
+              type="checkbox"
+              class="size-4 flex-none accent-[var(--brand)]"
+              [checked]="selected().has(f.id)"
+              (change)="toggle(f.id, $any($event.target).checked)"
+            />
+            <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span>
+            <span class="flex-1 min-w-0 truncate">{{ f.name }}</span>
+            <span class="text-xs text-muted tabular-nums flex-none"
+              >{{ f.projectCount }} projet(s)</span
+            >
+          </label>
+        }
+      </div>
+      <div
+        class="flex items-center gap-2.5 mt-1.5 rounded-lg border border-dashed border-line px-3 py-2 text-sm text-muted"
+        title="Dossier par défaut : il ne peut pas être supprimé"
+      >
+        <ff-icon name="lock" [size]="16" class="flex-none" />
+        <span class="flex-1 min-w-0 truncate">Projets sans dossier</span>
+        <span class="text-xs flex-none">Par défaut, ne peut pas être supprimé</span>
+      </div>
+    </section>
+
+    <fieldset class="space-y-2">
+      <legend class="font-semibold text-sm mb-1.5">Que deviennent leurs projets ?</legend>
+      <label
+        class="flex items-start gap-3 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+        [style.border-color]="mode() === 'KEEP_PROJECTS' ? 'var(--brand)' : null"
+      >
+        <input
+          type="radio"
+          name="fdel-mode"
+          class="size-4 mt-0.5 flex-none accent-[var(--brand)]"
+          [checked]="mode() === 'KEEP_PROJECTS'"
+          (change)="choose('KEEP_PROJECTS')"
+          cdkFocusInitial
+        />
+        <span class="min-w-0">
+          <strong>Garder les projets</strong>
+          <span class="block text-sm text-muted">
+            Seuls les dossiers disparaissent. Les projets qui n’ont plus de dossier passent dans
+            le dossier par défaut « Projets sans dossier », avec leurs tâches.
+          </span>
+        </span>
+      </label>
+      <label
+        class="flex items-start gap-3 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+        [style.border-color]="mode() === 'DELETE_PROJECTS' ? 'var(--danger)' : null"
+      >
+        <input
+          type="radio"
+          name="fdel-mode"
+          class="size-4 mt-0.5 flex-none accent-[var(--brand)]"
+          [checked]="mode() === 'DELETE_PROJECTS'"
+          (change)="choose('DELETE_PROJECTS')"
+        />
+        <span class="min-w-0">
+          <strong>Supprimer aussi les projets</strong>
+          <span class="block text-sm text-muted">
+            Les projets de ces dossiers sont supprimés. Leurs tâches sont gardées, sans ces projets.
+          </span>
+        </span>
+      </label>
+      <label
+        class="flex items-start gap-3 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+        [style.border-color]="mode() === 'DELETE_PROJECTS_AND_TASKS' ? 'var(--danger)' : null"
+      >
+        <input
+          type="radio"
+          name="fdel-mode"
+          class="size-4 mt-0.5 flex-none accent-[var(--brand)]"
+          [checked]="mode() === 'DELETE_PROJECTS_AND_TASKS'"
+          (change)="choose('DELETE_PROJECTS_AND_TASKS')"
+        />
+        <span class="min-w-0">
+          <strong>Supprimer les projets et leurs tâches</strong>
+          <span class="block text-sm text-muted">
+            Les projets et leurs tâches sont supprimés définitivement. Une tâche qui fait aussi
+            partie d’un projet conservé est gardée.
+          </span>
+        </span>
+      </label>
+    </fieldset>
+
+    <section
+      aria-labelledby="fdel-what"
+      role="status"
+      [attr.aria-busy]="loading() || null"
+      class="rounded-xl p-3 text-sm"
+      [class.bg-danger-soft]="mode() !== 'KEEP_PROJECTS'"
+      [class.bg-surface-2]="mode() === 'KEEP_PROJECTS'"
+    >
+      <h3 id="fdel-what" class="font-bold mb-1">Ce qui va se passer</h3>
+      @if (!count()) {
+        <p class="text-muted">Aucun dossier sélectionné.</p>
+      } @else if (preview(); as r) {
+        <ul class="list-disc pl-5 space-y-0.5" [class.opacity-50]="loading()">
+          @for (l of lines(r); track $index) {
+            <li>{{ l }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="text-muted">Calcul…</p>
+      }
+    </section>
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+
+  <footer class="flex-none flex flex-wrap items-center justify-end gap-2 border-t border-line px-6 py-4">
+    @if (summary()) {
+      <p class="basis-full text-sm font-semibold text-danger" aria-hidden="true">{{ summary() }}</p>
+    }
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button
+      type="button"
+      class="btn btn-danger-solid"
+      [disabled]="!count() || !preview() || loading() || deleting()"
+      (click)="confirm()"
+    >
+      <ff-icon name="trash" [size]="16" />{{
+        deleting()
+          ? 'Suppression…'
+          : count() > 1
+            ? 'Supprimer ' + count() + ' dossiers'
+            : 'Supprimer le dossier'
+      }}
+    </button>
+  </footer>
+</div>

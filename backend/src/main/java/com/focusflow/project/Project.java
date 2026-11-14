@@ -5,10 +5,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -34,10 +39,11 @@ public class Project {
     @Column(nullable = false)
     private boolean archived;
 
-    /** Dossier de rangement (facultatif) ; n'a aucun effet sur les taches. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "folder_id")
-    private ProjectFolder folder;
+    /** Dossiers de rangement (aucun, un ou plusieurs) ; sans effet sur les taches. */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "project_folder_link", joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "folder_id"))
+    private Set<ProjectFolder> folders = new HashSet<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -66,7 +72,28 @@ public class Project {
     public void setDueAt(Instant dueAt) { this.dueAt = dueAt; }
     public boolean isArchived() { return archived; }
     public void setArchived(boolean archived) { this.archived = archived; }
-    public ProjectFolder getFolder() { return folder; }
-    public void setFolder(ProjectFolder folder) { this.folder = folder; }
+    /** Dossiers du projet, par nom. */
+    public List<ProjectFolder> getFolders() {
+        return folders.stream()
+                .sorted(Comparator.comparing(ProjectFolder::getName, String.CASE_INSENSITIVE_ORDER)).toList();
+    }
+
+    public boolean isIn(ProjectFolder folder) {
+        return folders.stream().anyMatch(f -> f.getId().equals(folder.getId()));
+    }
+
+    /** Remplace les dossiers du projet. */
+    public void setFolders(java.util.Collection<ProjectFolder> folders) {
+        this.folders.clear();
+        this.folders.addAll(folders);
+    }
+
+    public void addFolder(ProjectFolder folder) {
+        if (!isIn(folder)) folders.add(folder);
+    }
+
+    public void removeFolder(ProjectFolder folder) {
+        folders.removeIf(f -> f.getId().equals(folder.getId()));
+    }
     public Instant getCreatedAt() { return createdAt; }
 }

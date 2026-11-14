@@ -19,4 +19,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             + "union all select e.project_id, t.status from task_extra_project e join task t on t.id = e.task_id "
             + "where t.project_id is null or t.project_id <> e.project_id) x group by x.pid")
     List<Object[]> progressByProject();
+
+    /** Liens projet - dossier : [projectId, folderId], dossiers par nom. */
+    @Query("select p.id, f.id from Project p join p.folders f order by lower(f.name)")
+    List<Object[]> folderLinks();
 }

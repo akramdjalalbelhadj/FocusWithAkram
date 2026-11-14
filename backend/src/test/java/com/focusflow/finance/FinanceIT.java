@@ -413,7 +413,7 @@ class FinanceIT extends IntegrationTest {
         String backup = mvc.perform(get("/api/v1/export/backup")).andReturn().getResponse()
                 .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         // La section financiere est apparue en v3 ; la sauvegarde courante (v5) la conserve.
-        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(6);
+        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(7);
         assertThat((Integer) JsonPath.read(backup, "$.finance.operations.length()")).isEqualTo(5);
 
         resetState();

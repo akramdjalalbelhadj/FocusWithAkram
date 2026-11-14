@@ -189,8 +189,11 @@ export interface Project {
   createdAt: string;
   totalTasks: number;
   doneTasks: number;
-  /** Lot 23 : dossier de rangement (absent = sans dossier). Les taches restent liees au projet. */
-  folderId?: string | null;
+  /**
+   * Lot 27 : dossiers du projet (aucun, un ou plusieurs ; par nom de dossier). Les taches restent liees au projet.
+   * Remplace `folderId` (lot 23), encore accepte en ecriture.
+   */
+  folderIds?: string[];
 }
 
 /** Lot 23 : dossier regroupant des projets (un seul niveau). */
@@ -418,7 +421,27 @@ export interface ImportConflict {
   folder?: string | null;
   folderExists: boolean;
   projectCount: number;
-  existingProjects: { name: string; currentFolder?: string | null; inactive: boolean }[];
+  existingProjects: { name: string; currentFolders: string[]; inactive: boolean }[];
+}
+
+/**
+ * Lot 27 : sort des projets des dossiers supprimes. Un projet qui fait aussi partie d'un dossier conserve n'est
+ * jamais supprime.
+ */
+export type FolderDeletionMode = "KEEP_PROJECTS" | "DELETE_PROJECTS" | "DELETE_PROJECTS_AND_TASKS";
+
+/** Resultat (ou apercu) d'une suppression de dossiers. */
+export interface FolderDeletionReport {
+  dryRun: boolean;
+  mode: FolderDeletionMode;
+  foldersDeleted: number;
+  /** Projets qui n'ont plus aucun dossier (mode KEEP_PROJECTS). */
+  projectsUnfiled: number;
+  projectsDeleted: number;
+  /** Projets conserves car ils font aussi partie d'un autre dossier. */
+  keptProjects: { name: string; otherFolders: string[] }[];
+  tasksDeleted: number;
+  tasksKept: number;
 }
 
 /** Erreur API normalisee (ProblemDetail RFC 9457). */

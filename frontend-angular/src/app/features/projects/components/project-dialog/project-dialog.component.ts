@@ -10,7 +10,7 @@ import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { COLORS } from '../../constants/colors';
 
 /** Projet a modifier, ou valeurs initiales d'un nouveau projet (dossier choisi), ou rien. */
-export type ProjectDialogData = Project | { folderId?: string | null } | null;
+export type ProjectDialogData = Project | { folderIds?: string[] } | null;
 
 @Component({
   selector: 'ff-project-dialog',
@@ -34,11 +34,20 @@ export class ProjectDialogComponent {
       .pipe(catchError(() => of([] as ProjectFolder[]))),
     { initialValue: [] as ProjectFolder[] },
   );
+  /** Dossiers coches (un projet peut en avoir plusieurs, ou aucun). */
+  protected readonly chosen = signal<Set<string>>(new Set(this.input?.folderIds ?? []));
+
+  protected toggleFolder(id: string, on: boolean): void {
+    const next = new Set(this.chosen());
+    if (on) next.add(id);
+    else next.delete(id);
+    this.chosen.set(next);
+  }
+
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: [this.data?.name ?? '', [Validators.required, Validators.maxLength(120)]],
     description: [this.data?.description ?? ''],
     color: [this.data?.color ?? COLORS[0]],
-    folderId: [this.input?.folderId ?? ''],
   });
 
   protected async submit(): Promise<void> {
@@ -50,7 +59,7 @@ export class ProjectDialogComponent {
       name: v.name.trim(),
       description: v.description,
       color: v.color,
-      folderId: v.folderId || null,
+      folderIds: [...this.chosen()],
     };
     try {
       this.ref.close(

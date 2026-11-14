@@ -11,7 +11,7 @@ public interface ProjectFolderRepository extends JpaRepository<ProjectFolder, UU
 
     boolean existsByNameIgnoreCase(String name);
 
-    /** Nombre de projets par dossier : [folderId, nombre]. */
-    @Query("select p.folder.id, count(p) from Project p where p.folder is not null group by p.folder.id")
+    /** Nombre de projets par dossier : [folderId, nombre] (un projet compte dans chacun de ses dossiers). */
+    @Query("select f.id, count(p) from Project p join p.folders f group by f.id")
     List<Object[]> projectCounts();
 }

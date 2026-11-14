@@ -101,7 +101,7 @@ public class TransferService {
         List<Task> all = tasks.findAll(Sort.by("createdAt"));
         Map<UUID, List<ExecutionData>> executionsByTask = executionsByTask();
         return new BackupFile(BackupFile.CURRENT_VERSION, Instant.now(clock),
-                projects.findAllByOrderByNameAsc().stream().map(TransferService::toData).toList(),
+                projects.findAllByOrderByNameAsc().stream().map(p -> toData(p, null)).toList(),
                 all.stream().map(t -> toData(t, executionsByTask)).toList(),
                 sessions.findAll(Sort.by("startedAt")).stream().filter(s -> !s.getStatus().isActive())
                         .map(TransferService::toData).toList(),
@@ -124,14 +124,16 @@ public class TransferService {
         boolean all = projectIds.isEmpty() && folderIds.isEmpty();
         List<Project> selected = projects.findAllByOrderByNameAsc().stream()
                 .filter(p -> all || projectIds.contains(p.getId())
-                        || (p.getFolder() != null && folderIds.contains(p.getFolder().getId())))
+                        || p.getFolders().stream().anyMatch(f -> folderIds.contains(f.getId())))
                 .toList();
         if (selected.isEmpty()) {
             throw ApiException.rule("EXPORT_NO_PROJECT", "Aucun projet a exporter.");
         }
         Set<UUID> selectedIds = selected.stream().map(Project::getId).collect(Collectors.toSet());
+        // Dossiers du fichier : ceux choisis ; sans choix de dossier, tous ceux des projets exportes.
         Map<UUID, ProjectFolder> usedFolders = new LinkedHashMap<>();
-        selected.stream().map(Project::getFolder).filter(Objects::nonNull)
+        selected.stream().flatMap(p -> p.getFolders().stream())
+                .filter(f -> folderIds.isEmpty() || folderIds.contains(f.getId()))
                 .sorted(Comparator.comparing(ProjectFolder::getName, String.CASE_INSENSITIVE_ORDER))
                 .forEach(f -> usedFolders.putIfAbsent(f.getId(), f));
         List<TaskData> taskData = List.of();
@@ -148,7 +150,7 @@ public class TransferService {
                     .map(TransferService::toData).toList();
         }
         return new BackupFile(BackupFile.CURRENT_VERSION, Instant.now(clock),
-                selected.stream().map(TransferService::toData).toList(), taskData, sessionData,
+                selected.stream().map(p -> toData(p, usedFolders.keySet())).toList(), taskData, sessionData,
                 null, null, null, null,
                 usedFolders.values().stream().map(TransferService::toData).toList());
     }
@@ -273,9 +275,14 @@ public class TransferService {
     /** Cle du groupe « projets sans dossier » du fichier. */
     private static final UUID LOOSE = new UUID(0, 0);
 
-    /** Groupe d'un projet du fichier : son dossier s'il figure dans le fichier, sinon les projets sans dossier. */
-    private static UUID groupOf(ProjectData pd, Set<UUID> fileFolderIds) {
-        return pd.folderId() != null && fileFolderIds.contains(pd.folderId()) ? pd.folderId() : LOOSE;
+    /**
+     * Groupes d'un projet du fichier : ses dossiers qui figurent dans le fichier (un projet peut en avoir
+     * plusieurs), sinon le groupe des projets sans dossier.
+     */
+    private static Set<UUID> groupsOf(ProjectData pd, Set<UUID> fileFolderIds) {
+        Set<UUID> groups = pd.allFolderIds().stream().filter(fileFolderIds::contains)
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+        return groups.isEmpty() ? Set.of(LOOSE) : groups;
     }
 
     /**
@@ -296,14 +303,16 @@ public class TransferService {
         Map<UUID, Integer> counts = new HashMap<>();
         Map<UUID, List<ImportConflict.ExistingProject>> existing = new HashMap<>();
         for (ProjectData pd : nullToEmpty(file.projects())) {
-            UUID group = groupOf(pd, groupNames.keySet());
-            counts.merge(group, 1, Integer::sum);
-            if (pd.id() != null) run.groupByProjectFileId.put(pd.id(), group);
+            Set<UUID> groups = groupsOf(pd, groupNames.keySet());
+            if (pd.id() != null) run.groupsByProjectFileId.put(pd.id(), groups);
             Project match = pd.name() == null ? null : projectByName.get(pd.name().strip().toLowerCase());
-            if (match != null) {
-                existing.computeIfAbsent(group, g -> new ArrayList<>()).add(new ImportConflict.ExistingProject(
-                        match.getName(), match.getFolder() == null ? null : match.getFolder().getName(),
-                        match.isArchived()));
+            for (UUID group : groups) {
+                counts.merge(group, 1, Integer::sum);
+                if (match != null) {
+                    existing.computeIfAbsent(group, g -> new ArrayList<>()).add(new ImportConflict.ExistingProject(
+                            match.getName(), match.getFolders().stream().map(ProjectFolder::getName).toList(),
+                            match.isArchived()));
+                }
             }
         }
         List<ImportConflict> conflicts = new ArrayList<>();
@@ -318,8 +327,14 @@ public class TransferService {
         return conflicts;
     }
 
-    private boolean inConflict(UUID group, ImportRun run, ConflictMode mode) {
-        return run.mode == mode && run.conflictGroups.contains(group);
+    /** Mode SKIP : le projet est ignore si tous ses groupes sont en conflit. */
+    private static boolean allSkipped(Set<UUID> groups, ImportRun run) {
+        return run.mode == ConflictMode.SKIP && !groups.isEmpty() && run.conflictGroups.containsAll(groups);
+    }
+
+    /** Mode REPLACE : le fichier ecrase le projet si l'un de ses groupes est en conflit. */
+    private static boolean anyReplaced(Set<UUID> groups, ImportRun run) {
+        return run.mode == ConflictMode.REPLACE && groups.stream().anyMatch(run.conflictGroups::contains);
     }
 
     /** Etat d'un import : correspondances d'identifiants et compteurs du rapport. */
@@ -338,8 +353,8 @@ public class TransferService {
         ConflictMode mode = ConflictMode.MERGE;
         /** Groupes du fichier (dossier, ou LOOSE) en conflit avec l'existant. */
         final Set<UUID> conflictGroups = new HashSet<>();
-        /** Groupe de chaque projet du fichier. */
-        final Map<UUID, UUID> groupByProjectFileId = new HashMap<>();
+        /** Groupes (dossiers du fichier, ou LOOSE) de chaque projet du fichier. */
+        final Map<UUID, Set<UUID>> groupsByProjectFileId = new HashMap<>();
 
         void error(String message) {
             if (errors.size() < MAX_ERRORS) {
@@ -355,12 +370,12 @@ public class TransferService {
         for (FolderData fd : nullToEmpty(file.folders())) {
             try {
                 String name = ProjectFolderService.cleanName(fd.name());
-                if (fd.id() != null && inConflict(fd.id(), run, ConflictMode.SKIP)) {
+                if (fd.id() != null && run.mode == ConflictMode.SKIP && run.conflictGroups.contains(fd.id())) {
                     continue;
                 }
                 ProjectFolder folder = byName.get(name.toLowerCase());
                 if (folder != null) {
-                    if (fd.id() != null && inConflict(fd.id(), run, ConflictMode.REPLACE)
+                    if (fd.id() != null && run.mode == ConflictMode.REPLACE && run.conflictGroups.contains(fd.id())
                             && ProjectFolderService.validColor(fd.color())) {
                         folder.setColor(fd.color());
                     }
@@ -391,27 +406,29 @@ public class TransferService {
                 if (pd.icon() != null && pd.icon().length() > 40) {
                     throw new IllegalArgumentException("icone de plus de 40 caracteres.");
                 }
-                UUID group = pd.id() != null ? run.groupByProjectFileId.get(pd.id())
-                        : groupOf(pd, run.foldersByFileId.keySet());
-                if (inConflict(group, run, ConflictMode.SKIP)) {
+                Set<UUID> groups = pd.id() != null ? run.groupsByProjectFileId.getOrDefault(pd.id(), Set.of(LOOSE))
+                        : groupsOf(pd, run.foldersByFileId.keySet());
+                if (allSkipped(groups, run)) {
                     run.projectsIgnored++;
                     continue;
                 }
-                ProjectFolder folder = pd.folderId() == null ? null : run.foldersByFileId.get(pd.folderId());
+                // Dossiers importes du projet (ceux des dossiers ignores sont absents de foldersByFileId).
+                List<ProjectFolder> projectFolders = pd.allFolderIds().stream().map(run.foldersByFileId::get)
+                        .filter(Objects::nonNull).distinct().toList();
                 Project existing = byName.get(name.toLowerCase());
-                if (existing != null && inConflict(group, run, ConflictMode.REPLACE)) {
-                    // Le fichier ecrase le projet existant : description, couleur, etat et dossier.
+                if (existing != null && anyReplaced(groups, run)) {
+                    // Le fichier ecrase le projet existant : description, couleur, etat et dossiers.
                     existing.setDescription(pd.description());
                     if (pd.color() != null && pd.color().matches("^#[0-9a-fA-F]{6}$")) existing.setColor(pd.color());
                     existing.setArchived(pd.archived());
-                    existing.setFolder(folder);
+                    existing.setFolders(projectFolders);
                     if (pd.id() != null) run.projectsByFileId.put(pd.id(), existing);
                     run.projectsReplaced++;
                     continue;
                 }
                 if (existing != null) {
-                    // Un projet deja range garde son dossier ; un projet sans dossier rejoint celui du fichier.
-                    if (existing.getFolder() == null && folder != null) existing.setFolder(folder);
+                    // Un projet deja present garde ses dossiers et rejoint aussi ceux du fichier.
+                    projectFolders.forEach(existing::addFolder);
                     if (pd.id() != null) run.projectsByFileId.put(pd.id(), existing);
                     run.projectsReused++;
                     continue;
@@ -422,7 +439,7 @@ public class TransferService {
                 p.setIcon(pd.icon());
                 p.setDueAt(pd.dueAt());
                 p.setArchived(pd.archived());
-                p.setFolder(folder);
+                p.setFolders(projectFolders);
                 p = projects.save(p);
                 byName.put(name.toLowerCase(), p);
                 if (pd.id() != null) run.projectsByFileId.put(pd.id(), p);
@@ -446,8 +463,8 @@ public class TransferService {
                 // Groupes (dossiers du fichier) des projets de la tache.
                 List<UUID> refs = td.projectIds() != null && !td.projectIds().isEmpty() ? td.projectIds()
                         : td.projectId() == null ? List.of() : List.of(td.projectId());
-                Set<UUID> groups = refs.stream().map(run.groupByProjectFileId::get).filter(Objects::nonNull)
-                        .collect(Collectors.toSet());
+                Set<UUID> groups = refs.stream().map(run.groupsByProjectFileId::get).filter(Objects::nonNull)
+                        .flatMap(Set::stream).collect(Collectors.toSet());
                 if (run.mode == ConflictMode.SKIP && !groups.isEmpty() && run.conflictGroups.containsAll(groups)) {
                     // Tache qui ne concerne que des dossiers ignores.
                     run.tasksIgnored++;
@@ -646,9 +663,12 @@ public class TransferService {
         };
     }
 
-    private static ProjectData toData(Project p) {
+    /** Projet du fichier ; {@code keptFolders} limite ses dossiers a ceux du fichier (null : tous). */
+    private static ProjectData toData(Project p, Set<UUID> keptFolders) {
+        List<UUID> folderIds = p.getFolders().stream().map(ProjectFolder::getId)
+                .filter(id -> keptFolders == null || keptFolders.contains(id)).toList();
         return new ProjectData(p.getId(), p.getName(), p.getDescription(), p.getColor(), p.getIcon(), p.getDueAt(),
-                p.isArchived(), p.getCreatedAt(), p.getFolder() == null ? null : p.getFolder().getId());
+                p.isArchived(), p.getCreatedAt(), folderIds.isEmpty() ? null : folderIds.getFirst(), folderIds);
     }
 
     private static FolderData toData(ProjectFolder f) {

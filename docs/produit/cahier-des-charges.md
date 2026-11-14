@@ -36,7 +36,7 @@ La cible est une personne gérant ses propres activités : études, projets pers
 | FWA-F010 | Configuration dans Focus            | Toutes les options du minuteur sont dans **Focus / Pomodoro → Configurer**, sans être dupliquées dans les paramètres généraux. |
 | FWA-F011 | Historique des sessions             | Afficher les heures, le temps travaillé, la tâche associée et le résultat des sessions.                                        |
 | FWA-F012 | Calendrier                          | Vues mois, semaine et jour ; tâches datées et non planifiées ; changement de date persistant.                                  |
-| FWA-F013 | Projets                             | Créer, modifier, archiver et supprimer un projet ; afficher sa progression et accéder à ses tâches.                            |
+| FWA-F013 | Projets                             | Créer, modifier, rendre inactif (archiver) et supprimer un projet ; afficher sa progression et accéder à ses tâches. Angular : dossiers de projets (un projet dans plusieurs dossiers, dossier par défaut « Projets sans dossier » non supprimable), vue des projets inactifs, suppression de dossiers avec trois choix, export et import de projets avec gestion des conflits. |
 | FWA-F014 | Tableau de bord                     | Indicateurs du jour, Top 3, aperçu de matrice, Pomodoro et activité issus de l’API.                                            |
 | FWA-F015 | Statistiques                        | Mesures des tâches et sessions, répartitions et comparaison prévu/réalisé par période et fuseau.                               |
 | FWA-F016 | Paramètres généraux                 | Thème, fuseau, semaine, raccourcis et préférences de tâches ; conserver les réglages Pomodoro lors d’un enregistrement.        |
@@ -99,7 +99,9 @@ Les démarrages automatiques, le son et les notifications sont facultatifs. Les 
 
 ### 4.4 Projets et données
 
-Un projet actif porte un nom non vide de 120 caractères maximum, unique parmi les projets actifs. Supprimer un projet conserve ses tâches et supprime leur rattachement. Une sauvegarde complète contient les projets, tâches, sous-tâches, cycles d’exécution et sessions ; elle n’inclut pas les préférences utilisateur dans son format actuel. Le rapport d’import distingue créations, réutilisations, doublons et erreurs.
+Un projet actif porte un nom non vide de 120 caractères maximum, unique parmi les projets actifs. Supprimer un projet conserve ses tâches et supprime leur rattachement.
+
+**Dossiers de projets** (lots 23 à 27, Angular) : un dossier porte un nom unique (80 caractères maximum, sans tenir compte de la casse) et une couleur ; il sert seulement au rangement, une tâche reste liée à ses projets. Un projet peut faire partie de plusieurs dossiers ; sans dossier, il est dans le dossier par défaut « Projets sans dossier », toujours présent, dont le nom est réservé et qui ne peut être ni renommé ni supprimé. Supprimer des dossiers propose de garder leurs projets, de les supprimer (tâches conservées) ou de les supprimer avec leurs tâches ; un projet qui fait aussi partie d’un dossier conservé n’est jamais supprimé, et une tâche qui fait aussi partie d’un projet conservé est gardée. L’export de projets (tout, dossiers et projets seuls, ou une sélection de dossiers) produit un fichier de sauvegarde ; son import montre d’abord ce qui sera fait et, si des dossiers ou projets de même nom existent, propose de les ignorer ou de les remplacer par le fichier. Une sauvegarde complète contient les projets, tâches, sous-tâches, cycles d’exécution et sessions ; elle n’inclut pas les préférences utilisateur dans son format actuel. Le rapport d’import distingue créations, réutilisations, doublons et erreurs.
 
 ### 4.5 Notes et idées
 

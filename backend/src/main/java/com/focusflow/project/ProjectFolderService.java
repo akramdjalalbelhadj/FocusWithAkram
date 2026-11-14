@@ -18,6 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectFolderService {
 
     public static final int MAX_NAME = 80;
+
+    /**
+     * Dossier par defaut (lot 27) : il n'existe pas en base, il regroupe les projets qui n'ont aucun dossier.
+     * Son nom est reserve et il ne peut etre ni cree, ni renomme, ni supprime.
+     */
+    public static final String DEFAULT_FOLDER_NAME = "Projets sans dossier";
     private static final Pattern COLOR = Pattern.compile("^#[0-9a-fA-F]{6}$");
 
     private final ProjectFolderRepository repository;
@@ -85,6 +91,10 @@ public class ProjectFolderService {
         String name = raw == null ? "" : raw.strip();
         if (name.isEmpty() || name.length() > MAX_NAME) {
             throw new IllegalArgumentException("Le nom du dossier est obligatoire (" + MAX_NAME + " caracteres maximum).");
+        }
+        if (name.equalsIgnoreCase(DEFAULT_FOLDER_NAME)) {
+            throw ApiException.conflict("FOLDER_NAME_RESERVED",
+                    "« " + DEFAULT_FOLDER_NAME + " » est le dossier par defaut : choisissez un autre nom.");
         }
         return name;
     }
