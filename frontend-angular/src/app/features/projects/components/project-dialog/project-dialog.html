@@ -24,6 +24,18 @@
       <textarea id="pj-desc" class="input" rows="2" formControlName="description"></textarea>
     </div>
     <div>
+      <label class="field-label" for="pj-folder">Dossier</label
+      ><select id="pj-folder" class="input" formControlName="folderId">
+        <option value="">Sans dossier</option>
+        @for (f of folders(); track f.id) {
+          <option [value]="f.id">{{ f.name }}</option>
+        }
+      </select>
+      <p class="text-xs text-muted mt-1">
+        Le dossier sert seulement au rangement : les tâches restent liées au projet.
+      </p>
+    </div>
+    <div>
       <label class="field-label" for="pj-icon">Icône</label
       ><select id="pj-icon" class="input" formControlName="icon">
         <option value="folder">Dossier</option>

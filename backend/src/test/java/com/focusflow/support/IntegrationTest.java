@@ -49,7 +49,7 @@ public abstract class IntegrationTest {
 
     @BeforeEach
     protected void resetState() {
-        jdbc.execute("TRUNCATE pomodoro_session, daily_goal, task_execution, subtask, task_tag, task, tag, project, "
+        jdbc.execute("TRUNCATE pomodoro_session, daily_goal, task_execution, subtask, task_tag, task, tag, project, project_folder, "
                 + "fin_envelope_month, fin_envelope_amount, fin_envelope, fin_schedule_amount, "
                 + "fin_operation, fin_goal, fin_schedule, fin_budget, fin_category, fin_account, "
                 + "note_tag, note, note_category RESTART IDENTITY CASCADE");

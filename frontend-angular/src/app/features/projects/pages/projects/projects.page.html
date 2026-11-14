@@ -3,9 +3,9 @@
     <h1 class="page-title">
       <span class="page-icon"><ff-icon name="folder" [size]="24" /></span>Projets
     </h1>
-    <p class="page-sub">Regroupez vos tâches par projet et suivez leur avancement.</p>
+    <p class="page-sub">Rangez vos projets dans des dossiers et suivez leur avancement.</p>
   </div>
-  <div class="flex gap-2">
+  <div class="flex flex-wrap items-center gap-2">
     <label class="flex items-center gap-2 text-sm text-muted"
       ><input
         type="checkbox"
@@ -14,11 +14,75 @@
         (change)="showArchived.set($any($event.target).checked)"
       />Afficher les archivés</label
     >
+    <input
+      #importInput
+      type="file"
+      accept=".json,application/json"
+      class="hidden"
+      aria-hidden="true"
+      tabindex="-1"
+      (change)="importFile(importInput)"
+    />
+    <button
+      type="button"
+      class="btn btn-secondary"
+      title="Importer des projets depuis un fichier exporté (.json)"
+      [disabled]="busy()"
+      [attr.aria-busy]="busy() || null"
+      (click)="importInput.click()"
+    >
+      <ff-icon name="upload" [size]="16" />{{ busy() ? 'Import…' : 'Importer' }}
+    </button>
+    <button
+      type="button"
+      class="btn btn-secondary"
+      title="Télécharger des projets dans un fichier .json"
+      [cdkMenuTriggerFor]="exportMenu"
+    >
+      <ff-icon name="download" [size]="16" />Exporter<ff-icon name="chevron-down" [size]="14" />
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="editFolder(null)">
+      <ff-icon name="folder-plus" [size]="16" />Nouveau dossier
+    </button>
     <button type="button" class="btn btn-primary" (click)="edit(null)">
       <ff-icon name="plus" />Nouveau projet
     </button>
   </div>
 </header>
+
+@if (folders().length) {
+  <nav class="segmented mb-4" aria-label="Dossiers de projets">
+    <button
+      type="button"
+      class="segmented-item"
+      [attr.aria-pressed]="folderFilter() === 'all'"
+      (click)="folderFilter.set('all')"
+    >
+      Tous <span class="tabular-nums font-normal">{{ count('all') }}</span>
+    </button>
+    @for (f of folders(); track f.id) {
+      <button
+        type="button"
+        class="segmented-item"
+        [attr.aria-pressed]="folderFilter() === f.id"
+        (click)="folderFilter.set(f.id)"
+      >
+        <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span
+        >{{ f.name }} <span class="tabular-nums font-normal">{{ count(f.id) }}</span>
+      </button>
+    }
+    @if (count('none')) {
+      <button
+        type="button"
+        class="segmented-item"
+        [attr.aria-pressed]="folderFilter() === 'none'"
+        (click)="folderFilter.set('none')"
+      >
+        Sans dossier <span class="tabular-nums font-normal">{{ count('none') }}</span>
+      </button>
+    }
+  </nav>
+}
 
 <div class="flex flex-wrap gap-2 mb-4">
   <input
@@ -41,103 +105,228 @@
 @if (taskPreview.error()) {
   <ff-error (retry)="taskPreview.load()" />
 }
-@if (loader.error()) {
-  <ff-error (retry)="loader.load()" />
-} @else if (loader.loading()) {
+@if (loader.error() || folderLoader.error()) {
+  <ff-error (retry)="loader.load(); folderLoader.load()" />
+} @else if (loader.loading() || folderLoader.loading()) {
   <ff-skeleton [count]="3" [height]="120" />
-} @else if (!visible().length) {
+} @else if (!sections().length) {
   <div class="card">
     <ff-empty
       icon="folder"
-      title="Aucun projet"
-      hint="Créez un projet pour regrouper des tâches liées."
+      [title]="query() ? 'Aucun projet trouvé' : 'Aucun projet'"
+      hint="Créez un projet pour regrouper des tâches liées, ou importez un fichier de projets."
       ><button type="button" class="btn btn-primary btn-sm mt-2" (click)="edit(null)">
         Créer un projet
       </button></ff-empty
     >
   </div>
 } @else {
-  <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-    @for (p of visible(); track p.id) {
-      <article
-        class="card p-5 flex flex-col gap-3"
-        [class.opacity-70]="p.archived"
-        [style.border-top-color]="p.color"
-      >
-        <div class="flex items-start gap-3">
-          <span
-            class="size-10 rounded-xl grid place-items-center text-white flex-none"
-            [style.background]="p.color"
-            ><ff-icon [name]="p.icon || 'folder'"
-          /></span>
-          <div class="min-w-0 flex-1">
-            <h2 class="font-bold truncate">{{ p.name }}</h2>
-            @if (p.description) {
-              <p class="text-sm text-muted line-clamp-2">{{ p.description }}</p>
+  <div class="space-y-6">
+    @for (s of sections(); track s.folder?.id ?? 'none') {
+      @let key = s.folder?.id ?? 'none';
+      @let showHeader = folders().length > 0;
+      <section [attr.aria-labelledby]="'pf-' + key">
+        @if (showHeader) {
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <button
+              type="button"
+              class="flex items-center gap-2 min-w-0 rounded-lg px-1 -mx-1 hover:bg-surface-2"
+              [attr.aria-expanded]="!isCollapsed(key)"
+              [attr.aria-controls]="'pf-grid-' + key"
+              (click)="toggleCollapsed(key)"
+            >
+              <ff-icon [name]="isCollapsed(key) ? 'chevron-right' : 'chevron-down'" [size]="16" />
+              <span
+                class="size-7 rounded-lg grid place-items-center text-white flex-none"
+                [style.background]="s.folder?.color ?? 'var(--muted)'"
+                ><ff-icon [name]="isCollapsed(key) ? 'folder' : 'folder-open'" [size]="15"
+              /></span>
+              <h2 [id]="'pf-' + key" class="font-bold truncate">
+                {{ s.folder?.name ?? 'Sans dossier' }}
+              </h2>
+              <span class="badge badge-todo tabular-nums">{{ s.projects.length }}</span>
+            </button>
+            @if (s.folder; as f) {
+              <div class="flex gap-1 ml-auto">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="edit(null, f.id)">
+                  <ff-icon name="plus" [size]="14" />Projet
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-icon btn-sm"
+                  [attr.aria-label]="'Actions du dossier ' + f.name"
+                  [cdkMenuTriggerFor]="folderMenu"
+                  [cdkMenuTriggerData]="{ $implicit: f }"
+                >
+                  <ff-icon name="more" [size]="16" />
+                </button>
+              </div>
             }
           </div>
-          @if (p.archived) {
-            <span class="badge badge-todo">Archivé</span>
-          }
-        </div>
-        <div>
-          <div class="flex justify-between text-xs text-muted mb-1">
-            <span>{{ p.doneTasks }}/{{ p.totalTasks }} terminées</span
-            ><span class="tabular-nums">{{ pct(p) }}%</span>
+        }
+        @if (!showHeader || !isCollapsed(key)) {
+          <div [id]="'pf-grid-' + key" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            @for (p of s.projects; track p.id) {
+              <article
+                class="card p-5 flex flex-col gap-3"
+                [class.opacity-70]="p.archived"
+                [style.border-top-color]="p.color"
+              >
+                <div class="flex items-start gap-3">
+                  <span
+                    class="size-10 rounded-xl grid place-items-center text-white flex-none"
+                    [style.background]="p.color"
+                    ><ff-icon [name]="p.icon || 'folder'"
+                  /></span>
+                  <div class="min-w-0 flex-1">
+                    <h3 class="font-bold truncate">{{ p.name }}</h3>
+                    @if (p.description) {
+                      <p class="text-sm text-muted line-clamp-2">{{ p.description }}</p>
+                    }
+                  </div>
+                  @if (p.archived) {
+                    <span class="badge badge-todo">Archivé</span>
+                  }
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs text-muted mb-1">
+                    <span>{{ p.doneTasks }}/{{ p.totalTasks }} terminées</span
+                    ><span class="tabular-nums">{{ pct(p) }}%</span>
+                  </div>
+                  <div
+                    class="h-2 rounded-full bg-surface-3 overflow-hidden"
+                    role="progressbar"
+                    [attr.aria-label]="'Avancement de ' + p.name"
+                    [attr.aria-valuenow]="pct(p)"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div
+                      class="h-full transition-all"
+                      [style.width.%]="pct(p)"
+                      [style.background]="p.color"
+                    ></div>
+                  </div>
+                </div>
+                <div class="project-preview">
+                  @for (t of previewTasks(p.id); track t.id) {
+                    <button type="button" (click)="actions.openDetail(t.id)">□ {{ t.title }}</button>
+                  }
+                </div>
+                <p class="text-sm text-muted">{{ settings.fmt(p.dueAt) || 'Sans échéance' }}</p>
+                <div class="flex flex-wrap gap-1 mt-auto">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    (click)="actions.create({ projectId: p.id })"
+                  >
+                    <ff-icon name="plus" [size]="14" />Tâche
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="edit(p)">
+                    <ff-icon name="pencil" [size]="14" />Modifier
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-icon btn-sm ml-auto"
+                    [attr.aria-label]="'Autres actions pour ' + p.name"
+                    title="Déplacer, exporter, archiver, supprimer"
+                    [cdkMenuTriggerFor]="projectMenu"
+                    [cdkMenuTriggerData]="{ $implicit: p }"
+                  >
+                    <ff-icon name="more" [size]="14" />
+                  </button>
+                </div>
+              </article>
+            }
+            @if (s.folder || !folders().length) {
+              <button
+                type="button"
+                class="card p-6 flex flex-col items-center justify-center gap-3 border-dashed min-h-48"
+                (click)="edit(null, s.folder?.id ?? null)"
+              >
+                <ff-icon name="plus" [size]="32" /><strong>Un nouveau projet ?</strong
+                ><span class="text-sm text-muted">{{
+                  s.folder ? 'Il sera rangé dans ' + s.folder.name + '.' : 'Donne une place à ta prochaine idée.'
+                }}</span>
+              </button>
+            }
           </div>
-          <div
-            class="h-2 rounded-full bg-surface-3 overflow-hidden"
-            role="progressbar"
-            [attr.aria-label]="'Avancement de ' + p.name"
-            [attr.aria-valuenow]="pct(p)"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          >
-            <div
-              class="h-full transition-all"
-              [style.width.%]="pct(p)"
-              [style.background]="p.color"
-            ></div>
-          </div>
-        </div>
-        <div class="project-preview">
-          @for (t of previewTasks(p.id); track t.id) {
-            <button type="button" (click)="actions.openDetail(t.id)">□ {{ t.title }}</button>
-          }
-        </div>
-        <p class="text-sm text-muted">{{ settings.fmt(p.dueAt) || 'Sans échéance' }}</p>
-        <div class="flex flex-wrap gap-1 mt-auto">
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            (click)="actions.create({ projectId: p.id })"
-          >
-            <ff-icon name="plus" [size]="14" />Tâche
-          </button>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="edit(p)">
-            <ff-icon name="pencil" [size]="14" />Modifier
-          </button>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="toggleArchive(p)">
-            <ff-icon name="archive" [size]="14" />{{ p.archived ? 'Restaurer' : 'Archiver' }}
-          </button>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm text-danger"
-            (click)="remove(p)"
-            [attr.aria-label]="'Supprimer ' + p.name"
-          >
-            <ff-icon name="trash" [size]="14" />
-          </button>
-        </div>
-      </article>
+        }
+      </section>
     }
-    <button
-      type="button"
-      class="card p-6 flex flex-col items-center justify-center gap-3 border-dashed min-h-64"
-      (click)="edit(null)"
-    >
-      <ff-icon name="plus" [size]="32" /><strong>Un nouveau projet ?</strong
-      ><span class="text-sm text-muted">Donne une place à ta prochaine idée.</span>
-    </button>
   </div>
 }
+
+<ng-template #exportMenu>
+  <div cdkMenu class="menu anim-pop" aria-label="Exporter des projets">
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportAll(true)">
+      <ff-icon name="download" [size]="16" />Tous les projets, avec leurs tâches
+    </button>
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportAll(false)">
+      <ff-icon name="folder-tree" [size]="16" />Dossiers et projets seulement
+    </button>
+    @if (folders().length) {
+      <div class="menu-sep" role="separator"></div>
+      @for (f of folders(); track f.id) {
+        <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportFolder(f)">
+          <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span>Dossier
+          {{ f.name }}
+        </button>
+      }
+    }
+  </div>
+</ng-template>
+
+<ng-template #folderMenu let-f>
+  <div cdkMenu class="menu anim-pop" [attr.aria-label]="'Dossier ' + f.name">
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="editFolder(f)">
+      <ff-icon name="pencil" [size]="16" />Renommer, couleur
+    </button>
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportFolder(f)">
+      <ff-icon name="download" [size]="16" />Exporter le dossier
+    </button>
+    <div class="menu-sep" role="separator"></div>
+    <button cdkMenuItem class="menu-item danger" (cdkMenuItemTriggered)="removeFolder(f)">
+      <ff-icon name="trash" [size]="16" />Supprimer le dossier
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #projectMenu let-p>
+  <div cdkMenu class="menu anim-pop" [attr.aria-label]="'Actions pour ' + p.name">
+    @if (folders().length) {
+      <p class="px-3 pt-1 pb-0.5 text-xs font-semibold text-muted" aria-hidden="true">
+        Déplacer vers
+      </p>
+      @for (f of folders(); track f.id) {
+        <button
+          cdkMenuItem
+          class="menu-item"
+          [disabled]="p.folderId === f.id"
+          [attr.aria-label]="'Déplacer vers ' + f.name"
+          (cdkMenuItemTriggered)="move(p, f)"
+        >
+          <ff-icon [name]="p.folderId === f.id ? 'check' : 'folder-input'" [size]="16" />{{ f.name }}
+        </button>
+      }
+      @if (folderName(p)) {
+        <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="move(p, null)">
+          <ff-icon name="x" [size]="16" />Sortir du dossier
+        </button>
+      }
+      <div class="menu-sep" role="separator"></div>
+    }
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportProject(p)">
+      <ff-icon name="download" [size]="16" />Exporter le projet
+    </button>
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="toggleArchive(p)">
+      <ff-icon [name]="p.archived ? 'restore' : 'archive'" [size]="16" />{{
+        p.archived ? 'Restaurer' : 'Archiver'
+      }}
+    </button>
+    <div class="menu-sep" role="separator"></div>
+    <button cdkMenuItem class="menu-item danger" (cdkMenuItemTriggered)="remove(p)">
+      <ff-icon name="trash" [size]="16" />Supprimer
+    </button>
+  </div>
+</ng-template>

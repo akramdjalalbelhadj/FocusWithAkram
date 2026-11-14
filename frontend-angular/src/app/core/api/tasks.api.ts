@@ -9,6 +9,7 @@ import {
   Page,
   PriorityMode,
   Project,
+  ProjectFolder,
   Quadrant,
   SearchResult,
   Task,
@@ -199,5 +200,27 @@ export class ProjectsApi {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${BASE}/projects/${id}`);
+  }
+}
+
+/** Lot 23 : dossiers de projets. Supprimer un dossier conserve ses projets, sans dossier. */
+@Injectable({ providedIn: 'root' })
+export class ProjectFoldersApi {
+  private readonly http = inject(HttpClient);
+
+  list(): Observable<ProjectFolder[]> {
+    return this.http.get<ProjectFolder[]>(`${BASE}/project-folders`);
+  }
+
+  create(input: { name: string; color?: string }): Observable<ProjectFolder> {
+    return this.http.post<ProjectFolder>(`${BASE}/project-folders`, input);
+  }
+
+  update(id: string, patch: { name?: string; color?: string }): Observable<ProjectFolder> {
+    return this.http.patch<ProjectFolder>(`${BASE}/project-folders/${id}`, patch);
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${BASE}/project-folders/${id}`);
   }
 }

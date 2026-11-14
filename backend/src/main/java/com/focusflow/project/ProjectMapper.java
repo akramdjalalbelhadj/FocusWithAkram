@@ -9,6 +9,7 @@ public final class ProjectMapper {
     public static ProjectResponse toResponse(ProjectView v) {
         Project p = v.project();
         return new ProjectResponse(p.getId(), p.getName(), p.getDescription(), p.getColor(), p.getIcon(),
-                p.getDueAt(), p.isArchived(), p.getCreatedAt(), v.totalTasks(), v.doneTasks());
+                p.getDueAt(), p.isArchived(), p.getCreatedAt(), v.totalTasks(), v.doneTasks(),
+                p.getFolder() == null ? null : p.getFolder().getId());
     }
 }

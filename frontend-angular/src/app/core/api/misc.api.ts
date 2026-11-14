@@ -105,6 +105,17 @@ export class TransferApi {
     return this.http.get(`${BASE}/export/backup`, { responseType: 'blob' });
   }
 
+  /** Export de projets (et/ou dossiers entiers) au format de sauvegarde ; sans filtre : tous les projets. */
+  exportProjects(
+    filter: { ids?: string[]; folderIds?: string[] },
+    withTasks = true,
+  ): Observable<Blob> {
+    let params = new HttpParams().set('withTasks', withTasks);
+    for (const id of filter.ids ?? []) params = params.append('id', id);
+    for (const id of filter.folderIds ?? []) params = params.append('folderId', id);
+    return this.http.get(`${BASE}/export/projects`, { params, responseType: 'blob' });
+  }
+
   importBackup(file: unknown, dryRun: boolean): Observable<ImportReport> {
     return this.http.post<ImportReport>(`${BASE}/import`, file, { params: { dryRun } });
   }

@@ -16,14 +16,18 @@ import java.util.List;
  *   <li>v5 : « Mes achats » simplifie (lot 13) : montants dates des echeanciers et depenses variables plafonnees
  *       (plafonds dates, commentaires et totaux du mois). Les sauvegardes v3 et v4 (plusieurs comptes, prets) sont
  *       converties a l'import.</li>
+ *   <li>v6 : dossiers de projets ({@code folders}, {@code ProjectData.folderId}) et tous les projets d'une tache
+ *       ({@code TaskData.projectIds}). L'export de projets choisis produit ce meme format, limite aux dossiers,
+ *       projets, taches et sessions concernes.</li>
  * </ul>
  * Une sauvegarde d'une version anterieure reste importable : les sections absentes sont ignorees.
  */
 public record BackupFile(int version, Instant exportedAt, List<ProjectData> projects, List<TaskData> tasks,
                          List<SessionData> sessions, SettingsData settings, List<DailyGoalData> dailyGoals,
-                         FinanceBackupData finance, NotesBackupData notes) {
+                         FinanceBackupData finance, NotesBackupData notes,
+                         List<FolderData> folders) {
 
-    public static final int CURRENT_VERSION = 5;
+    public static final int CURRENT_VERSION = 6;
     public static final int OLDEST_SUPPORTED_VERSION = 1;
 
 }

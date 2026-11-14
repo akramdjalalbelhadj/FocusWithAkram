@@ -353,7 +353,7 @@ class EnvelopeIT extends IntegrationTest {
                 {"amount":350,"comment":"Invites"}""").andExpect(status().isOk());
 
         String backup = body(mvc.perform(get("/api/v1/export/backup")));
-        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(5);
+        assertThat((Integer) JsonPath.read(backup, "$.version")).isEqualTo(6);
         assertThat((Integer) JsonPath.read(backup, "$.finance.envelopes.length()")).isEqualTo(1);
         assertThat((List<String>) JsonPath.read(backup, "$.finance.schedules[0].amounts[*].fromMonth"))
                 .containsExactly("2027-01");

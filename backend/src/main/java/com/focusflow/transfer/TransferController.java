@@ -5,6 +5,7 @@ import com.focusflow.transfer.dto.ImportReport;
 import com.focusflow.transfer.dto.TaskData;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -41,6 +42,15 @@ public class TransferController {
     @GetMapping("/export/backup")
     public ResponseEntity<?> backup() {
         return attachment(service.backup(), "focusflow-sauvegarde.json");
+    }
+
+    /** Projets choisis (et/ou dossiers entiers) au format de sauvegarde v6 ; sans filtre : tous les projets. */
+    @GetMapping("/export/projects")
+    public ResponseEntity<?> exportProjects(@RequestParam(name = "id", required = false) List<UUID> ids,
+                                            @RequestParam(name = "folderId", required = false) List<UUID> folderIds,
+                                            @RequestParam(defaultValue = "true") boolean withTasks) {
+        return attachment(service.exportProjects(ids == null ? List.of() : ids,
+                folderIds == null ? List.of() : folderIds, withTasks), "focusflow-projets.json");
     }
 
     @PostMapping("/import")

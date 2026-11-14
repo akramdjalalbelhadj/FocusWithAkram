@@ -108,6 +108,10 @@ Le calendrier propose Mois, Semaine et Jour, la navigation temporelle et les tâ
 
 Dans **Projets**, créer un regroupement avec nom, couleur et informations complémentaires. La progression dépend des tâches réellement associées. Ouvrir l’aperçu d’une tâche pour accéder à son détail. Archiver un projet et le supprimer sont deux opérations différentes ; une suppression conserve les tâches en les détachant du projet.
 
+**Dossiers de projets** (Angular). **Nouveau dossier** crée un dossier (nom et couleur, par exemple « DMP » pour 20 applications, « MES » pour 17 autres). Un projet se range dans un dossier depuis sa fenêtre (**Dossier**), depuis le menu **⋯** de sa carte (**Déplacer vers…**, **Sortir du dossier**) ou en le créant avec **+ Projet** dans l’en-tête du dossier. La barre des dossiers filtre la page (Tous, un dossier, Sans dossier) ; dans « Tous », chaque dossier est une section repliable (le repli est mémorisé dans le navigateur). Le dossier sert seulement au rangement : **une tâche reste liée à ses projets**, jamais à un dossier, et filtres, progression et statistiques ne changent pas. Supprimer un dossier conserve ses projets et leurs tâches, sans dossier.
+
+**Exporter et importer des projets** (Angular). **Exporter** propose tous les projets avec leurs tâches, les dossiers et projets seuls, ou un dossier entier ; le menu **⋯** d’un dossier ou d’un projet exporte seulement celui-ci. Le fichier `.json` contient les dossiers, les projets, leurs tâches (y compris celles partagées avec d’autres projets) et leurs sessions Pomodoro terminées. **Importer** vérifie d’abord le fichier sans rien écrire et affiche ce qui sera créé, puis importe après confirmation. Les dossiers et projets sont rapprochés par nom (un projet existant sans dossier rejoint celui du fichier), les tâches déjà présentes sont ignorées : réimporter le même fichier ne crée pas de doublons. L’import de projets ne touche jamais aux préférences, au Top 3, à « Mes achats » ni aux idées, même si l’on choisit une sauvegarde complète.
+
 ## 9. Tableau de bord, statistiques et archives
 
 Le dashboard aide à choisir la prochaine action : tâches restantes, réalisées, retard, objectif, Top 3, mini-matrice et session. Les statistiques permettent de changer la période et de comparer le temps planifié, réel écoulé et actif.
@@ -118,7 +122,7 @@ En tête des archives, **Anciennes idées** liste les idées transformées en t�
 
 ## 10. Exporter et importer
 
-Dans **Paramètres**, exporter les tâches en CSV ou JSON, ou télécharger une **Sauvegarde complète**. Pour une reprise complète des données métier, préférer cette dernière au CSV : elle contient aussi les préférences, le Top 3, « Mes achats » et les **notes et idées** (catégories, idées et lien entre chaque tâche et son idée d’origine). À l’import, l’aperçu indique ce qui sera créé, ignoré (doublons) ou signalé comme invalide ; les préférences du fichier remplacent les préférences courantes.
+Dans **Paramètres**, exporter les tâches en CSV ou JSON, ou télécharger une **Sauvegarde complète**. Pour une reprise complète des données métier, préférer cette dernière au CSV : elle contient aussi les dossiers de projets, les préférences, le Top 3, « Mes achats » et les **notes et idées** (catégories, idées et lien entre chaque tâche et son idée d’origine). À l’import, l’aperçu indique ce qui sera créé, ignoré (doublons) ou signalé comme invalide ; les préférences du fichier remplacent les préférences courantes.
 
 Pour importer : sélectionner le JSON, lire l’aperçu des créations, réutilisations, doublons et erreurs, puis confirmer l’import. Conserver le fichier d’origine jusqu’à vérification des tâches, projets et historiques.
 

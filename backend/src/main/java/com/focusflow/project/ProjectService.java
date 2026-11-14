@@ -18,10 +18,12 @@ public class ProjectService {
     private static final Pattern COLOR = Pattern.compile("^#[0-9a-fA-F]{6}$");
 
     private final ProjectRepository repository;
+    private final ProjectFolderRepository folders;
     private final Clock clock;
 
-    public ProjectService(ProjectRepository repository, Clock clock) {
+    public ProjectService(ProjectRepository repository, ProjectFolderRepository folders, Clock clock) {
         this.repository = repository;
+        this.folders = folders;
         this.clock = clock;
     }
 
@@ -109,6 +111,11 @@ public class ProjectService {
         }
         if (body.has("dueAt")) {
             p.setDueAt(body.instant("dueAt"));
+        }
+        if (body.has("folderId")) {
+            UUID folderId = body.uuid("folderId");
+            p.setFolder(folderId == null ? null : folders.findById(folderId)
+                    .orElseThrow(() -> ApiException.notFound("Dossier", folderId)));
         }
     }
 

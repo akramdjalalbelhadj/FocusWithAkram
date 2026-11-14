@@ -189,6 +189,17 @@ export interface Project {
   createdAt: string;
   totalTasks: number;
   doneTasks: number;
+  /** Lot 23 : dossier de rangement (absent = sans dossier). Les taches restent liees au projet. */
+  folderId?: string | null;
+}
+
+/** Lot 23 : dossier regroupant des projets (un seul niveau). */
+export interface ProjectFolder {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  projectCount: number;
 }
 
 // ---- Pomodoro --------------------------------------------------------------
@@ -384,6 +395,9 @@ export interface ImportReport {
   finance: FinanceImportSummary | null;
   /** Sauvegarde v4 : section Notes & idees (absente si le fichier n'en contient pas). */
   notes?: NotesImportSummary | null;
+  /** Sauvegarde v6 : dossiers de projets crees ou rapproches par nom. */
+  foldersCreated?: number;
+  foldersReused?: number;
 }
 
 /** Erreur API normalisee (ProblemDetail RFC 9457). */

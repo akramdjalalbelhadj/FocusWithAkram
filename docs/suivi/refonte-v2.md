@@ -32,6 +32,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-10 | Notes & idées : **liste d'émojis** dans la barre d'outils (catégories, recherche en français, récents), insertion à la position du curseur | Lot 20 ; [cahier des charges FWA-F026](../produit/cahier-des-charges.md) |
 | 2026-11-13 | Idées transformées en tâche archivées (« anciennes idées ») ; suppression avec choix Supprimer / Archiver et délai de 72 h si des tâches en sont issues ; recherche des idées par étiquette (filtre étiquettes retiré) ; description de tâche avec l'éditeur des notes ; tâche dans plusieurs projets (sélecteur avec recherche) ; champ « Notes » et sous-tâches retirés de l'interface des tâches ; pseudo au premier lancement (« Hello pseudo ») | Lot 22 ; migration V12 |
 | 2026-11-12 | Notes & idées : **schémas ASCII** (bloc ```` ```ascii ````) — arborescence de dossiers modifiable dans les deux sens (texte ↔ hiérarchie ↔ commandes `mkdir`/`touch` ou `New-Item`), tableau encadré (grille ↔ texte), bannière | Lot 21 ; [cahier des charges FWA-F026](../produit/cahier-des-charges.md) |
+| 2026-11-14 | Projets : **dossiers** à un seul niveau (rangement seulement : une tâche reste liée à ses projets, jamais à un dossier ; supprimer un dossier garde ses projets) ; **export et import de projets** au format de la sauvegarde (v6), import limité aux dossiers, projets, tâches et sessions, rapprochement par nom et sans doublon au réimport | Lot 23 ; migration V13 |
 
 ## 2. Lots
 
@@ -58,6 +59,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 19 | Export d'une idée en PDF ; un seul bouton « Exporter » (Markdown ou PDF) (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 20 | Liste d'émojis dans la barre d'outils de l'éditeur (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 21 | Schémas ASCII dans les notes : arborescence ↔ commandes, tableau, bannière (Angular seulement) | Livré le 12 novembre 2026, à valider par le propriétaire |
+| 23 | Dossiers de projets ; export et import de projets ; sauvegarde v6 (API et Angular) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-23-dossiers-projets`) |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -388,6 +390,20 @@ Vérifications (12 novembre 2026) : 235 tests unitaires Angular, lint et build d
 
 Vérifications (13 novembre 2026) : tests backend (nouveaux : recherche par étiquette, archivage/suppression à 72 h, tâche multi-projets), 235 tests unitaires Angular, ESLint et build de production Angular (chargement initial inchangé grâce à `@defer`). Hors périmètre : React et Krimou.
 
+### Lot 23 — Dossiers de projets, export et import de projets
+
+**Livré le 14 novembre 2026**, à valider par le propriétaire. Demande : importer et exporter des projets ; ranger les projets dans des dossiers (« DMP » : 20 applications, « MES » : 17…) ; une tâche reste liée à un projet, jamais à un dossier.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Dossiers | Migration V13 : `project_folder` (nom unique sans casse, couleur) et `project.folder_id` (`ON DELETE SET NULL`). API `/api/v1/project-folders`, `folderId` des projets ; un seul niveau | `ProjectFolderIT` (création, conflit de nom, couleur, déplacement, suppression qui garde projets et tâches, dossier inconnu) |
+| Export | `GET /export/projects` (projets, dossiers entiers, ou tout ; avec ou sans tâches) au format de sauvegarde v6 : dossiers, projets, tâches rattachées (principal ou supplémentaire), sessions terminées | `ProjectFolderIT` (export d'un dossier, tâche partagée, export sans tâches, sélection vide refusée) |
+| Import | `POST /import` existant : dossiers rapprochés par nom, projet réutilisé sans dossier rangé dans celui du fichier, tâches multi-projets restaurées (`projectIds`) ; réimport sans doublon. Angular ne transmet que dossiers, projets, tâches et sessions | `ProjectFolderIT` (aperçu sans écriture, base vide, réimport, sauvegarde complète) ; `project-folders.spec.ts` |
+| Sauvegarde v6 | `folders`, `projects[].folderId`, `tasks[].projectIds` (corrige au passage la perte des projets supplémentaires d'une tâche dans la sauvegarde) | `ImportExportIT`, `ProjectFolderIT` |
+| Page Projets | Barre des dossiers (Tous, chaque dossier avec son nombre, Sans dossier), sections repliables, **+ Projet** par dossier, menu du dossier (renommer, exporter, supprimer), menu **⋯** des cartes (déplacer, exporter, supprimer), boutons **Importer** (aperçu puis confirmation) et **Exporter** ; champ **Dossier** dans la fenêtre du projet | `project-folders.spec.ts` (6 tests) ; lint et build de production |
+
+Vérifications (14 novembre 2026) : suite backend complète (193 tests sans échec), 241 tests unitaires Angular, ESLint et build de production Angular ; React compile sans changement ; E2E `projects.spec.ts` (création de dossier, projet créé dans le dossier filtré, déplacement par le menu, sections repliables, export du dossier, base vidée puis import avec aperçu, réimport sans doublon, suppression du dossier, audits axe, 390 px) et `smoke.spec.ts` sans échec sur backend et base jetables. Défauts trouvés en recette et corrigés : bouton ⋯ renvoyé à la ligne dans les cartes (Archiver passé dans le menu), contraste insuffisant du nombre de projets dans le dossier actif. Hors périmètre : React et Krimou (voir § 4).
+
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 
 Backlog **gelé** jusqu'à la version stable d'Angular (décision du 5 novembre 2026). Toute évolution des contrats `shared/` doit rester compatible : React doit continuer à compiler sans modification.
@@ -405,4 +421,6 @@ Backlog **gelé** jusqu'à la version stable d'Angular (décision du 5 novembre 
 | Lot 13 (Krimou) | Porter dans `engine.focus.finance` le compte unique et la fusion des comptes, les prêts en catégorie, l'épargne du mois, la feuille du mois, les montants datés et les dépenses variables plafonnées, avec leurs scénarios de test ; importer et exporter le format v5 |
 | Lot 14 | Avec le module Notes & idées : tutoriel « de l'idée à l'action » (schéma en trois étapes, Suivant / Précédent / Passer, relance « Comment ça marche ? »), état dans `Settings.notesTutorialDone` (`GET` / `PATCH /settings`). Champ ajouté en facultatif dans `shared/models.ts` : React compile sans changement et l'ignore d'ici là |
 | Lot 15 | Tutoriel de la matrice (grille 2 × 2 aux couleurs des quadrants, étape « Planifier », relance « Comment ça marche ? »), état dans `Settings.matrixTutorialDone` (`GET` / `PATCH /settings`), indépendant de `notesTutorialDone`. Champ ajouté en facultatif : React compile sans changement et l'ignore d'ici là |
+| Lot 23 | Dossiers de projets (`ProjectFolder`, `/api/v1/project-folders`, `Project.folderId`), export de projets (`/export/projects`) et import par `/import` limité aux sections des projets ; `ImportReport.foldersCreated` / `foldersReused`. Champs ajoutés en facultatifs : React compile sans changement |
+| Lot 23 (Krimou) | Importer et exporter le format v6 (`folders`, `folderId`, `projectIds`) dans `engine.focus` ; jusque-là, une sauvegarde v6 est refusée par Krimou |
 | Lot 0 | La suite E2E (`frontend-react/e2e`, `playwright.config.ts`) écrit dans `docs/test-results/` et `docs/screenshots/`, désormais ignorés par Git ; envisager de la déplacer hors du dossier React puisqu'elle teste aussi Angular |

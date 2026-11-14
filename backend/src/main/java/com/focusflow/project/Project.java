@@ -2,7 +2,10 @@ package com.focusflow.project;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
@@ -31,6 +34,11 @@ public class Project {
     @Column(nullable = false)
     private boolean archived;
 
+    /** Dossier de rangement (facultatif) ; n'a aucun effet sur les taches. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
+    private ProjectFolder folder;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -58,5 +66,7 @@ public class Project {
     public void setDueAt(Instant dueAt) { this.dueAt = dueAt; }
     public boolean isArchived() { return archived; }
     public void setArchived(boolean archived) { this.archived = archived; }
+    public ProjectFolder getFolder() { return folder; }
+    public void setFolder(ProjectFolder folder) { this.folder = folder; }
     public Instant getCreatedAt() { return createdAt; }
 }

@@ -10,6 +10,9 @@ import com.focusflow.note.dto.NotesImportSummary;
 import com.focusflow.pomodoro.PomodoroSession;
 import com.focusflow.pomodoro.PomodoroSessionRepository;
 import com.focusflow.project.Project;
+import com.focusflow.project.ProjectFolder;
+import com.focusflow.project.ProjectFolderRepository;
+import com.focusflow.project.ProjectFolderService;
 import com.focusflow.project.ProjectRepository;
 import com.focusflow.settings.SettingsService;
 import com.focusflow.settings.UserSettings;
@@ -25,6 +28,7 @@ import com.focusflow.task.TaskRepository;
 import com.focusflow.transfer.dto.BackupFile;
 import com.focusflow.transfer.dto.DailyGoalData;
 import com.focusflow.transfer.dto.ExecutionData;
+import com.focusflow.transfer.dto.FolderData;
 import com.focusflow.transfer.dto.ImportReport;
 import com.focusflow.transfer.dto.ProjectData;
 import com.focusflow.transfer.dto.SessionData;
@@ -37,6 +41,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -59,6 +65,7 @@ public class TransferService {
 
     private final TaskRepository tasks;
     private final ProjectRepository projects;
+    private final ProjectFolderRepository folders;
     private final TagRepository tags;
     private final TaskExecutionRepository executions;
     private final PomodoroSessionRepository sessions;
@@ -68,12 +75,14 @@ public class TransferService {
     private final NoteBackup notes;
     private final Clock clock;
 
-    public TransferService(TaskRepository tasks, ProjectRepository projects, TagRepository tags,
+    public TransferService(TaskRepository tasks, ProjectRepository projects, ProjectFolderRepository folders,
+                           TagRepository tags,
                            TaskExecutionRepository executions, PomodoroSessionRepository sessions,
                            DailyGoalRepository dailyGoals, SettingsService settings, FinanceBackup finance, NoteBackup notes,
                            Clock clock) {
         this.tasks = tasks;
         this.projects = projects;
+        this.folders = folders;
         this.tags = tags;
         this.executions = executions;
         this.sessions = sessions;
@@ -94,16 +103,53 @@ public class TransferService {
                 projects.findAllByOrderByNameAsc().stream().map(TransferService::toData).toList(),
                 all.stream().map(t -> toData(t, executionsByTask)).toList(),
                 sessions.findAll(Sort.by("startedAt")).stream().filter(s -> !s.getStatus().isActive())
-                        .map(s -> new SessionData(s.getId(), s.getTask() == null ? null : s.getTask().getId(),
-                                s.getExecutionNumber(), s.getType(), s.getStatus(), s.getPlannedSeconds(), s.getWorkedSeconds(),
-                                s.getSequenceNumber(), s.getStartedAt(), s.getEndedAt()))
-                        .toList(),
+                        .map(TransferService::toData).toList(),
                 toData(settings.get()),
                 dailyGoals.findAll(Sort.by("goalDate", "position")).stream()
                         .map(g -> new DailyGoalData(g.getGoalDate(), g.getTask().getId(), g.getPosition(), g.getCreatedAt()))
                         .toList(),
                 finance.export(),
-                notes.export());
+                notes.export(),
+                folders.findAllByOrderByNameAsc().stream().map(TransferService::toData).toList());
+    }
+
+    /**
+     * Export de projets choisis, au format de sauvegarde : leurs dossiers, les projets, et (si {@code withTasks})
+     * les taches rattachees a l'un d'eux (projet principal ou supplementaire) avec leurs sessions terminees.
+     * Sans projet ni dossier designe, tous les projets sont exportes. Le fichier s'importe par {@code POST /import}.
+     */
+    @Transactional(readOnly = true)
+    public BackupFile exportProjects(Collection<UUID> projectIds, Collection<UUID> folderIds, boolean withTasks) {
+        boolean all = projectIds.isEmpty() && folderIds.isEmpty();
+        List<Project> selected = projects.findAllByOrderByNameAsc().stream()
+                .filter(p -> all || projectIds.contains(p.getId())
+                        || (p.getFolder() != null && folderIds.contains(p.getFolder().getId())))
+                .toList();
+        if (selected.isEmpty()) {
+            throw ApiException.rule("EXPORT_NO_PROJECT", "Aucun projet a exporter.");
+        }
+        Set<UUID> selectedIds = selected.stream().map(Project::getId).collect(Collectors.toSet());
+        Map<UUID, ProjectFolder> usedFolders = new LinkedHashMap<>();
+        selected.stream().map(Project::getFolder).filter(Objects::nonNull)
+                .sorted(Comparator.comparing(ProjectFolder::getName, String.CASE_INSENSITIVE_ORDER))
+                .forEach(f -> usedFolders.putIfAbsent(f.getId(), f));
+        List<TaskData> taskData = List.of();
+        List<SessionData> sessionData = List.of();
+        if (withTasks) {
+            List<Task> related = tasks.findAll(Sort.by("createdAt")).stream()
+                    .filter(t -> t.getProjects().stream().anyMatch(p -> selectedIds.contains(p.getId())))
+                    .toList();
+            Map<UUID, List<ExecutionData>> executionsByTask = executionsByTask();
+            taskData = related.stream().map(t -> toData(t, executionsByTask)).toList();
+            Set<UUID> taskIds = related.stream().map(Task::getId).collect(Collectors.toSet());
+            sessionData = sessions.findAll(Sort.by("startedAt")).stream()
+                    .filter(s -> !s.getStatus().isActive() && s.getTask() != null && taskIds.contains(s.getTask().getId()))
+                    .map(TransferService::toData).toList();
+        }
+        return new BackupFile(BackupFile.CURRENT_VERSION, Instant.now(clock),
+                selected.stream().map(TransferService::toData).toList(), taskData, sessionData,
+                null, null, null, null,
+                usedFolders.values().stream().map(TransferService::toData).toList());
     }
 
     @Transactional(readOnly = true)
@@ -161,7 +207,7 @@ public class TransferService {
     // ---- Import -------------------------------------------------------------------------------
 
     /**
-     * Importe une sauvegarde (version 1 a 5).
+     * Importe une sauvegarde (version 1 a 6) ou un export de projets (meme format).
      * <ul>
      *   <li>Les idees (v4) sont importees avant les taches afin que chaque tache retrouve son idee d'origine.</li>
      * </ul>
@@ -188,6 +234,7 @@ public class TransferService {
                             + ") : mettez l'application a jour avant de l'importer.");
         }
         ImportRun run = new ImportRun();
+        importFolders(file, run);
         importProjects(file, run);
         NotesImportSummary notesSummary = null;
         if (file.notes() != null) {
@@ -205,24 +252,49 @@ public class TransferService {
         }
         return new ImportReport(dryRun, run.projectsCreated, run.projectsReused, run.tasksCreated, run.tasksSkipped,
                 run.sessionsCreated, run.sessionsSkipped, run.errors, run.settingsRestored, run.goalsCreated,
-                run.goalsSkipped, financeSummary, notesSummary);
+                run.goalsSkipped, financeSummary, notesSummary, run.foldersCreated, run.foldersReused);
     }
 
     /** Etat d'un import : correspondances d'identifiants et compteurs du rapport. */
     private static final class ImportRun {
         final List<String> errors = new ArrayList<>();
+        final Map<UUID, ProjectFolder> foldersByFileId = new HashMap<>();
         final Map<UUID, Project> projectsByFileId = new HashMap<>();
         /** Taches de la sauvegarde resolues vers une tache de la base : creee, ou deja presente avec le meme identifiant. */
         final Map<UUID, Task> tasksByFileId = new HashMap<>();
         /** Idees de la sauvegarde resolues vers une idee de la base (creee, ou deja presente). */
         final Map<UUID, UUID> noteIdsByFileId = new HashMap<>();
         int projectsCreated, projectsReused, tasksCreated, tasksSkipped, sessionsCreated, sessionsSkipped;
-        int goalsCreated, goalsSkipped;
+        int goalsCreated, goalsSkipped, foldersCreated, foldersReused;
         boolean settingsRestored;
 
         void error(String message) {
             if (errors.size() < MAX_ERRORS) {
                 errors.add(message);
+            }
+        }
+    }
+
+    /** Dossiers (v6), rapproches par nom sans tenir compte de la casse. */
+    private void importFolders(BackupFile file, ImportRun run) {
+        Map<String, ProjectFolder> byName = new HashMap<>();
+        folders.findAll().forEach(f -> byName.putIfAbsent(f.getName().toLowerCase(), f));
+        for (FolderData fd : nullToEmpty(file.folders())) {
+            try {
+                String name = ProjectFolderService.cleanName(fd.name());
+                ProjectFolder folder = byName.get(name.toLowerCase());
+                if (folder != null) {
+                    run.foldersReused++;
+                } else {
+                    folder = new ProjectFolder(name, fd.createdAt() != null ? fd.createdAt() : Instant.now(clock));
+                    if (ProjectFolderService.validColor(fd.color())) folder.setColor(fd.color());
+                    folder = folders.save(folder);
+                    byName.put(name.toLowerCase(), folder);
+                    run.foldersCreated++;
+                }
+                if (fd.id() != null) run.foldersByFileId.put(fd.id(), folder);
+            } catch (RuntimeException e) {
+                run.error("Dossier '" + fd.name() + "' : " + e.getMessage());
             }
         }
     }
@@ -239,8 +311,11 @@ public class TransferService {
                 if (pd.icon() != null && pd.icon().length() > 40) {
                     throw new IllegalArgumentException("icone de plus de 40 caracteres.");
                 }
+                ProjectFolder folder = pd.folderId() == null ? null : run.foldersByFileId.get(pd.folderId());
                 Project existing = byName.get(name.toLowerCase());
                 if (existing != null) {
+                    // Un projet deja range garde son dossier ; un projet sans dossier rejoint celui du fichier.
+                    if (existing.getFolder() == null && folder != null) existing.setFolder(folder);
                     if (pd.id() != null) run.projectsByFileId.put(pd.id(), existing);
                     run.projectsReused++;
                     continue;
@@ -251,6 +326,7 @@ public class TransferService {
                 p.setIcon(pd.icon());
                 p.setDueAt(pd.dueAt());
                 p.setArchived(pd.archived());
+                p.setFolder(folder);
                 p = projects.save(p);
                 byName.put(name.toLowerCase(), p);
                 if (pd.id() != null) run.projectsByFileId.put(pd.id(), p);
@@ -285,7 +361,13 @@ public class TransferService {
                         td.important(), td.urgent(), td.position(), td.estimatedMinutes(), td.createdAt(), td.updatedAt(),
                         td.plannedStartAt(), td.plannedEndAt(), td.actualStartAt(), td.actualEndAt(), td.archivedAt(),
                         td.executionNumber()));
-                if (td.projectId() != null) t.setProject(run.projectsByFileId.get(td.projectId()));
+                if (td.projectIds() != null && !td.projectIds().isEmpty()) {
+                    // v6 : tous les projets connus de la tache, le principal d'abord ; les inconnus sont ignores.
+                    t.setProjects(td.projectIds().stream().map(run.projectsByFileId::get).filter(Objects::nonNull)
+                            .distinct().toList());
+                } else if (td.projectId() != null) {
+                    t.setProject(run.projectsByFileId.get(td.projectId()));
+                }
                 if (td.sourceNoteId() != null) t.setSourceNoteId(run.noteIdsByFileId.get(td.sourceNoteId()));
                 for (SubtaskData sd : nullToEmpty(td.subtasks())) {
                     t.addImportedSubtask(sd.title(), sd.done(), sd.position(), sd.createdAt() != null ? sd.createdAt() : t.getCreatedAt());
@@ -423,7 +505,17 @@ public class TransferService {
 
     private static ProjectData toData(Project p) {
         return new ProjectData(p.getId(), p.getName(), p.getDescription(), p.getColor(), p.getIcon(), p.getDueAt(),
-                p.isArchived(), p.getCreatedAt());
+                p.isArchived(), p.getCreatedAt(), p.getFolder() == null ? null : p.getFolder().getId());
+    }
+
+    private static FolderData toData(ProjectFolder f) {
+        return new FolderData(f.getId(), f.getName(), f.getColor(), f.getCreatedAt());
+    }
+
+    private static SessionData toData(PomodoroSession s) {
+        return new SessionData(s.getId(), s.getTask() == null ? null : s.getTask().getId(), s.getExecutionNumber(),
+                s.getType(), s.getStatus(), s.getPlannedSeconds(), s.getWorkedSeconds(), s.getSequenceNumber(),
+                s.getStartedAt(), s.getEndedAt());
     }
 
     private static SettingsData toData(UserSettings s) {
@@ -441,7 +533,8 @@ public class TransferService {
                 t.getSubtasks().stream().map(s -> new SubtaskData(s.getTitle(), s.isDone(), s.getPosition(), s.getCreatedAt())).toList(),
                 t.getCreatedAt(), t.getUpdatedAt(), t.getPlannedStartAt(), t.getPlannedEndAt(), t.getActualStartAt(),
                 t.getActualEndAt(), t.getArchivedAt(), t.getExecutionNumber(),
-                executionsByTask.getOrDefault(t.getId(), List.of()), t.getSourceNoteId());
+                executionsByTask.getOrDefault(t.getId(), List.of()), t.getSourceNoteId(),
+                t.getProjects().stream().map(Project::getId).toList());
     }
 
     private static <T> List<T> nullToEmpty(List<T> list) {

@@ -13,7 +13,8 @@ backend/src/main/java/com/focusflow/
                    TaskSpecifications, repositories, TaskController, TagController
     archive/       sous-domaine des archives : ArchiveController, ArchiveService, ArchiveFilter, ArchiveSection
     dto/           requetes et reponses de l'API des taches
-  project/         Project, ProjectService, ProjectMapper, ProjectView, ProjectController, dto/
+  project/         Project, ProjectService, ProjectMapper, ProjectView, ProjectController,
+                   ProjectFolder, ProjectFolderService, ProjectFolderController (lot 23), dto/
   pomodoro/        PomodoroSession (machine a etats), SessionType, SessionStatus, PomodoroService, dto/
   settings/        UserSettings (singleton), SettingsService, SettingsMapper, dto/
   dashboard/       indicateurs et Top 3 ; eisenhower/ matrice ; statistics/ agregations ; search/ recherche
@@ -127,7 +128,7 @@ API : `/api/v1/notes` (`GET` pagine et filtre : `q`, `categoryId`, `tag`, `favor
 
 ## Sauvegarde et import
 
-`BackupFile` est un format JSON versionne (`CURRENT_VERSION = 5` avec le lot 13) :
+`BackupFile` est un format JSON versionne (`CURRENT_VERSION = 6` avec le lot 23) :
 
 | Version | Contenu |
 | --- | --- |
@@ -136,8 +137,11 @@ API : `/api/v1/notes` (`GET` pagine et filtre : `q`, `categoryId`, `tag`, `favor
 | 3 | v2 + module « Mes achats » (`finance` : comptes, categories, echeanciers, objectifs d'achat, prets, operations, budgets, preferences) |
 | 4 | v3 + Notes & idees (`notes` : categories, idees), idee d'origine des taches (`tasks[].sourceNoteId`) et `settings.noteEditorMode` |
 | 5 | v4 + « Mes achats » simplifie (lot 13) : montants dates des echeanciers, enveloppes (plafonds dates, commentaires et totaux du mois) ; compte unique ; plus de section `loans` ni de `loanId`. Les etats de visite guidee (`tutorialDone`, `notesTutorialDone`, `matrixTutorialDone`) ne sont pas sauvegardes |
+| 6 | v5 + dossiers de projets (`folders`, `projects[].folderId`) et tous les projets d'une tache (`tasks[].projectIds`, principal en tete ; sans ce champ, seul `projectId` est lu) |
 
 L'import accepte toute version de 1 a `CURRENT_VERSION` (sections absentes ignorees) et refuse un fichier plus recent avec `IMPORT_UNSUPPORTED_VERSION`. Chaque element est valide avant ecriture (memes regles que les contraintes SQL) : un element invalide est signale dans `ImportReport.errors` sans interrompre les autres. Le mode apercu (`dryRun=true`) execute l'import puis annule la transaction : son rapport est exactement celui de l'import reel. Les doublons sont ignores (taches : meme identifiant, ou meme titre et date de creation ; projets : meme nom ; sessions et Top 3 : meme identifiant ou meme date et position). Une session n'est rattachee a une tache existante que si leurs identifiants concordent. Les preferences du fichier remplacent les preferences courantes, apres validation complete. Partie « Mes achats » d'une sauvegarde v3 ou v4 (lot 13) : tous ses comptes se rattachent au compte unique (cree au besoin d'apres son compte courant actif), le solde initial d'un compte supplementaire devient une correction, les virements sont ignores et les mouvements de pret deviennent des depenses ou revenus de la categorie « Prets » (reutilisee ou creee) ; le type d'operation est lu comme texte pour accepter ces anciens types. Les idees sont importees avant les taches : une tache retrouve son idee d'origine si celle-ci est dans le fichier (creee ou deja presente) ; les categories d'idees sont rapprochees par identifiant puis par nom, les idees par identifiant ou par titre et date de creation (`ImportReport.notes`).
+
+Dossiers de projets (lot 23) : table `project_folder` (nom unique sans casse, couleur), `project.folder_id` (`ON DELETE SET NULL`) ; une tache ne connait jamais de dossier. API `/api/v1/project-folders` (`GET` avec `projectCount`, `POST`, `PATCH /{id}`, `DELETE /{id}` ; `FOLDER_NAME_TAKEN`), `folderId` dans `ProjectResponse` et le `PATCH`/`POST` des projets. `GET /api/v1/export/projects?id=…&folderId=…&withTasks=true` produit un fichier v6 limite aux dossiers et projets choisis (aucun filtre : tous), aux taches rattachees a l'un d'eux (principal ou supplementaire) et a leurs sessions terminees (`EXPORT_NO_PROJECT` si rien n'est choisi) ; il s'importe par `POST /import`. Les dossiers sont rapproches par nom (`ImportReport.foldersCreated` / `foldersReused`) ; un projet reutilise sans dossier rejoint celui du fichier. L'interface Angular n'envoie a l'import de projets que `folders`, `projects`, `tasks` et `sessions`.
 
 Pour ajouter un domaine a la sauvegarde : ajouter une section nullable a `BackupFile`, incrementer `CURRENT_VERSION`, ajouter ses compteurs a `ImportReport` et a `shared/models.ts`, et tester l'import d'un fichier de l'ancienne version.
 

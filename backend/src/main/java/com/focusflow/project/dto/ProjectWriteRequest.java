@@ -3,6 +3,7 @@ package com.focusflow.project.dto;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.focusflow.common.PatchRequest;
 import java.time.Instant;
+import java.util.UUID;
 
 /** Champs modifiables de cette ressource ; presence et null explicite sont conserves. */
 public class ProjectWriteRequest extends PatchRequest {
@@ -30,6 +31,12 @@ public class ProjectWriteRequest extends PatchRequest {
     @JsonSetter("dueAt")
     public void setDueAt(Instant value) {
         set("dueAt", value);
+    }
+
+    /** Dossier de rangement ; null retire le projet de son dossier. */
+    @JsonSetter("folderId")
+    public void setFolderId(UUID value) {
+        set("folderId", value);
     }
 
     @JsonSetter("archived")
