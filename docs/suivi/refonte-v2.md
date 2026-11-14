@@ -60,6 +60,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 20 | Liste d'émojis dans la barre d'outils de l'éditeur (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 21 | Schémas ASCII dans les notes : arborescence ↔ commandes, tableau, bannière (Angular seulement) | Livré le 12 novembre 2026, à valider par le propriétaire |
 | 23 | Dossiers de projets ; export et import de projets ; sauvegarde v6 (API et Angular) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-23-dossiers-projets`) |
+| 24 | Page Projets simplifiée : ni icône ni échéance, dossiers fermés par défaut, vue « Projets inactifs », boutons « Nouveau » et « Importer / Exporter » (Angular seulement) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-24-projets-simplifies`) |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -403,6 +404,20 @@ Vérifications (13 novembre 2026) : tests backend (nouveaux : recherche par éti
 | Page Projets | Barre des dossiers (Tous, chaque dossier avec son nombre, Sans dossier), sections repliables, **+ Projet** par dossier, menu du dossier (renommer, exporter, supprimer), menu **⋯** des cartes (déplacer, exporter, supprimer), boutons **Importer** (aperçu puis confirmation) et **Exporter** ; champ **Dossier** dans la fenêtre du projet | `project-folders.spec.ts` (6 tests) ; lint et build de production |
 
 Vérifications (14 novembre 2026) : suite backend complète (193 tests sans échec), 241 tests unitaires Angular, ESLint et build de production Angular ; React compile sans changement ; E2E `projects.spec.ts` (création de dossier, projet créé dans le dossier filtré, déplacement par le menu, sections repliables, export du dossier, base vidée puis import avec aperçu, réimport sans doublon, suppression du dossier, audits axe, 390 px) et `smoke.spec.ts` sans échec sur backend et base jetables. Défauts trouvés en recette et corrigés : bouton ⋯ renvoyé à la ligne dans les cartes (Archiver passé dans le menu), contraste insuffisant du nombre de projets dans le dossier actif. Hors périmètre : React et Krimou (voir § 4).
+
+### Lot 24 — Page Projets simplifiée
+
+**Livré le 14 novembre 2026**, à valider par le propriétaire (Angular seulement, sans changement d'API ni de base).
+
+| Demande | Réalisation |
+| --- | --- |
+| Retirer l'échéance et la notion d'icône | Champs **Échéance** et **Icône** retirés de la fenêtre du projet (une modification ne les envoie plus : les valeurs existantes restent en base, sans effet) ; la carte affiche l'initiale du projet sur sa couleur, sans échéance ; tri par **Nom** ou **Avancement** |
+| Dossiers fermés au départ | Dans « Tous », chaque dossier (et « Sans dossier ») est fermé par défaut, même juste après sa création ; les dossiers ouverts sont mémorisés (`ff.projects.openFolders`). Un dossier choisi dans la barre ou une recherche montre directement les projets ; créer un projet ouvre son dossier |
+| « Afficher les archivés » → projets inactifs | Choix **Projets actifs / Projets inactifs** (avec leur nombre) ; les inactifs restent groupés dans leurs dossiers, avec **Réactiver** ; « Archiver » devient **Rendre inactif** (même champ `archived` côté API) |
+| Un seul bouton de création | **Nouveau** : **Dossier** (« un groupe de projets… ») ou **Projet** |
+| Un seul bouton d'échange | **Importer / Exporter** : importer un fichier, exporter tout, dossiers et projets seuls, ou un dossier |
+
+Vérifications (14 novembre 2026) : 241 tests unitaires Angular, ESLint et build de production ; E2E `projects.spec.ts` (menu Nouveau, dossier fermé à la création, fenêtre sans icône ni échéance, projet inactif retrouvé dans son dossier puis réactivé, import par le menu, audits axe) et `smoke.spec.ts` sans échec sur backend et base jetables (le test « aperçu des tâches du projet » ouvre d'abord les dossiers fermés). Défaut trouvé en recette et corrigé : badge « Inactif » peu contrasté sur une carte atténuée (atténuation retirée). Hors périmètre : React et Krimou.
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

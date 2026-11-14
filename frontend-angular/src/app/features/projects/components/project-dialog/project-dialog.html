@@ -35,15 +35,6 @@
         Le dossier sert seulement au rangement : les tâches restent liées au projet.
       </p>
     </div>
-    <div>
-      <label class="field-label" for="pj-icon">Icône</label
-      ><select id="pj-icon" class="input" formControlName="icon">
-        <option value="folder">Dossier</option>
-        <option value="target">Objectif</option>
-        <option value="coffee">Personnel</option>
-        <option value="layers">Apprentissage</option>
-      </select>
-    </div>
     <fieldset>
       <legend class="field-label">Couleur</legend>
       <div class="flex flex-wrap gap-2" role="radiogroup">
@@ -66,10 +57,6 @@
         }
       </div>
     </fieldset>
-    <div>
-      <label class="field-label" for="pj-due">Échéance (facultative)</label>
-      <ff-datetime inputId="pj-due" formControlName="dueAt" />
-    </div>
   </div>
   <div class="flex justify-end gap-2 mt-6">
     <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>

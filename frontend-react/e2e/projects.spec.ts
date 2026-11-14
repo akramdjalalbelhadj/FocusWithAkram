@@ -37,7 +37,7 @@ async function cleanup(request: APIRequestContext, suffix: string) {
     if (f.name.includes(suffix)) await request.delete(api + `project-folders/${f.id}`);
 }
 
-test("Projets : dossiers, déplacement, export puis import d’un dossier", async ({ page, request }) => {
+test("Projets : dossiers, déplacement, projets inactifs, export puis import d’un dossier", async ({ page, request }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   const s = String(Date.now()).slice(-6);
@@ -51,18 +51,26 @@ test("Projets : dossiers, déplacement, export puis import d’un dossier", asyn
     await page.goto("/projects");
     await expect(page.getByRole("heading", { name: "Projets", level: 1 })).toBeVisible();
 
-    // Nouveau dossier par l'interface : il devient le filtre courant.
-    await page.getByRole("button", { name: "Nouveau dossier" }).click();
+    // Un seul bouton « Nouveau » : Dossier (explique) ou Projet.
+    await page.getByRole("button", { name: "Nouveau", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: /^Dossier Un groupe de projets/ })).toBeVisible();
+    await axe(page, "menu Nouveau");
+    await page.getByRole("menuitem", { name: /^Dossier/ }).click();
     const folderDialog = page.getByRole("dialog", { name: "Nouveau dossier" });
     await folderDialog.getByLabel("Nom").fill(dmp);
     await folderDialog.getByRole("button", { name: "Créer" }).click();
     await expect(folderDialog).toBeHidden();
     const bar = page.getByRole("navigation", { name: "Dossiers de projets" });
-    await expect(bar.getByRole("button", { name: new RegExp(`^${dmp} 0$`) })).toHaveAttribute("aria-pressed", "true");
+    // Le nouveau dossier est ferme dans la vue « Tous ».
+    await expect(page.getByRole("button", { name: new RegExp(`^${dmp} 0$`), expanded: false })).toBeVisible();
+    await bar.getByRole("button", { name: new RegExp(`^${dmp} 0$`) }).click();
 
-    // Nouveau projet depuis le dossier filtre : le dossier est deja choisi dans la fenetre.
-    await page.getByRole("button", { name: "Nouveau projet", exact: true }).click();
+    // Nouveau projet depuis le dossier filtre : le dossier est deja choisi ; ni icone ni echeance.
+    await page.getByRole("button", { name: "Nouveau", exact: true }).click();
+    await page.getByRole("menuitem", { name: /^Projet/ }).click();
     const projectDialog = page.getByRole("dialog", { name: "Nouveau projet" });
+    await expect(projectDialog.getByLabel("Icône")).toHaveCount(0);
+    await expect(projectDialog.getByText("Échéance")).toHaveCount(0);
     await expect(projectDialog.getByLabel("Dossier")).toHaveValue(/.+/);
     await expect(projectDialog.getByLabel("Dossier").locator("option:checked")).toHaveText(dmp);
     await projectDialog.getByLabel("Nom").fill(`Appli A ${s}`);
@@ -82,8 +90,9 @@ test("Projets : dossiers, déplacement, export puis import d’un dossier", asyn
     await expect(page.getByText(`« Appli B ${s} » rangé dans ${dmp}.`)).toBeVisible();
     await expect(bar.getByRole("button", { name: new RegExp(`^${dmp} 2$`) })).toBeVisible();
 
-    // Vue « Tous » : sections repliables, une par dossier.
+    // Vue « Tous » : dossiers fermes par defaut ; DMP, ouvert a la creation de son projet, le reste.
     await bar.getByRole("button", { name: /^Tous / }).click();
+    await expect(page.getByRole("button", { name: new RegExp(`^${mes}`), expanded: false })).toBeVisible();
     const dmpToggle = page.getByRole("button", { name: new RegExp(`^${dmp}`), expanded: true });
     await expect(dmpToggle).toBeVisible();
     await axe(page, "page Projets avec dossiers");
@@ -91,6 +100,22 @@ test("Projets : dossiers, déplacement, export puis import d’un dossier", asyn
     await expect(page.getByRole("heading", { name: `Appli A ${s}` })).toBeHidden();
     await page.getByRole("button", { name: new RegExp(`^${dmp}`), expanded: false }).click();
     await expect(page.getByRole("heading", { name: `Appli A ${s}` })).toBeVisible();
+
+    // Projet inactif : il quitte les projets actifs et se retrouve, dans son dossier, parmi les inactifs.
+    await page.getByRole("button", { name: `Autres actions pour Appli B ${s}` }).click();
+    await page.getByRole("menuitem", { name: "Rendre inactif" }).click();
+    await expect(page.getByText(`« Appli B ${s} » est maintenant inactif`)).toBeVisible();
+    await expect(page.getByRole("heading", { name: `Appli B ${s}` })).toBeHidden();
+    await page.getByRole("button", { name: /^Projets inactifs/ }).click();
+    await bar.getByRole("button", { name: new RegExp(`^${dmp} 1$`) }).click();
+    await expect(page.getByRole("heading", { name: dmp, level: 2 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: `Appli B ${s}` })).toBeVisible();
+    await expect(page.getByRole("heading", { name: `Appli A ${s}` })).toBeHidden();
+    await axe(page, "projets inactifs");
+    await page.getByRole("button", { name: "Réactiver" }).click();
+    await expect(page.getByText(`« Appli B ${s} » est de nouveau actif.`)).toBeVisible();
+    await page.getByRole("button", { name: "Projets actifs" }).click();
+    await bar.getByRole("button", { name: /^Tous / }).click();
 
     // Export du dossier DMP : fichier v6 avec ses deux projets et la tache.
     await page.getByRole("button", { name: `Actions du dossier ${dmp}` }).click();
@@ -110,6 +135,9 @@ test("Projets : dossiers, déplacement, export puis import d’un dossier", asyn
     await cleanup(request, s);
     await page.reload();
     await expect(page.getByRole("heading", { name: `Appli A ${s}` })).toBeHidden();
+    await page.getByRole("button", { name: "Importer / Exporter" }).click();
+    await expect(page.getByRole("menuitem", { name: "Importer un fichier…" })).toBeVisible();
+    await page.keyboard.press("Escape");
     await page.locator('input[type="file"]').setInputFiles(file);
     const confirm = page.getByRole("alertdialog", { name: "Importer « dmp.json » ?" });
     await expect(confirm).toContainText("Dossiers : 1 à créer");
@@ -133,6 +161,7 @@ test("Projets : dossiers, déplacement, export puis import d’un dossier", asyn
     await page.getByRole("alertdialog", { name: "Supprimer ce dossier ?" })
       .getByRole("button", { name: "Supprimer le dossier" }).click();
     await expect(page.getByText("Dossier supprimé — ses projets sont conservés.")).toBeVisible();
+    await bar.getByRole("button", { name: /^Sans dossier/ }).click();
     await expect(page.getByRole("heading", { name: `Appli A ${s}` })).toBeVisible();
 
     // Telephone : aucun debordement horizontal.

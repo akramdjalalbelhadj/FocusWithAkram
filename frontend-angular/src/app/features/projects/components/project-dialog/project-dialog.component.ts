@@ -6,7 +6,6 @@ import { catchError, firstValueFrom, of } from 'rxjs';
 import { Project, ProjectFolder } from '../../../../core/api/models';
 import { ProjectFoldersApi, ProjectsApi } from '../../../../core/api/tasks.api';
 import { AppError } from '../../../../core/api/app-error';
-import { DateTimeFieldComponent } from '../../../../shared/ui/datetime-field/datetime-field';
 import { IconComponent } from '../../../../shared/ui/icon/icon';
 import { COLORS } from '../../constants/colors';
 
@@ -15,7 +14,7 @@ export type ProjectDialogData = Project | { folderId?: string | null } | null;
 
 @Component({
   selector: 'ff-project-dialog',
-  imports: [ReactiveFormsModule, IconComponent, DateTimeFieldComponent],
+  imports: [ReactiveFormsModule, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-dialog.html',
 })
@@ -24,7 +23,8 @@ export class ProjectDialogComponent {
   private readonly input = inject<ProjectDialogData>(DIALOG_DATA);
   /** Projet modifie (null en creation). */
   protected readonly data: Project | null = this.input && 'id' in this.input ? this.input : null;
-  protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
+  /** Se ferme avec le projet enregistre. */
+  protected readonly ref = inject<DialogRef<Project>>(DialogRef);
   protected readonly colors = COLORS;
   protected readonly saving = signal(false);
   protected readonly error = signal('');
@@ -38,8 +38,6 @@ export class ProjectDialogComponent {
     name: [this.data?.name ?? '', [Validators.required, Validators.maxLength(120)]],
     description: [this.data?.description ?? ''],
     color: [this.data?.color ?? COLORS[0]],
-    icon: [this.data?.icon ?? 'folder'],
-    dueAt: [this.data?.dueAt ?? (null as string | null)],
     folderId: [this.input?.folderId ?? ''],
   });
 
@@ -52,13 +50,12 @@ export class ProjectDialogComponent {
       name: v.name.trim(),
       description: v.description,
       color: v.color,
-      icon: v.icon,
-      dueAt: v.dueAt,
       folderId: v.folderId || null,
     };
     try {
-      await firstValueFrom(this.data ? this.api.update(this.data.id, body) : this.api.create(body));
-      this.ref.close(true);
+      this.ref.close(
+        await firstValueFrom(this.data ? this.api.update(this.data.id, body) : this.api.create(body)),
+      );
     } catch (e) {
       this.error.set(e instanceof AppError ? e.problem.detail : 'Erreur inattendue.');
     } finally {

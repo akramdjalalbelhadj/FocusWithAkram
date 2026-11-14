@@ -6,14 +6,6 @@
     <p class="page-sub">Rangez vos projets dans des dossiers et suivez leur avancement.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <label class="flex items-center gap-2 text-sm text-muted"
-      ><input
-        type="checkbox"
-        class="size-4 accent-[var(--brand)]"
-        [checked]="showArchived()"
-        (change)="showArchived.set($any($event.target).checked)"
-      />Afficher les archivés</label
-    >
     <input
       #importInput
       type="file"
@@ -26,63 +18,73 @@
     <button
       type="button"
       class="btn btn-secondary"
-      title="Importer des projets depuis un fichier exporté (.json)"
+      title="Importer ou exporter des projets (.json)"
       [disabled]="busy()"
       [attr.aria-busy]="busy() || null"
-      (click)="importInput.click()"
+      [cdkMenuTriggerFor]="transferMenu"
     >
-      <ff-icon name="upload" [size]="16" />{{ busy() ? 'Import…' : 'Importer' }}
+      <ff-icon name="transfer" [size]="16" />{{ busy() ? 'Import…' : 'Importer / Exporter'
+      }}<ff-icon name="chevron-down" [size]="14" />
     </button>
-    <button
-      type="button"
-      class="btn btn-secondary"
-      title="Télécharger des projets dans un fichier .json"
-      [cdkMenuTriggerFor]="exportMenu"
-    >
-      <ff-icon name="download" [size]="16" />Exporter<ff-icon name="chevron-down" [size]="14" />
-    </button>
-    <button type="button" class="btn btn-secondary" (click)="editFolder(null)">
-      <ff-icon name="folder-plus" [size]="16" />Nouveau dossier
-    </button>
-    <button type="button" class="btn btn-primary" (click)="edit(null)">
-      <ff-icon name="plus" />Nouveau projet
+    <button type="button" class="btn btn-primary" [cdkMenuTriggerFor]="newMenu">
+      <ff-icon name="plus" />Nouveau<ff-icon name="chevron-down" [size]="14" />
     </button>
   </div>
 </header>
 
-@if (folders().length) {
-  <nav class="segmented mb-4" aria-label="Dossiers de projets">
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <nav class="segmented" aria-label="État des projets">
     <button
       type="button"
       class="segmented-item"
-      [attr.aria-pressed]="folderFilter() === 'all'"
-      (click)="folderFilter.set('all')"
+      [attr.aria-pressed]="!inactive()"
+      (click)="inactive.set(false)"
     >
-      Tous <span class="tabular-nums font-normal">{{ count('all') }}</span>
+      Projets actifs
     </button>
-    @for (f of folders(); track f.id) {
-      <button
-        type="button"
-        class="segmented-item"
-        [attr.aria-pressed]="folderFilter() === f.id"
-        (click)="folderFilter.set(f.id)"
-      >
-        <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span
-        >{{ f.name }} <span class="tabular-nums font-normal">{{ count(f.id) }}</span>
-      </button>
-    }
-    @if (count('none')) {
-      <button
-        type="button"
-        class="segmented-item"
-        [attr.aria-pressed]="folderFilter() === 'none'"
-        (click)="folderFilter.set('none')"
-      >
-        Sans dossier <span class="tabular-nums font-normal">{{ count('none') }}</span>
-      </button>
-    }
+    <button
+      type="button"
+      class="segmented-item"
+      [attr.aria-pressed]="inactive()"
+      (click)="inactive.set(true)"
+    >
+      Projets inactifs <span class="tabular-nums font-normal">{{ inactiveCount() }}</span>
+    </button>
   </nav>
-}
+  @if (folders().length) {
+    <nav class="segmented" aria-label="Dossiers de projets">
+      <button
+        type="button"
+        class="segmented-item"
+        [attr.aria-pressed]="folderFilter() === 'all'"
+        (click)="folderFilter.set('all')"
+      >
+        Tous <span class="tabular-nums font-normal">{{ count('all') }}</span>
+      </button>
+      @for (f of folders(); track f.id) {
+        <button
+          type="button"
+          class="segmented-item"
+          [attr.aria-pressed]="folderFilter() === f.id"
+          (click)="folderFilter.set(f.id)"
+        >
+          <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span
+          >{{ f.name }} <span class="tabular-nums font-normal">{{ count(f.id) }}</span>
+        </button>
+      }
+      @if (count('none')) {
+        <button
+          type="button"
+          class="segmented-item"
+          [attr.aria-pressed]="folderFilter() === 'none'"
+          (click)="folderFilter.set('none')"
+        >
+          Sans dossier <span class="tabular-nums font-normal">{{ count('none') }}</span>
+        </button>
+      }
+    </nav>
+  }
+</div>
 
 <div class="flex flex-wrap gap-2 mb-4">
   <input
@@ -99,7 +101,7 @@
     (change)="sort.set($any($event.target).value)"
   >
     <option value="name">Nom</option>
-    <option value="due">Échéance</option>
+    <option value="progress">Avancement</option>
   </select>
 </div>
 @if (taskPreview.error()) {
@@ -111,46 +113,71 @@
   <ff-skeleton [count]="3" [height]="120" />
 } @else if (!sections().length) {
   <div class="card">
-    <ff-empty
-      icon="folder"
-      [title]="query() ? 'Aucun projet trouvé' : 'Aucun projet'"
-      hint="Créez un projet pour regrouper des tâches liées, ou importez un fichier de projets."
-      ><button type="button" class="btn btn-primary btn-sm mt-2" (click)="edit(null)">
-        Créer un projet
-      </button></ff-empty
-    >
+    @if (inactive()) {
+      <ff-empty
+        icon="archive"
+        [title]="query() ? 'Aucun projet inactif trouvé' : 'Aucun projet inactif'"
+        hint="Un projet rendu inactif (menu ⋯ de sa carte) apparaît ici, dans son dossier."
+      />
+    } @else {
+      <ff-empty
+        icon="folder"
+        [title]="query() ? 'Aucun projet trouvé' : 'Aucun projet'"
+        hint="Créez un projet pour regrouper des tâches liées, ou importez un fichier de projets."
+        ><button type="button" class="btn btn-primary btn-sm mt-2" (click)="edit(null)">
+          Créer un projet
+        </button></ff-empty
+      >
+    }
   </div>
 } @else {
-  <div class="space-y-6">
+  <div class="space-y-3">
     @for (s of sections(); track s.folder?.id ?? 'none') {
       @let key = s.folder?.id ?? 'none';
       @let showHeader = folders().length > 0;
+      @let open = !showHeader || isOpen(key);
       <section [attr.aria-labelledby]="'pf-' + key">
         @if (showHeader) {
-          <div class="flex flex-wrap items-center gap-2 mb-3">
-            <button
-              type="button"
-              class="flex items-center gap-2 min-w-0 rounded-lg px-1 -mx-1 hover:bg-surface-2"
-              [attr.aria-expanded]="!isCollapsed(key)"
-              [attr.aria-controls]="'pf-grid-' + key"
-              (click)="toggleCollapsed(key)"
-            >
-              <ff-icon [name]="isCollapsed(key) ? 'chevron-right' : 'chevron-down'" [size]="16" />
-              <span
-                class="size-7 rounded-lg grid place-items-center text-white flex-none"
-                [style.background]="s.folder?.color ?? 'var(--muted)'"
-                ><ff-icon [name]="isCollapsed(key) ? 'folder' : 'folder-open'" [size]="15"
-              /></span>
-              <h2 [id]="'pf-' + key" class="font-bold truncate">
-                {{ s.folder?.name ?? 'Sans dossier' }}
-              </h2>
-              <span class="badge badge-todo tabular-nums">{{ s.projects.length }}</span>
-            </button>
+          <div class="card flex flex-wrap items-center gap-2 px-3 py-2" [class.mb-3]="open">
+            @if (canFold()) {
+              <button
+                type="button"
+                class="flex items-center gap-2 min-w-0 flex-1 rounded-lg p-1 hover:bg-surface-2 text-left"
+                [attr.aria-expanded]="open"
+                [attr.aria-controls]="'pf-grid-' + key"
+                (click)="toggleOpen(key)"
+              >
+                <ff-icon [name]="open ? 'chevron-down' : 'chevron-right'" [size]="16" />
+                <span
+                  class="size-7 rounded-lg grid place-items-center text-white flex-none"
+                  [style.background]="s.folder?.color ?? 'var(--muted)'"
+                  ><ff-icon [name]="open ? 'folder-open' : 'folder'" [size]="15"
+                /></span>
+                <h2 [id]="'pf-' + key" class="font-bold truncate">
+                  {{ s.folder?.name ?? 'Sans dossier' }}
+                </h2>
+                <span class="badge badge-todo tabular-nums">{{ s.projects.length }}</span>
+              </button>
+            } @else {
+              <div class="flex items-center gap-2 min-w-0 flex-1 p-1">
+                <span
+                  class="size-7 rounded-lg grid place-items-center text-white flex-none"
+                  [style.background]="s.folder?.color ?? 'var(--muted)'"
+                  ><ff-icon name="folder-open" [size]="15"
+                /></span>
+                <h2 [id]="'pf-' + key" class="font-bold truncate">
+                  {{ s.folder?.name ?? 'Sans dossier' }}
+                </h2>
+                <span class="badge badge-todo tabular-nums">{{ s.projects.length }}</span>
+              </div>
+            }
             @if (s.folder; as f) {
-              <div class="flex gap-1 ml-auto">
-                <button type="button" class="btn btn-ghost btn-sm" (click)="edit(null, f.id)">
-                  <ff-icon name="plus" [size]="14" />Projet
-                </button>
+              <div class="flex gap-1">
+                @if (!inactive()) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="edit(null, f.id)">
+                    <ff-icon name="plus" [size]="14" />Projet
+                  </button>
+                }
                 <button
                   type="button"
                   class="btn btn-ghost btn-icon btn-sm"
@@ -164,20 +191,20 @@
             }
           </div>
         }
-        @if (!showHeader || !isCollapsed(key)) {
-          <div [id]="'pf-grid-' + key" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        @if (open) {
+          <div [id]="'pf-grid-' + key" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-3">
             @for (p of s.projects; track p.id) {
               <article
                 class="card p-5 flex flex-col gap-3"
-                [class.opacity-70]="p.archived"
                 [style.border-top-color]="p.color"
               >
                 <div class="flex items-start gap-3">
                   <span
-                    class="size-10 rounded-xl grid place-items-center text-white flex-none"
+                    class="size-10 rounded-xl grid place-items-center text-white font-bold flex-none"
                     [style.background]="p.color"
-                    ><ff-icon [name]="p.icon || 'folder'"
-                  /></span>
+                    aria-hidden="true"
+                    >{{ (p.name[0] || '?').toUpperCase() }}</span
+                  >
                   <div class="min-w-0 flex-1">
                     <h3 class="font-bold truncate">{{ p.name }}</h3>
                     @if (p.description) {
@@ -185,7 +212,7 @@
                     }
                   </div>
                   @if (p.archived) {
-                    <span class="badge badge-todo">Archivé</span>
+                    <span class="badge badge-todo">Inactif</span>
                   }
                 </div>
                 <div>
@@ -213,15 +240,20 @@
                     <button type="button" (click)="actions.openDetail(t.id)">□ {{ t.title }}</button>
                   }
                 </div>
-                <p class="text-sm text-muted">{{ settings.fmt(p.dueAt) || 'Sans échéance' }}</p>
                 <div class="flex flex-wrap gap-1 mt-auto">
-                  <button
-                    type="button"
-                    class="btn btn-secondary btn-sm"
-                    (click)="actions.create({ projectId: p.id })"
-                  >
-                    <ff-icon name="plus" [size]="14" />Tâche
-                  </button>
+                  @if (p.archived) {
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="toggleArchive(p)">
+                      <ff-icon name="restore" [size]="14" />Réactiver
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      (click)="actions.create({ projectId: p.id })"
+                    >
+                      <ff-icon name="plus" [size]="14" />Tâche
+                    </button>
+                  }
                   <button type="button" class="btn btn-ghost btn-sm" (click)="edit(p)">
                     <ff-icon name="pencil" [size]="14" />Modifier
                   </button>
@@ -229,7 +261,7 @@
                     type="button"
                     class="btn btn-ghost btn-icon btn-sm ml-auto"
                     [attr.aria-label]="'Autres actions pour ' + p.name"
-                    title="Déplacer, exporter, archiver, supprimer"
+                    title="Déplacer, exporter, rendre inactif, supprimer"
                     [cdkMenuTriggerFor]="projectMenu"
                     [cdkMenuTriggerData]="{ $implicit: p }"
                   >
@@ -238,7 +270,7 @@
                 </div>
               </article>
             }
-            @if (s.folder || !folders().length) {
+            @if (!inactive() && (s.folder || !folders().length)) {
               <button
                 type="button"
                 class="card p-6 flex flex-col items-center justify-center gap-3 border-dashed min-h-48"
@@ -246,7 +278,9 @@
               >
                 <ff-icon name="plus" [size]="32" /><strong>Un nouveau projet ?</strong
                 ><span class="text-sm text-muted">{{
-                  s.folder ? 'Il sera rangé dans ' + s.folder.name + '.' : 'Donne une place à ta prochaine idée.'
+                  s.folder
+                    ? 'Il sera rangé dans ' + s.folder.name + '.'
+                    : 'Donne une place à ta prochaine idée.'
                 }}</span>
               </button>
             }
@@ -257,20 +291,47 @@
   </div>
 }
 
-<ng-template #exportMenu>
-  <div cdkMenu class="menu anim-pop" aria-label="Exporter des projets">
+<ng-template #newMenu>
+  <div cdkMenu class="menu anim-pop w-72" aria-label="Créer">
+    <button cdkMenuItem class="menu-item items-start" (cdkMenuItemTriggered)="editFolder(null)">
+      <ff-icon name="folder-plus" [size]="16" class="mt-0.5" />
+      <span class="flex flex-col text-left">
+        <span>Dossier</span>
+        <span class="text-xs text-muted font-normal"
+          >Un groupe de projets, par exemple toutes les applications d’un client.</span
+        >
+      </span>
+    </button>
+    <button cdkMenuItem class="menu-item items-start" (cdkMenuItemTriggered)="edit(null)">
+      <ff-icon name="file-plus" [size]="16" class="mt-0.5" />
+      <span class="flex flex-col text-left">
+        <span>Projet</span>
+        <span class="text-xs text-muted font-normal"
+          >Il regroupe des tâches ; il peut être rangé dans un dossier.</span
+        >
+      </span>
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #transferMenu>
+  <div cdkMenu class="menu anim-pop" aria-label="Importer ou exporter des projets">
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="importInput.click()">
+      <ff-icon name="upload" [size]="16" />Importer un fichier…
+    </button>
+    <div class="menu-sep" role="separator"></div>
     <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportAll(true)">
-      <ff-icon name="download" [size]="16" />Tous les projets, avec leurs tâches
+      <ff-icon name="download" [size]="16" />Exporter tous les projets, avec leurs tâches
     </button>
     <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportAll(false)">
-      <ff-icon name="folder-tree" [size]="16" />Dossiers et projets seulement
+      <ff-icon name="folder-tree" [size]="16" />Exporter les dossiers et projets seulement
     </button>
     @if (folders().length) {
       <div class="menu-sep" role="separator"></div>
       @for (f of folders(); track f.id) {
         <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportFolder(f)">
-          <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span>Dossier
-          {{ f.name }}
+          <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span>Exporter
+          le dossier {{ f.name }}
         </button>
       }
     }
@@ -306,7 +367,9 @@
           [attr.aria-label]="'Déplacer vers ' + f.name"
           (cdkMenuItemTriggered)="move(p, f)"
         >
-          <ff-icon [name]="p.folderId === f.id ? 'check' : 'folder-input'" [size]="16" />{{ f.name }}
+          <ff-icon [name]="p.folderId === f.id ? 'check' : 'folder-input'" [size]="16" />{{
+            f.name
+          }}
         </button>
       }
       @if (folderName(p)) {
@@ -321,7 +384,7 @@
     </button>
     <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="toggleArchive(p)">
       <ff-icon [name]="p.archived ? 'restore' : 'archive'" [size]="16" />{{
-        p.archived ? 'Restaurer' : 'Archiver'
+        p.archived ? 'Réactiver' : 'Rendre inactif'
       }}
     </button>
     <div class="menu-sep" role="separator"></div>

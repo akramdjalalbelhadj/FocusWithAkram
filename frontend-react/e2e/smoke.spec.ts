@@ -288,6 +288,10 @@ test("création par formulaire, sous-tâche et thème persistés", async ({
 
 test("aperçu des tâches du projet et ouverture du détail", async ({ page }) => {
   await page.goto("/projects");
+  // Angular (lot 24) : avec des dossiers, les sections sont fermees par defaut ; on les ouvre toutes.
+  await page.locator('.project-preview button, button[aria-controls^="pf-grid-"][aria-expanded="false"]').first().waitFor();
+  const closed = page.locator('button[aria-controls^="pf-grid-"][aria-expanded="false"]');
+  while (await closed.count()) await closed.first().click();
   const preview = page.locator(".project-preview button").first();
   await expect(preview).toBeVisible();
   await preview.click();
