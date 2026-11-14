@@ -14,6 +14,19 @@ import org.springframework.data.repository.query.Param;
 
 public interface PomodoroSessionRepository extends JpaRepository<PomodoroSession, UUID> {
 
+    /** Sessions d'une tache (identifiants), pour les rattacher a nouveau quand la tache est remplacee a l'import. */
+    @Query("select s.id from PomodoroSession s where s.task.id = :taskId")
+    List<UUID> findIdsByTaskId(@Param("taskId") UUID taskId);
+
+    @Query("select count(s) > 0 from PomodoroSession s where s.task.id = :taskId "
+            + "and s.status in (com.focusflow.pomodoro.SessionStatus.RUNNING, com.focusflow.pomodoro.SessionStatus.PAUSED)")
+    boolean hasActiveSession(@Param("taskId") UUID taskId);
+
+    /** Rattache des sessions a une tache (apres remplacement de celle-ci a l'import). */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query(nativeQuery = true, value = "update pomodoro_session set task_id = :taskId where id in (:ids)")
+    int relinkToTask(@Param("ids") Collection<UUID> ids, @Param("taskId") UUID taskId);
+
     /** Parmi ces identifiants, ceux deja en base (import par lots, voir ExistingIds). */
     @Query("select s.id from PomodoroSession s where s.id in :ids")
     List<UUID> findExistingIds(@Param("ids") Collection<UUID> ids);

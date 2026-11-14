@@ -29,6 +29,7 @@ import com.focusflow.transfer.dto.BackupFile;
 import com.focusflow.transfer.dto.DailyGoalData;
 import com.focusflow.transfer.dto.ExecutionData;
 import com.focusflow.transfer.dto.FolderData;
+import com.focusflow.transfer.dto.ImportConflict;
 import com.focusflow.transfer.dto.ImportReport;
 import com.focusflow.transfer.dto.ProjectData;
 import com.focusflow.transfer.dto.SessionData;
@@ -225,6 +226,16 @@ public class TransferService {
      */
     @Transactional
     public ImportReport importBackup(BackupFile file, boolean dryRun) {
+        return importBackup(file, dryRun, ConflictMode.MERGE);
+    }
+
+    /**
+     * Import avec traitement des conflits (lot 25) : un dossier du fichier est en conflit si ce dossier, ou l'un de
+     * ses projets, existe deja (meme nom). Les conflits sont toujours detectes et rapportes ({@code conflicts}) ;
+     * {@code mode} decide de ce qu'il advient de ces dossiers (voir {@link ConflictMode}).
+     */
+    @Transactional
+    public ImportReport importBackup(BackupFile file, boolean dryRun, ConflictMode mode) {
         if (file == null || file.version() < BackupFile.OLDEST_SUPPORTED_VERSION) {
             throw ApiException.rule("IMPORT_UNSUPPORTED_VERSION", "Version de sauvegarde non prise en charge.");
         }
@@ -234,6 +245,8 @@ public class TransferService {
                             + ") : mettez l'application a jour avant de l'importer.");
         }
         ImportRun run = new ImportRun();
+        run.mode = mode == null ? ConflictMode.MERGE : mode;
+        List<ImportConflict> conflicts = detectConflicts(file, run);
         importFolders(file, run);
         importProjects(file, run);
         NotesImportSummary notesSummary = null;
@@ -252,7 +265,61 @@ public class TransferService {
         }
         return new ImportReport(dryRun, run.projectsCreated, run.projectsReused, run.tasksCreated, run.tasksSkipped,
                 run.sessionsCreated, run.sessionsSkipped, run.errors, run.settingsRestored, run.goalsCreated,
-                run.goalsSkipped, financeSummary, notesSummary, run.foldersCreated, run.foldersReused);
+                run.goalsSkipped, financeSummary, notesSummary, run.foldersCreated, run.foldersReused,
+                conflicts, run.mode.name(), run.projectsReplaced, run.projectsIgnored, run.tasksReplaced,
+                run.tasksIgnored);
+    }
+
+    /** Cle du groupe « projets sans dossier » du fichier. */
+    private static final UUID LOOSE = new UUID(0, 0);
+
+    /** Groupe d'un projet du fichier : son dossier s'il figure dans le fichier, sinon les projets sans dossier. */
+    private static UUID groupOf(ProjectData pd, Set<UUID> fileFolderIds) {
+        return pd.folderId() != null && fileFolderIds.contains(pd.folderId()) ? pd.folderId() : LOOSE;
+    }
+
+    /**
+     * Repere les dossiers du fichier deja presents, ou contenant des projets deja presents (noms compares sans
+     * tenir compte de la casse), et note dans {@code run} les groupes et projets concernes.
+     */
+    private List<ImportConflict> detectConflicts(BackupFile file, ImportRun run) {
+        Map<String, ProjectFolder> folderByName = new HashMap<>();
+        folders.findAll().forEach(f -> folderByName.putIfAbsent(f.getName().toLowerCase(), f));
+        Map<String, Project> projectByName = new HashMap<>();
+        projects.findAll().forEach(p -> projectByName.putIfAbsent(p.getName().toLowerCase(), p));
+
+        Map<UUID, String> groupNames = new LinkedHashMap<>();
+        for (FolderData fd : nullToEmpty(file.folders())) {
+            if (fd.id() != null && fd.name() != null && !fd.name().isBlank()) groupNames.put(fd.id(), fd.name().strip());
+        }
+        groupNames.put(LOOSE, null);
+        Map<UUID, Integer> counts = new HashMap<>();
+        Map<UUID, List<ImportConflict.ExistingProject>> existing = new HashMap<>();
+        for (ProjectData pd : nullToEmpty(file.projects())) {
+            UUID group = groupOf(pd, groupNames.keySet());
+            counts.merge(group, 1, Integer::sum);
+            if (pd.id() != null) run.groupByProjectFileId.put(pd.id(), group);
+            Project match = pd.name() == null ? null : projectByName.get(pd.name().strip().toLowerCase());
+            if (match != null) {
+                existing.computeIfAbsent(group, g -> new ArrayList<>()).add(new ImportConflict.ExistingProject(
+                        match.getName(), match.getFolder() == null ? null : match.getFolder().getName(),
+                        match.isArchived()));
+            }
+        }
+        List<ImportConflict> conflicts = new ArrayList<>();
+        groupNames.forEach((group, name) -> {
+            boolean folderExists = name != null && folderByName.containsKey(name.toLowerCase());
+            List<ImportConflict.ExistingProject> found = existing.getOrDefault(group, List.of());
+            if (folderExists || !found.isEmpty()) {
+                run.conflictGroups.add(group);
+                conflicts.add(new ImportConflict(name, folderExists, counts.getOrDefault(group, 0), found));
+            }
+        });
+        return conflicts;
+    }
+
+    private boolean inConflict(UUID group, ImportRun run, ConflictMode mode) {
+        return run.mode == mode && run.conflictGroups.contains(group);
     }
 
     /** Etat d'un import : correspondances d'identifiants et compteurs du rapport. */
@@ -266,7 +333,13 @@ public class TransferService {
         final Map<UUID, UUID> noteIdsByFileId = new HashMap<>();
         int projectsCreated, projectsReused, tasksCreated, tasksSkipped, sessionsCreated, sessionsSkipped;
         int goalsCreated, goalsSkipped, foldersCreated, foldersReused;
+        int projectsReplaced, projectsIgnored, tasksReplaced, tasksIgnored;
         boolean settingsRestored;
+        ConflictMode mode = ConflictMode.MERGE;
+        /** Groupes du fichier (dossier, ou LOOSE) en conflit avec l'existant. */
+        final Set<UUID> conflictGroups = new HashSet<>();
+        /** Groupe de chaque projet du fichier. */
+        final Map<UUID, UUID> groupByProjectFileId = new HashMap<>();
 
         void error(String message) {
             if (errors.size() < MAX_ERRORS) {
@@ -282,8 +355,15 @@ public class TransferService {
         for (FolderData fd : nullToEmpty(file.folders())) {
             try {
                 String name = ProjectFolderService.cleanName(fd.name());
+                if (fd.id() != null && inConflict(fd.id(), run, ConflictMode.SKIP)) {
+                    continue;
+                }
                 ProjectFolder folder = byName.get(name.toLowerCase());
                 if (folder != null) {
+                    if (fd.id() != null && inConflict(fd.id(), run, ConflictMode.REPLACE)
+                            && ProjectFolderService.validColor(fd.color())) {
+                        folder.setColor(fd.color());
+                    }
                     run.foldersReused++;
                 } else {
                     folder = new ProjectFolder(name, fd.createdAt() != null ? fd.createdAt() : Instant.now(clock));
@@ -311,8 +391,24 @@ public class TransferService {
                 if (pd.icon() != null && pd.icon().length() > 40) {
                     throw new IllegalArgumentException("icone de plus de 40 caracteres.");
                 }
+                UUID group = pd.id() != null ? run.groupByProjectFileId.get(pd.id())
+                        : groupOf(pd, run.foldersByFileId.keySet());
+                if (inConflict(group, run, ConflictMode.SKIP)) {
+                    run.projectsIgnored++;
+                    continue;
+                }
                 ProjectFolder folder = pd.folderId() == null ? null : run.foldersByFileId.get(pd.folderId());
                 Project existing = byName.get(name.toLowerCase());
+                if (existing != null && inConflict(group, run, ConflictMode.REPLACE)) {
+                    // Le fichier ecrase le projet existant : description, couleur, etat et dossier.
+                    existing.setDescription(pd.description());
+                    if (pd.color() != null && pd.color().matches("^#[0-9a-fA-F]{6}$")) existing.setColor(pd.color());
+                    existing.setArchived(pd.archived());
+                    existing.setFolder(folder);
+                    if (pd.id() != null) run.projectsByFileId.put(pd.id(), existing);
+                    run.projectsReplaced++;
+                    continue;
+                }
                 if (existing != null) {
                     // Un projet deja range garde son dossier ; un projet sans dossier rejoint celui du fichier.
                     if (existing.getFolder() == null && folder != null) existing.setFolder(folder);
@@ -347,13 +443,40 @@ public class TransferService {
                 if (td.id() != null && !seen.add(td.id())) {
                     throw new IllegalArgumentException("identifiant en double dans le fichier : " + td.id());
                 }
-                if (td.id() != null && existing.contains(td.id())) {
-                    run.tasksByFileId.put(td.id(), tasks.getReferenceById(td.id()));
-                    run.tasksSkipped++;
+                // Groupes (dossiers du fichier) des projets de la tache.
+                List<UUID> refs = td.projectIds() != null && !td.projectIds().isEmpty() ? td.projectIds()
+                        : td.projectId() == null ? List.of() : List.of(td.projectId());
+                Set<UUID> groups = refs.stream().map(run.groupByProjectFileId::get).filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                if (run.mode == ConflictMode.SKIP && !groups.isEmpty() && run.conflictGroups.containsAll(groups)) {
+                    // Tache qui ne concerne que des dossiers ignores.
+                    run.tasksIgnored++;
                     continue;
                 }
-                if (td.title() != null && td.createdAt() != null
-                        && tasks.existsByTitleIgnoreCaseAndCreatedAt(td.title().strip(), td.createdAt())) {
+                boolean replace = run.mode == ConflictMode.REPLACE
+                        && groups.stream().anyMatch(run.conflictGroups::contains);
+                Task target = null;
+                if (td.id() != null && existing.contains(td.id())) {
+                    if (!replace) {
+                        run.tasksByFileId.put(td.id(), tasks.getReferenceById(td.id()));
+                        run.tasksSkipped++;
+                        continue;
+                    }
+                    target = tasks.findById(td.id()).orElse(null);
+                } else if (td.title() != null && td.createdAt() != null) {
+                    if (!replace) {
+                        if (tasks.existsByTitleIgnoreCaseAndCreatedAt(td.title().strip(), td.createdAt())) {
+                            run.tasksSkipped++;
+                            continue;
+                        }
+                    } else {
+                        target = tasks.findFirstByTitleIgnoreCaseAndCreatedAt(td.title().strip(), td.createdAt())
+                                .orElse(null);
+                    }
+                }
+                if (target != null && sessions.hasActiveSession(target.getId())) {
+                    run.error("Tache '" + td.title() + "' : une session Pomodoro est en cours, elle n'a pas ete remplacee.");
+                    if (td.id() != null) run.tasksByFileId.put(td.id(), target);
                     run.tasksSkipped++;
                     continue;
                 }
@@ -383,6 +506,17 @@ public class TransferService {
                             ed.actualStartAt(), ed.actualEndAt(), ed.archivedAt());
                 }
                 // Toutes les validations sont faites : les ecritures ne peuvent plus echouer sur une contrainte.
+                List<UUID> keptSessions = List.of();
+                List<DailyGoal> keptGoals = List.of();
+                if (target != null) {
+                    // Remplacement : l'ancienne tache disparait, ses sessions et son Top 3 sont rattaches a la nouvelle.
+                    keptSessions = sessions.findIdsByTaskId(target.getId());
+                    keptGoals = dailyGoals.findByTaskId(target.getId());
+                    dailyGoals.deleteAll(keptGoals);
+                    dailyGoals.flush();
+                    tasks.delete(target);
+                    tasks.flush();
+                }
                 for (String name : nullToEmpty(td.tags())) {
                     if (name != null && !name.isBlank() && name.strip().length() <= 40) {
                         String n = name.strip();
@@ -395,7 +529,16 @@ public class TransferService {
                             ed.plannedEndAt(), ed.actualStartAt(), ed.actualEndAt(), ed.archivedAt()));
                 }
                 if (td.id() != null) run.tasksByFileId.put(td.id(), saved);
-                run.tasksCreated++;
+                if (target != null) {
+                    tasks.flush();
+                    if (!keptSessions.isEmpty()) sessions.relinkToTask(keptSessions, saved.getId());
+                    for (DailyGoal g : keptGoals) {
+                        dailyGoals.save(new DailyGoal(g.getGoalDate(), saved, g.getPosition(), g.getCreatedAt()));
+                    }
+                    run.tasksReplaced++;
+                } else {
+                    run.tasksCreated++;
+                }
             } catch (RuntimeException e) {
                 run.error("Tache '" + td.title() + "' : " + e.getMessage());
             }

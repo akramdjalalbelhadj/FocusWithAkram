@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { ImportReport, Project, ProjectFolder } from '../../../core/api/models';
-import { exportFileName, groupByFolder, importSummary, projectsOnly } from './project-folders';
+import {
+  conflictDetail,
+  conflictTitle,
+  exportFileName,
+  groupByFolder,
+  importLines,
+  importSummary,
+  projectsOnly,
+} from './project-folders';
 
 const folder = (id: string, name: string): ProjectFolder => ({
   id,
@@ -83,11 +91,54 @@ describe('dossiers de projets', () => {
       foldersCreated: 1,
       foldersReused: 0,
     };
-    const text = importSummary(report);
-    expect(text).toContain('Dossiers : 1 à créer');
-    expect(text).toContain('Projets : 20 à créer, 1 déjà présent');
-    expect(text).toContain('Tâches : 140 à créer');
-    expect(text).toContain('3 sessions');
+    expect(importLines(report)).toEqual([
+      'Dossiers : 1 dossier sera créé.',
+      'Projets : 20 projets seront créés, 1 déjà présent(s), conservé(s).',
+      'Tâches : 140 tâches seront créées.',
+      'Sessions Pomodoro : 3 sessions seront créées.',
+    ]);
+    const done = importLines({
+      ...report,
+      dryRun: false,
+      projectsCreated: 0,
+      projectsReused: 0,
+      projectsReplaced: 2,
+      tasksCreated: 1,
+      tasksReplaced: 4,
+      projectsIgnored: 0,
+      sessionsCreated: 0,
+    });
+    expect(done[1]).toBe('Projets : 0 projet créé, 2 remplacé(s) par le fichier.');
+    expect(done[2]).toBe('Tâches : 1 tâche créée, 4 remplacée(s) par le fichier.');
+    expect(importSummary({ ...report, errors: ['Tâche x : invalide'] })).toContain(
+      '1 élément signalé : Tâche x : invalide',
+    );
+  });
+
+  it('explique un conflit en langage simple', () => {
+    const c = {
+      folder: 'DMP',
+      folderExists: true,
+      projectCount: 20,
+      existingProjects: [
+        { name: 'Appli A', currentFolder: 'DMP', inactive: false },
+        { name: 'Appli B', currentFolder: null, inactive: true },
+      ],
+    };
+    expect(conflictTitle(c)).toBe('Dossier « DMP »');
+    expect(conflictDetail(c)).toBe(
+      'Un dossier de ce nom existe déjà dans l’application ; 2 de ses 20 projets existent déjà : ' +
+        'Appli A (dans « DMP »), Appli B (sans dossier, inactif).',
+    );
+    expect(conflictTitle({ ...c, folder: null })).toBe('Projets sans dossier');
+    const many = Array.from({ length: 8 }, (_, i) => ({ name: `P${i}`, currentFolder: 'DMP', inactive: false }));
+    expect(conflictDetail({ ...c, folderExists: false, existingProjects: many })).toBe(
+      '8 de ses 20 projets existent déjà : P0 (dans « DMP »), P1 (dans « DMP »), P2 (dans « DMP »), ' +
+        'P3 (dans « DMP »), P4 (dans « DMP ») et 3 autres.',
+    );
+    expect(conflictDetail({ ...c, folderExists: false, existingProjects: [c.existingProjects[0]] })).toBe(
+      '1 de ses 20 projets existe déjà : Appli A (dans « DMP »).',
+    );
   });
 
   it('nomme le fichier d’export sans accents ni espaces', () => {

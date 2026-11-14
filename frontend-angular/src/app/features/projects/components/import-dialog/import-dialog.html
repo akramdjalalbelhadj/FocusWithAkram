@@ -1,0 +1,131 @@
+<div
+  class="card w-[min(36rem,calc(100vw-1.5rem))] max-h-[calc(100vh-2rem)] flex flex-col p-6 anim-pop shadow-modal"
+  role="dialog"
+  aria-labelledby="im-title"
+>
+  <h2 id="im-title" class="text-lg font-bold">Importer « {{ data.fileName }} »</h2>
+  <p class="text-sm text-muted mb-4">
+    Le fichier a été vérifié sans rien modifier. Rien ne sera importé avant votre confirmation.
+  </p>
+
+  <div class="overflow-y-auto min-h-0 space-y-4">
+    @if (preview(); as r) {
+      @if (r.conflicts?.length) {
+        <section
+          class="rounded-xl border p-4 bg-warning-soft"
+          style="border-color: var(--warning)"
+          aria-labelledby="im-conflicts"
+        >
+          <h3 id="im-conflicts" class="font-bold flex items-center gap-2">
+            <ff-icon name="alert" [size]="18" />
+            {{ r.conflicts!.length }} dossier(s) du fichier existent déjà
+          </h3>
+          <p class="text-sm mt-1">
+            Ces dossiers, ou certains de leurs projets, portent le même nom que des éléments déjà
+            présents dans l’application. Choisissez ce qu’il faut en faire ; tout le reste du
+            fichier sera importé normalement.
+          </p>
+          <ul class="mt-3 space-y-2 text-sm">
+            @for (c of r.conflicts; track $index) {
+              <li class="rounded-lg bg-surface p-2.5">
+                <strong>{{ title(c) }}</strong>
+                <span class="text-muted"> — {{ c.projectCount }} projet(s) dans le fichier</span>
+                <p class="mt-0.5">{{ detail(c) }}</p>
+              </li>
+            }
+          </ul>
+
+          <fieldset class="mt-4 space-y-2">
+            <legend class="font-semibold text-sm mb-1">Pour ces dossiers :</legend>
+            <label
+              class="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 cursor-pointer"
+              [style.border-color]="mode() === 'SKIP' ? 'var(--brand)' : null"
+            >
+              <input
+                type="radio"
+                name="im-mode"
+                class="accent-[var(--brand)] mt-1"
+                [checked]="mode() === 'SKIP'"
+                [disabled]="loading() || importing()"
+                (change)="choose('SKIP')"
+              />
+              <span>
+                <strong>Ignorer ces dossiers</strong>
+                <span class="block text-sm text-muted">
+                  Ils restent exactement comme ils sont dans l’application. Leurs projets et leurs
+                  tâches du fichier ne sont pas importés.
+                </span>
+              </span>
+            </label>
+            <label
+              class="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 cursor-pointer"
+              [style.border-color]="mode() === 'REPLACE' ? 'var(--brand)' : null"
+            >
+              <input
+                type="radio"
+                name="im-mode"
+                class="accent-[var(--brand)] mt-1"
+                [checked]="mode() === 'REPLACE'"
+                [disabled]="loading() || importing()"
+                (change)="choose('REPLACE')"
+              />
+              <span>
+                <strong>Remplacer par le fichier</strong>
+                <span class="block text-sm text-muted">
+                  Le fichier écrase l’existant : couleur du dossier ; description, couleur, état et
+                  dossier des projets ; les tâches déjà présentes sont remplacées par celles du
+                  fichier (leurs sessions Pomodoro et le Top 3 sont gardés). Rien n’est supprimé :
+                  ce qui n’est pas dans le fichier reste en place.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+        </section>
+      } @else {
+        <p class="flex items-center gap-2 text-sm rounded-xl bg-success-soft p-3">
+          <ff-icon name="circle-check" [size]="18" />Aucun conflit : aucun dossier ni projet du
+          fichier n’existe déjà.
+        </p>
+      }
+
+      <section aria-labelledby="im-what" role="status" [attr.aria-busy]="loading() || null">
+        <h3 id="im-what" class="font-bold text-sm mb-1">Ce qui va se passer</h3>
+        <ul class="text-sm list-disc pl-5 space-y-0.5" [class.opacity-50]="loading()">
+          @for (l of lines(r); track $index) {
+            <li>{{ l }}</li>
+          }
+        </ul>
+        @if (r.errors.length) {
+          <details class="mt-2 text-sm">
+            <summary class="cursor-pointer text-danger">
+              {{ r.errors.length }} élément(s) du fichier ne pourront pas être importés
+            </summary>
+            <ul class="list-disc pl-5 mt-1 text-muted">
+              @for (e of r.errors; track $index) {
+                <li>{{ e }}</li>
+              }
+            </ul>
+          </details>
+        }
+      </section>
+    } @else if (loading()) {
+      <p class="text-sm text-muted" role="status">Vérification du fichier…</p>
+    }
+    @if (error()) {
+      <p class="field-error" role="alert">{{ error() }}</p>
+    }
+  </div>
+
+  <div class="flex justify-end gap-2 mt-5">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      cdkFocusInitial
+      [disabled]="!preview() || loading() || importing()"
+      (click)="confirm()"
+    >
+      <ff-icon name="upload" [size]="16" />{{ importing() ? 'Import…' : 'Importer' }}
+    </button>
+  </div>
+</div>

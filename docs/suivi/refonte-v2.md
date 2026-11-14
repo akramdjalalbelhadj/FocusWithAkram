@@ -60,6 +60,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 20 | Liste d'émojis dans la barre d'outils de l'éditeur (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 21 | Schémas ASCII dans les notes : arborescence ↔ commandes, tableau, bannière (Angular seulement) | Livré le 12 novembre 2026, à valider par le propriétaire |
 | 23 | Dossiers de projets ; export et import de projets ; sauvegarde v6 (API et Angular) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-23-dossiers-projets`) |
+| 25 | Export par une fenêtre à trois choix ; import avec détection des conflits (Ignorer / Remplacer) et aperçu en langage simple (API et Angular) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-25-import-conflits`) |
 | 24 | Page Projets simplifiée : ni icône ni échéance, dossiers fermés par défaut, vue « Projets inactifs », boutons « Nouveau » et « Importer / Exporter » (Angular seulement) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-24-projets-simplifies`) |
 
 ## 3. Constats de l'audit du 1 novembre 2026
@@ -419,6 +420,18 @@ Vérifications (14 novembre 2026) : suite backend complète (193 tests sans éch
 
 Vérifications (14 novembre 2026) : 241 tests unitaires Angular, ESLint et build de production ; E2E `projects.spec.ts` (menu Nouveau, dossier fermé à la création, fenêtre sans icône ni échéance, projet inactif retrouvé dans son dossier puis réactivé, import par le menu, audits axe) et `smoke.spec.ts` sans échec sur backend et base jetables (le test « aperçu des tâches du projet » ouvre d'abord les dossiers fermés). Défaut trouvé en recette et corrigé : badge « Inactif » peu contrasté sur une carte atténuée (atténuation retirée). Hors périmètre : React et Krimou.
 
+### Lot 25 — Export en trois choix, conflits à l'import
+
+**Livré le 14 novembre 2026**, à valider par le propriétaire. Demande : la liste de tous les dossiers dans le menu d'export est trop longue ; un seul choix « Exporter » à trois options (tout avec les tâches, dossiers et projets seulement, un ensemble de dossiers) ; à l'import, avertir quand des dossiers et projets existent déjà, et laisser choisir entre écraser l'existant ou ignorer ces dossiers en important le reste, avec un message clair.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Export | Menu **Importer / Exporter** réduit à deux entrées ; fenêtre `ff-export-dialog` : trois options, cases des dossiers (et « Projets sans dossier ») avec leur nombre de projets, Tout cocher, tâches incluses ou non, résumé du contenu, bouton désactivé sans sélection | E2E `projects.spec.ts` (contenu du fichier lu) |
+| Conflits | `ImportConflict` dans le rapport ; `conflicts=SKIP|REPLACE` (voir l'architecture backend). Mode par défaut `MERGE` inchangé pour la sauvegarde complète des Paramètres | `ImportConflictIT` (détection, Ignorer avec tâche partagée, Remplacer avec sessions et Top 3 conservés, sans conflit) |
+| Fenêtre d'import | `ff-import-dialog` : aperçu sans écriture, « Aucun conflit » ou avertissement listant chaque dossier et l'emplacement actuel des projets concernés, choix **Ignorer ces dossiers** (par défaut) / **Remplacer par le fichier** avec aperçu recalculé, « Ce qui va se passer » ligne par ligne, éléments invalides dépliables | `project-folders.spec.ts` (`importLines`, `conflictDetail`) ; E2E (sans conflit, conflit ignoré puis remplacé, audits axe) |
+
+Vérifications (14 novembre 2026) : suite backend complète (196 tests sans échec), 242 tests unitaires Angular, ESLint et build de production ; E2E `projects.spec.ts` et `smoke.spec.ts` sans échec sur backend et base jetables ; React compile sans changement (champs ajoutés en facultatifs). Hors périmètre : React et Krimou (voir § 4).
+
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 
 Backlog **gelé** jusqu'à la version stable d'Angular (décision du 5 novembre 2026). Toute évolution des contrats `shared/` doit rester compatible : React doit continuer à compiler sans modification.
@@ -437,5 +450,6 @@ Backlog **gelé** jusqu'à la version stable d'Angular (décision du 5 novembre 
 | Lot 14 | Avec le module Notes & idées : tutoriel « de l'idée à l'action » (schéma en trois étapes, Suivant / Précédent / Passer, relance « Comment ça marche ? »), état dans `Settings.notesTutorialDone` (`GET` / `PATCH /settings`). Champ ajouté en facultatif dans `shared/models.ts` : React compile sans changement et l'ignore d'ici là |
 | Lot 15 | Tutoriel de la matrice (grille 2 × 2 aux couleurs des quadrants, étape « Planifier », relance « Comment ça marche ? »), état dans `Settings.matrixTutorialDone` (`GET` / `PATCH /settings`), indépendant de `notesTutorialDone`. Champ ajouté en facultatif : React compile sans changement et l'ignore d'ici là |
 | Lot 23 | Dossiers de projets (`ProjectFolder`, `/api/v1/project-folders`, `Project.folderId`), export de projets (`/export/projects`) et import par `/import` limité aux sections des projets ; `ImportReport.foldersCreated` / `foldersReused`. Champs ajoutés en facultatifs : React compile sans changement |
+| Lot 25 | Paramètre `conflicts` de `POST /import` et `ImportReport.conflicts` / `conflictMode` / `projectsReplaced` / `projectsIgnored` / `tasksReplaced` / `tasksIgnored` : à proposer si l'import de projets est porté. Sans paramètre, comportement inchangé |
 | Lot 23 (Krimou) | Importer et exporter le format v6 (`folders`, `folderId`, `projectIds`) dans `engine.focus` ; jusque-là, une sauvegarde v6 est refusée par Krimou |
 | Lot 0 | La suite E2E (`frontend-react/e2e`, `playwright.config.ts`) écrit dans `docs/test-results/` et `docs/screenshots/`, désormais ignorés par Git ; envisager de la déplacer hors du dossier React puisqu'elle teste aussi Angular |

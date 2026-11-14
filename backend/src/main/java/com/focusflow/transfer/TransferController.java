@@ -55,8 +55,9 @@ public class TransferController {
 
     @PostMapping("/import")
     public ImportReport importBackup(@RequestBody BackupFile file,
-                                                     @RequestParam(defaultValue = "false") boolean dryRun) {
-        return service.importBackup(file, dryRun);
+                                     @RequestParam(defaultValue = "false") boolean dryRun,
+                                     @RequestParam(defaultValue = "MERGE") ConflictMode conflicts) {
+        return service.importBackup(file, dryRun, conflicts);
     }
 
     private static ResponseEntity<byte[]> download(byte[] body, String filename, MediaType type) {

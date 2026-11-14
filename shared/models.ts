@@ -398,6 +398,27 @@ export interface ImportReport {
   /** Sauvegarde v6 : dossiers de projets crees ou rapproches par nom. */
   foldersCreated?: number;
   foldersReused?: number;
+  /** Lot 25 : dossiers du fichier deja presents (dossier ou projets de meme nom) et leur traitement. */
+  conflicts?: ImportConflict[];
+  conflictMode?: ConflictMode;
+  projectsReplaced?: number;
+  projectsIgnored?: number;
+  tasksReplaced?: number;
+  tasksIgnored?: number;
+}
+
+/**
+ * Lot 25 : traitement des dossiers en conflit a l'import. MERGE (defaut, sauvegarde complete) rapproche par nom ;
+ * SKIP ignore ces dossiers et importe le reste ; REPLACE laisse le fichier ecraser l'existant pour ces dossiers.
+ */
+export type ConflictMode = "MERGE" | "SKIP" | "REPLACE";
+
+/** Dossier du fichier (ou ses projets sans dossier : `folder` absent) deja present dans l'application. */
+export interface ImportConflict {
+  folder?: string | null;
+  folderExists: boolean;
+  projectCount: number;
+  existingProjects: { name: string; currentFolder?: string | null; inactive: boolean }[];
 }
 
 /** Erreur API normalisee (ProblemDetail RFC 9457). */

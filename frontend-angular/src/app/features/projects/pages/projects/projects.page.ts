@@ -3,7 +3,7 @@ import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { TransferApi } from '../../../../core/api/misc.api';
-import { Project, ProjectFolder } from '../../../../core/api/models';
+import { ImportReport, Project, ProjectFolder } from '../../../../core/api/models';
 import { ProjectFoldersApi, ProjectsApi, TasksApi } from '../../../../core/api/tasks.api';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
@@ -18,7 +18,12 @@ import {
   SkeletonComponent,
 } from '../../../../shared/ui/states/index';
 import { TaskActions } from '../../../tasks/services/task-actions.service';
+import {
+  ExportChoice,
+  ExportDialogComponent,
+} from '../../components/export-dialog/export-dialog.component';
 import { FolderDialogComponent } from '../../components/folder-dialog/folder-dialog.component';
+import { ImportDialogComponent } from '../../components/import-dialog/import-dialog.component';
 import {
   ProjectDialogComponent,
   ProjectDialogData,
@@ -78,7 +83,6 @@ export class ProjectsPage {
   protected readonly inactive = signal(false);
   protected readonly folderFilter = signal<FolderFilter>('all');
   protected readonly opened = signal(readOpened());
-  protected readonly busy = signal(false);
   protected readonly loader = new Loader(() => this.api.list());
   protected readonly folderLoader = new Loader(() => this.foldersApi.list());
   private readonly tasksApi = inject(TasksApi);
@@ -265,8 +269,20 @@ export class ProjectsPage {
 
   // ---- Export / import ---------------------------------------------------------------------
 
-  protected async exportAll(withTasks: boolean): Promise<void> {
-    await this.download({}, withTasks, 'tous');
+  /** Fenetre d'export : tout, dossiers et projets seulement, ou une selection de dossiers. */
+  protected async openExport(): Promise<void> {
+    const choice = await firstValueFrom(
+      this.dialog.open<ExportChoice>(ExportDialogComponent, {
+        data: { folders: this.folders(), projects: this.loader.data() ?? [] },
+        backdropClass: 'ff-backdrop',
+      }).closed,
+    );
+    if (!choice) return;
+    await this.download(
+      { ids: choice.ids, folderIds: choice.folderIds },
+      choice.withTasks,
+      choice.label,
+    );
   }
 
   protected async exportFolder(folder: ProjectFolder): Promise<void> {
@@ -292,35 +308,27 @@ export class ProjectsPage {
     }
   }
 
-  /** Verifie le fichier (import a blanc), montre ce qui sera cree, puis importe apres confirmation. */
+  /** Ouvre la fenetre d'import : apercu, conflits eventuels et leur traitement, puis import. */
   protected async importFile(input: HTMLInputElement): Promise<void> {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
-    this.busy.set(true);
+    let body: Record<string, unknown>;
     try {
-      let body: Record<string, unknown>;
-      try {
-        body = projectsOnly(JSON.parse(await file.text()));
-      } catch (e) {
-        this.toast.error(e instanceof SyntaxError ? 'Fichier JSON invalide.' : (e as Error).message);
-        return;
-      }
-      const preview = await firstValueFrom(this.transfer.importBackup(body, true));
-      const ok = await this.confirm({
-        title: `Importer « ${file.name} » ?`,
-        message: importSummary(preview),
-        confirmLabel: 'Importer',
-      });
-      if (!ok) return;
-      const report = await firstValueFrom(this.transfer.importBackup(body, false));
-      this.toast.success(`Import terminé. ${importSummary(report)}`);
-      this.refresh.bump();
+      body = projectsOnly(JSON.parse(await file.text()));
     } catch (e) {
-      this.toast.errorFrom(e, 'L’import a échoué.');
-    } finally {
-      this.busy.set(false);
+      this.toast.error(e instanceof SyntaxError ? 'Fichier JSON invalide.' : (e as Error).message);
+      return;
     }
+    const report = await firstValueFrom(
+      this.dialog.open<ImportReport>(ImportDialogComponent, {
+        data: { fileName: file.name, body },
+        backdropClass: 'ff-backdrop',
+      }).closed,
+    );
+    if (!report) return;
+    this.toast.success(`Import terminé. ${importSummary(report)}`);
+    this.refresh.bump();
   }
 
   private async confirm(data: {

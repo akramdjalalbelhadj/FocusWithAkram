@@ -37,6 +37,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
 
     boolean existsByTitleIgnoreCaseAndCreatedAt(String title, Instant createdAt);
 
+    /** Import en mode remplacement : la tache deja presente qui ressemble a celle du fichier. */
+    java.util.Optional<Task> findFirstByTitleIgnoreCaseAndCreatedAt(String title, Instant createdAt);
+
     long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant from, Instant to);
 
     @Query("select t from Task t where t.createdAt >= :from and t.createdAt < :to")

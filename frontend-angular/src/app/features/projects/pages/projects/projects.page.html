@@ -19,12 +19,12 @@
       type="button"
       class="btn btn-secondary"
       title="Importer ou exporter des projets (.json)"
-      [disabled]="busy()"
-      [attr.aria-busy]="busy() || null"
       [cdkMenuTriggerFor]="transferMenu"
     >
-      <ff-icon name="transfer" [size]="16" />{{ busy() ? 'Import…' : 'Importer / Exporter'
-      }}<ff-icon name="chevron-down" [size]="14" />
+      <ff-icon name="transfer" [size]="16" />Importer / Exporter<ff-icon
+        name="chevron-down"
+        [size]="14"
+      />
     </button>
     <button type="button" class="btn btn-primary" [cdkMenuTriggerFor]="newMenu">
       <ff-icon name="plus" />Nouveau<ff-icon name="chevron-down" [size]="14" />
@@ -319,22 +319,9 @@
     <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="importInput.click()">
       <ff-icon name="upload" [size]="16" />Importer un fichier…
     </button>
-    <div class="menu-sep" role="separator"></div>
-    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportAll(true)">
-      <ff-icon name="download" [size]="16" />Exporter tous les projets, avec leurs tâches
+    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="openExport()">
+      <ff-icon name="download" [size]="16" />Exporter…
     </button>
-    <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportAll(false)">
-      <ff-icon name="folder-tree" [size]="16" />Exporter les dossiers et projets seulement
-    </button>
-    @if (folders().length) {
-      <div class="menu-sep" role="separator"></div>
-      @for (f of folders(); track f.id) {
-        <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="exportFolder(f)">
-          <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span>Exporter
-          le dossier {{ f.name }}
-        </button>
-      }
-    }
   </div>
 </ng-template>
 

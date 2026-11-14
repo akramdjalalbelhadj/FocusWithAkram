@@ -117,10 +117,19 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     await page.getByRole("button", { name: "Projets actifs" }).click();
     await bar.getByRole("button", { name: /^Tous / }).click();
 
-    // Export du dossier DMP : fichier v6 avec ses deux projets et la tache.
-    await page.getByRole("button", { name: `Actions du dossier ${dmp}` }).click();
+    // Export par la fenetre « Exporter… » : trois choix ; on coche seulement le dossier DMP.
+    await page.getByRole("button", { name: "Importer / Exporter" }).click();
+    await expect(page.getByRole("menuitem")).toHaveCount(2);
+    await page.getByRole("menuitem", { name: "Exporter…" }).click();
+    const exportDialog = page.getByRole("dialog", { name: "Exporter des projets" });
+    await expect(exportDialog.getByRole("radio")).toHaveCount(3);
+    await exportDialog.getByRole("radio", { name: /^Certains dossiers/ }).check();
+    await expect(exportDialog.getByRole("button", { name: "Exporter" })).toBeDisabled();
+    await exportDialog.getByRole("checkbox", { name: new RegExp(`^${dmp}`) }).check();
+    await expect(exportDialog).toContainText("Le fichier contiendra 1 dossier(s) et 2 projet(s), avec leurs tâches.");
+    await axe(page, "fenêtre d’export");
     const downloadPromise = page.waitForEvent("download");
-    await page.getByRole("menuitem", { name: "Exporter le dossier" }).click();
+    await exportDialog.getByRole("button", { name: "Exporter" }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/^focusflow-projets-dmp-\d+-\d{4}-\d{2}-\d{2}\.json$/);
     const file = test.info().outputPath("dmp.json");
@@ -131,29 +140,49 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     expect(exported.projects.map((p: { name: string }) => p.name).sort()).toEqual([`Appli A ${s}`, `Appli B ${s}`]);
     expect(exported.tasks.map((t: { title: string }) => t.title)).toEqual([`Corriger ${s}`]);
 
-    // On efface tout, puis on reimporte le fichier par la page : apercu, confirmation, dossier recree.
+    // On efface tout, puis on importe le fichier : aucun conflit, apercu, confirmation, dossier recree.
     await cleanup(request, s);
     await page.reload();
     await expect(page.getByRole("heading", { name: `Appli A ${s}` })).toBeHidden();
-    await page.getByRole("button", { name: "Importer / Exporter" }).click();
-    await expect(page.getByRole("menuitem", { name: "Importer un fichier…" })).toBeVisible();
-    await page.keyboard.press("Escape");
     await page.locator('input[type="file"]').setInputFiles(file);
-    const confirm = page.getByRole("alertdialog", { name: "Importer « dmp.json » ?" });
-    await expect(confirm).toContainText("Dossiers : 1 à créer");
-    await expect(confirm).toContainText("Projets : 2 à créer");
-    await expect(confirm).toContainText("Tâches : 1 à créer");
-    await axe(page, "aperçu d’import");
-    await confirm.getByRole("button", { name: "Importer" }).click();
+    const importDialog = page.getByRole("dialog", { name: "Importer « dmp.json »" });
+    await expect(importDialog).toContainText("Aucun conflit");
+    await expect(importDialog).toContainText("Dossiers : 1 dossier sera créé.");
+    await expect(importDialog).toContainText("Projets : 2 projets seront créés.");
+    await expect(importDialog).toContainText("Tâches : 1 tâche sera créée.");
+    await axe(page, "aperçu d’import sans conflit");
+    await importDialog.getByRole("button", { name: "Importer" }).click();
     await expect(page.getByText(/Import terminé\./)).toBeVisible();
     await expect(bar.getByRole("button", { name: new RegExp(`^${dmp} 2$`) })).toBeVisible();
     const tasks = await (await request.get(api + "tasks", { params: { q: `Corriger ${s}` } })).json();
     expect(tasks.items[0].projects.map((p: { name: string }) => p.name)).toEqual([`Appli A ${s}`, `Appli B ${s}`]);
 
-    // Reimport : rien n'est duplique.
+    // Modification locale, puis reimport : le dossier est en conflit.
+    const appAId = (await (await request.get(api + "projects")).json()).find(
+      (p: { name: string }) => p.name === `Appli A ${s}`,
+    ).id;
+    await request.patch(api + `projects/${appAId}`, { data: { description: "Version locale" } });
     await page.locator('input[type="file"]').setInputFiles(file);
-    await expect(confirm).toContainText("Projets : 0 à créer, 2 déjà présent(s)");
-    await confirm.getByRole("button", { name: "Annuler" }).click();
+    await expect(importDialog).toContainText("1 dossier(s) du fichier existent déjà");
+    await expect(importDialog).toContainText(`Dossier « ${dmp} »`);
+    await expect(importDialog).toContainText(
+      `Un dossier de ce nom existe déjà dans l’application ; 2 de ses 2 projets existent déjà : Appli A ${s} (dans « ${dmp} »), Appli B ${s} (dans « ${dmp} »).`,
+    );
+    // Par defaut : ignorer ces dossiers.
+    await expect(importDialog.getByRole("radio", { name: /^Ignorer ces dossiers/ })).toBeChecked();
+    await expect(importDialog).toContainText("2 ignoré(s) (dossiers en conflit)");
+    await axe(page, "conflit d’import");
+    // Remplacer : l'apercu change, puis le fichier ecrase la modification locale.
+    await importDialog.getByRole("radio", { name: /^Remplacer par le fichier/ }).check();
+    await expect(importDialog).toContainText("Projets : 0 projet sera créé, 2 remplacé(s) par le fichier.");
+    await expect(importDialog).toContainText("1 remplacée(s) par le fichier");
+    await importDialog.getByRole("button", { name: "Importer" }).click();
+    await expect(importDialog).toBeHidden();
+    await expect
+      .poll(async () => (await (await request.get(api + `projects/${appAId}`)).json()).description ?? "")
+      .toBe("");
+    const after = await (await request.get(api + "tasks", { params: { q: `Corriger ${s}` } })).json();
+    expect(after.totalItems).toBe(1);
 
     // Suppression du dossier : projets conserves, sans dossier.
     await page.getByRole("button", { name: `Actions du dossier ${dmp}` }).click();

@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  ConflictMode,
   DashboardSummary,
   DayHistory,
   ImportReport,
@@ -116,7 +117,13 @@ export class TransferApi {
     return this.http.get(`${BASE}/export/projects`, { params, responseType: 'blob' });
   }
 
-  importBackup(file: unknown, dryRun: boolean): Observable<ImportReport> {
-    return this.http.post<ImportReport>(`${BASE}/import`, file, { params: { dryRun } });
+  importBackup(
+    file: unknown,
+    dryRun: boolean,
+    conflicts: ConflictMode = 'MERGE',
+  ): Observable<ImportReport> {
+    return this.http.post<ImportReport>(`${BASE}/import`, file, {
+      params: { dryRun, conflicts },
+    });
   }
 }

@@ -1,0 +1,128 @@
+<form
+  class="card w-[min(32rem,calc(100vw-1.5rem))] max-h-[calc(100vh-2rem)] flex flex-col p-6 anim-pop shadow-modal"
+  role="dialog"
+  aria-labelledby="ex-title"
+  aria-describedby="ex-desc"
+  (submit)="$event.preventDefault(); submit()"
+>
+  <h2 id="ex-title" class="text-lg font-bold">Exporter des projets</h2>
+  <p id="ex-desc" class="text-sm text-muted mb-4">
+    Le fichier .json pourra être importé dans FocusWithAkram, sur cet ordinateur ou un autre.
+  </p>
+
+  <fieldset class="space-y-2 overflow-y-auto min-h-0">
+    <legend class="sr-only-text">Que voulez-vous exporter ?</legend>
+    <label
+      class="flex items-start gap-3 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+      [style.border-color]="kind() === 'all' ? 'var(--brand)' : null"
+    >
+      <input
+        type="radio"
+        name="ex-kind"
+        class="accent-[var(--brand)] mt-1"
+        [checked]="kind() === 'all'"
+        (change)="kind.set('all')"
+        cdkFocusInitial
+      />
+      <span>
+        <strong>Tous les dossiers et projets, avec leurs tâches</strong>
+        <span class="block text-sm text-muted">Sauvegarde complète de la page Projets.</span>
+      </span>
+    </label>
+    <label
+      class="flex items-start gap-3 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+      [style.border-color]="kind() === 'structure' ? 'var(--brand)' : null"
+    >
+      <input
+        type="radio"
+        name="ex-kind"
+        class="accent-[var(--brand)] mt-1"
+        [checked]="kind() === 'structure'"
+        (change)="kind.set('structure')"
+      />
+      <span>
+        <strong>Les dossiers et projets seulement</strong>
+        <span class="block text-sm text-muted">Sans les tâches : pour repartir de la même organisation.</span>
+      </span>
+    </label>
+    <label
+      class="flex items-start gap-3 rounded-xl border border-line p-3 cursor-pointer hover:bg-surface-2"
+      [style.border-color]="kind() === 'folders' ? 'var(--brand)' : null"
+    >
+      <input
+        type="radio"
+        name="ex-kind"
+        class="accent-[var(--brand)] mt-1"
+        [checked]="kind() === 'folders'"
+        (change)="kind.set('folders')"
+      />
+      <span>
+        <strong>Certains dossiers, avec leurs projets</strong>
+        <span class="block text-sm text-muted">Choisissez un dossier, plusieurs ou tous.</span>
+      </span>
+    </label>
+
+    @if (kind() === 'folders') {
+      <div class="rounded-xl border border-line p-3 ml-6 space-y-1">
+        <button type="button" class="btn btn-ghost btn-sm mb-1" (click)="toggleAll()">
+          <ff-icon [name]="allChecked() ? 'x' : 'check'" [size]="14" />{{
+            allChecked() ? 'Tout décocher' : 'Tout cocher'
+          }}
+        </button>
+        <div class="max-h-56 overflow-y-auto space-y-1" role="group" aria-label="Dossiers à exporter">
+          @for (f of data.folders; track f.id) {
+            <label class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 cursor-pointer">
+              <input
+                type="checkbox"
+                class="size-4 accent-[var(--brand)]"
+                [checked]="selected().has(f.id)"
+                (change)="toggle(f.id, $any($event.target).checked)"
+              />
+              <span class="size-2.5 rounded-full flex-none" [style.background]="f.color"></span>
+              <span class="flex-1 truncate">{{ f.name }}</span>
+              <span class="text-xs text-muted tabular-nums">{{ countIn(f) }} projet(s)</span>
+            </label>
+          }
+          @if (loose.length) {
+            <label class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 cursor-pointer">
+              <input
+                type="checkbox"
+                class="size-4 accent-[var(--brand)]"
+                [checked]="selected().has(LOOSE)"
+                (change)="toggle(LOOSE, $any($event.target).checked)"
+              />
+              <span class="size-2.5 rounded-full flex-none bg-surface-3"></span>
+              <span class="flex-1 truncate">Projets sans dossier</span>
+              <span class="text-xs text-muted tabular-nums">{{ loose.length }} projet(s)</span>
+            </label>
+          }
+        </div>
+        <label class="flex items-center gap-2 pt-2 mt-1 border-t border-line text-sm">
+          <input
+            type="checkbox"
+            class="size-4 accent-[var(--brand)]"
+            [checked]="withTasks()"
+            (change)="withTasks.set($any($event.target).checked)"
+          />Inclure les tâches de ces projets
+        </label>
+      </div>
+    }
+  </fieldset>
+
+  <p class="text-sm mt-4" role="status">
+    @if (canExport()) {
+      Le fichier contiendra {{ folderCount() }} dossier(s) et {{ projectCount() }} projet(s){{
+        kind() === 'structure' || (kind() === 'folders' && !withTasks()) ? ', sans les tâches' : ', avec leurs tâches'
+      }}.
+    } @else {
+      <span class="text-muted">Cochez au moins un dossier contenant des projets.</span>
+    }
+  </p>
+
+  <div class="flex justify-end gap-2 mt-4">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="!canExport()">
+      <ff-icon name="download" [size]="16" />Exporter
+    </button>
+  </div>
+</form>
