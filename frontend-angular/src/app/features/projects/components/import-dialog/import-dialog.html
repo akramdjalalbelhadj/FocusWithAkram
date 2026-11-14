@@ -1,14 +1,17 @@
 <div
-  class="card w-[min(36rem,calc(100vw-1.5rem))] max-h-[calc(100vh-2rem)] flex flex-col p-6 anim-pop shadow-modal"
+  class="card w-[min(36rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] flex flex-col anim-pop shadow-modal overflow-hidden"
   role="dialog"
   aria-labelledby="im-title"
 >
-  <h2 id="im-title" class="text-lg font-bold">Importer « {{ data.fileName }} »</h2>
-  <p class="text-sm text-muted mb-4">
-    Le fichier a été vérifié sans rien modifier. Rien ne sera importé avant votre confirmation.
-  </p>
+  <header class="flex-none px-6 pt-6 pb-3">
+    <h2 id="im-title" class="text-lg font-bold">Importer « {{ data.fileName }} »</h2>
+    <p class="text-sm text-muted">
+      Le fichier a été vérifié sans rien modifier. Rien ne sera importé avant votre confirmation.
+    </p>
+  </header>
 
-  <div class="overflow-y-auto min-h-0 space-y-4">
+  <!-- Seule cette zone defile : les boutons restent toujours visibles et cliquables. -->
+  <div class="flex-1 min-h-0 overflow-y-auto px-6 pb-4 space-y-4">
     @if (preview(); as r) {
       @if (r.conflicts?.length) {
         <section
@@ -116,7 +119,7 @@
     }
   </div>
 
-  <div class="flex justify-end gap-2 mt-5">
+  <div class="flex-none flex justify-end gap-2 border-t border-line px-6 py-4">
     <button type="button" class="btn btn-secondary" (click)="ref.close()">Annuler</button>
     <button
       type="button"

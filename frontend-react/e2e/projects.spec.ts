@@ -118,6 +118,8 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     await bar.getByRole("button", { name: /^Tous / }).click();
 
     // Export par la fenetre « Exporter… » : trois choix ; on coche seulement le dossier DMP.
+    // Petit ecran (portable zoome a 125 %) : la liste defile, rien n'est recouvert par les boutons.
+    await page.setViewportSize({ width: 1093, height: 614 });
     await page.getByRole("button", { name: "Importer / Exporter" }).click();
     await expect(page.getByRole("menuitem")).toHaveCount(2);
     await page.getByRole("menuitem", { name: "Exporter…" }).click();
@@ -125,7 +127,23 @@ test("Projets : dossiers, déplacement, projets inactifs, export puis import d�
     await expect(exportDialog.getByRole("radio")).toHaveCount(3);
     await exportDialog.getByRole("radio", { name: /^Certains dossiers/ }).check();
     await expect(exportDialog.getByRole("button", { name: "Exporter" })).toBeDisabled();
+    await expect(exportDialog).not.toContainText("Cochez au moins");
+    await expect(exportDialog).toContainText(/0 sur \d+ sélectionné\(s\)/);
+    // Clics reels (Playwright refuse un element recouvert) sur chaque case, jusqu'a la derniere.
+    const boxes = exportDialog.getByRole("group", { name: "Dossiers à exporter" }).getByRole("checkbox");
+    const n = await boxes.count();
+    await exportDialog.getByRole("button", { name: "Tout sélectionner" }).click();
+    await expect(exportDialog).toContainText(`${n} sur ${n} sélectionné(s)`);
+    await boxes.last().uncheck();
+    await exportDialog.getByRole("checkbox", { name: "Inclure les tâches de ces projets" }).uncheck();
+    await exportDialog.getByRole("checkbox", { name: "Inclure les tâches de ces projets" }).check();
+    await expect(exportDialog).toContainText(`${n - 1} sur ${n} sélectionné(s)`);
+    await exportDialog.getByRole("button", { name: "Tout sélectionner" }).click();
+    await exportDialog.getByRole("button", { name: "Tout désélectionner" }).click();
+    await expect(exportDialog).toContainText(`0 sur ${n} sélectionné(s)`);
     await exportDialog.getByRole("checkbox", { name: new RegExp(`^${dmp}`) }).check();
+    await axe(page, "fenêtre d’export sur petit écran");
+    await page.setViewportSize({ width: 1440, height: 900 });
     await expect(exportDialog).toContainText("Le fichier contiendra 1 dossier(s) et 2 projet(s), avec leurs tâches.");
     await axe(page, "fenêtre d’export");
     const downloadPromise = page.waitForEvent("download");

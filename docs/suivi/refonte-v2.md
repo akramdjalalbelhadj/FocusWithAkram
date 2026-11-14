@@ -60,6 +60,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 20 | Liste d'émojis dans la barre d'outils de l'éditeur (Angular seulement) | Livré le 10 novembre 2026, à valider par le propriétaire |
 | 21 | Schémas ASCII dans les notes : arborescence ↔ commandes, tableau, bannière (Angular seulement) | Livré le 12 novembre 2026, à valider par le propriétaire |
 | 23 | Dossiers de projets ; export et import de projets ; sauvegarde v6 (API et Angular) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-23-dossiers-projets`) |
+| 26 | Fenêtre d'export retravaillée : cases toujours cliquables sur petit écran, liste intégrée au 3ᵉ choix, compteur de sélection (Angular seulement) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-26-export-dialog`) |
 | 25 | Export par une fenêtre à trois choix ; import avec détection des conflits (Ignorer / Remplacer) et aperçu en langage simple (API et Angular) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-25-import-conflits`) |
 | 24 | Page Projets simplifiée : ni icône ni échéance, dossiers fermés par défaut, vue « Projets inactifs », boutons « Nouveau » et « Importer / Exporter » (Angular seulement) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-24-projets-simplifies`) |
 
@@ -431,6 +432,18 @@ Vérifications (14 novembre 2026) : 241 tests unitaires Angular, ESLint et build
 | Fenêtre d'import | `ff-import-dialog` : aperçu sans écriture, « Aucun conflit » ou avertissement listant chaque dossier et l'emplacement actuel des projets concernés, choix **Ignorer ces dossiers** (par défaut) / **Remplacer par le fichier** avec aperçu recalculé, « Ce qui va se passer » ligne par ligne, éléments invalides dépliables | `project-folders.spec.ts` (`importLines`, `conflictDetail`) ; E2E (sans conflit, conflit ignoré puis remplacé, audits axe) |
 
 Vérifications (14 novembre 2026) : suite backend complète (196 tests sans échec), 242 tests unitaires Angular, ESLint et build de production ; E2E `projects.spec.ts` et `smoke.spec.ts` sans échec sur backend et base jetables ; React compile sans changement (champs ajoutés en facultatifs). Hors périmètre : React et Krimou (voir § 4).
+
+### Lot 26 — Fenêtre d'export retravaillée
+
+**Livré le 14 novembre 2026**, à valider par le propriétaire (Angular seulement). Retour : dans le 3ᵉ choix « Certains dossiers », le texte « Cochez au moins un dossier contenant des projets » et des cases mal placées, impossibles à cocher.
+
+| Constat | Correction |
+| --- | --- |
+| Sur un écran peu haut (portable, zoom 125 % : 1093 × 614), la liste débordait sous le résumé et les boutons : « Projets sans dossier » et « Inclure les tâches » étaient recouverts, donc impossibles à cocher (un `fieldset` ne rétrécit pas pour défiler) | Fenêtre en trois zones : en-tête fixe, **zone centrale qui défile seule**, pied fixe séparé par un trait. Même structure pour la fenêtre d'import |
+| Liste décalée dans un cadre à part, sous l'option | Liste intégrée à la carte du 3ᵉ choix et alignée sur son texte ; lignes séparées, nombre de projets à droite |
+| Phrase « Cochez au moins… » affichée d'emblée ; bouton « ✓ Tout cocher » ressemblant à une case | Compteur « N sur M sélectionné(s) » et lien **Tout sélectionner / Tout désélectionner** ; résumé affiché seulement quand l'export est possible ; **Exporter** grisé avec une infobulle sinon |
+
+Vérifications (14 novembre 2026) : 242 tests unitaires Angular, ESLint et build de production ; E2E `projects.spec.ts` complété (fenêtre ouverte en 1093 × 614, chaque case cochée et décochée par de vrais clics, jusqu'à la dernière ; Tout sélectionner / désélectionner ; audit axe) et `smoke.spec.ts` sans échec ; rendu vérifié en clair et en sombre. Hors périmètre : React et Krimou.
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

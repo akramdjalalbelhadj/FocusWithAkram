@@ -80,6 +80,15 @@ export class ExportDialogComponent {
 
   protected readonly canExport = computed(() => this.projectCount() > 0);
 
+  /** Nombre de cases cochees (dossiers et « Projets sans dossier »). */
+  protected readonly selectedCount = computed(
+    () => this.allKeys().filter((k) => this.selected().has(k)).length,
+  );
+
+  protected readonly includesTasks = computed(
+    () => this.kind() === 'all' || (this.kind() === 'folders' && this.withTasks()),
+  );
+
   protected submit(): void {
     if (!this.canExport()) return;
     const kind = this.kind();
