@@ -11,6 +11,7 @@ Sur ordinateur, la barre latérale permet de naviguer et de se replier. Sur mobi
 ## 2. Première utilisation : préparer sa journée
 
 1. Ouvrir **Paramètres** et choisir le fuseau, le thème et le premier jour de la semaine.
+Au premier lancement, l’application demande votre **pseudo** ; le tableau de bord vous accueille ensuite par « Hello *pseudo* ». Il se modifie dans **Paramètres → Apparence et région**.
 2. Créer quelques tâches avec **Nouvelle tâche**. Donner un titre concret et, si utile, un projet et une échéance.
 3. Les répartir dans la matrice : Q1 faire maintenant, Q2 planifier, Q3 limiter/déléguer, Q4 plus tard/éliminer.
 4. Choisir les trois priorités du jour depuis le tableau de bord.
@@ -20,11 +21,11 @@ Les paramètres et le classement sont conservés côté serveur. Une autre inter
 
 ## 3. Créer et modifier une tâche
 
-Le titre est obligatoire. Le formulaire propose description, notes, quadrant, projet, étiquettes, estimation, dates prévues et sous-tâches selon le contexte. Les étiquettes se saisissent en liste dans les formulaires ; les propositions existantes facilitent leur réutilisation.
+Le titre est obligatoire. Le formulaire propose description, quadrant, projets, étiquettes, estimation et dates prévues. La **description** s’écrit avec l’éditeur des notes (barre d’outils, tableaux, alertes, schémas ASCII, aperçu ou mode Visuel) et s’affiche mise en forme dans le détail de la tâche ; l’ancien champ « Notes » a disparu (son contenu a rejoint la description). Une tâche peut faire partie de **plusieurs projets** : le champ **Projets** affiche les projets choisis en pastilles (le premier est le projet principal, × pour le retirer) et une **recherche** ouvre une liste filtrée (sans tenir compte des accents) ; Entrée choisit le premier résultat. Les sous-tâches ne sont plus proposées. Les étiquettes se saisissent en liste dans les formulaires ; les propositions existantes facilitent leur réutilisation.
 
 Les dates affichées utilisent le fuseau configuré. Une date vide reste inconnue ; elle ne signifie pas minuit aujourd’hui. Une estimation est une durée attendue, distincte du temps travaillé par Pomodoro.
 
-Ouvrir le détail d’une tâche pour consulter ses informations, ses sous-tâches, sa chronologie et ses cycles. Les menus d’actions permettent notamment modifier, dupliquer, terminer ou supprimer selon son état.
+Ouvrir le détail d’une tâche pour consulter ses informations, sa description mise en forme, sa chronologie et ses cycles. Les menus d’actions permettent notamment modifier, dupliquer, terminer ou supprimer selon son état.
 
 ## 4. Utiliser la matrice et les listes
 
@@ -113,7 +114,7 @@ Le dashboard aide à choisir la prochaine action : tâches restantes, réalisée
 
 Ces temps peuvent être différents sans erreur : une tâche commencée lundi et finie mercredi a une durée écoulée longue, même si elle ne représente que trois séances de travail. Les pauses et interruptions de sessions sont distinguées.
 
-Les archives regroupent les tâches par fin réelle dans le fuseau de l’utilisateur. Consulter le détail pour retrouver les dates et sessions du cycle ; restaurer pour recommencer sans effacer l’ancien travail.
+En tête des archives, **Anciennes idées** liste les idées transformées en tâche, archivées ou supprimées (avec le temps restant avant suppression définitive), avec recherche et bouton **Restaurer**. Les archives regroupent ensuite les tâches par fin réelle dans le fuseau de l’utilisateur. Consulter le détail pour retrouver les dates et sessions du cycle ; restaurer pour recommencer sans effacer l’ancien travail.
 
 ## 10. Exporter et importer
 
@@ -271,11 +272,11 @@ flowchart LR
    Pour modifier un schéma : bouton **Modifier** de son bloc en mode Visuel, ou **Insérer → Modifier ce schéma** avec le curseur dedans (les deux modes) ; **Ctrl+Z** annule la mise à jour. Dans le PDF, les traits Unicode deviennent `|`, `-`, `+` et `#`, colonnes conservées.
 
    **Surligner** : sélectionnez le texte, puis cliquez sur le bouton **Surligner** (le surligneur, souligné de la couleur en cours) ou appuyez sur **Ctrl+Maj+H**. La flèche à côté ouvre les quatre couleurs, **Jaune**, **Rouge**, **Bleu ciel** et **Violet**, ainsi que **Retirer le surlignage**. Une couleur choisie dans ce menu devient celle du bouton et du raccourci (retenue par le navigateur). Un second clic sur le bouton retire le surlignage de cette couleur ; une autre couleur le remplace. Dans le menu, la couleur du passage sous le curseur est cochée. En Markdown, le jaune s’écrit `==texte==` (que vous pouvez aussi taper en mode Visuel) et les autres couleurs `<mark data-color="red">texte</mark>` (`red`, `sky`, `violet`) ; un fichier exporté en .md reste surligné dans GitHub ou Obsidian, en jaune.
-4. **Organiser** : une **catégorie** (créée dans l’écran **Catégories**, avec une couleur), des **étiquettes** séparées par des virgules et l’étoile **Favori**. La liste se filtre par texte (titre et contenu), catégorie, étiquette, et par vue : **Toutes**, **Favorites**, **À transformer** (aucune tâche encore), **Avec tâches** ; elle se trie par date de modification, de création ou par titre.
-5. **Transformer en tâche** : dans l’éditeur, **Créer une tâche** ouvre le formulaire de tâche habituel, prérempli avec le titre et les étiquettes de l’idée ; **Reprendre le contenu de l’idée** copie le texte dans la description. Choisissez le quadrant (urgence et importance), une échéance si besoin, puis **Créer la tâche** : elle rejoint la matrice d’Eisenhower. Recommencez autant de fois que nécessaire : une idée peut donner plusieurs tâches.
+4. **Organiser** : une **catégorie** (créée dans l’écran **Catégories**, avec une couleur), des **étiquettes** séparées par des virgules et l’étoile **Favori**. La recherche porte sur le titre, le contenu **et les étiquettes** (taper le nom d’une étiquette suffit à retrouver l’idée ; le filtre déroulant des étiquettes a été retiré). La liste se filtre aussi par catégorie et par vue : **Toutes**, **Favorites**, **À transformer**, **Archivées** ; elle se trie par date de modification, de création ou par titre.
+5. **Transformer en tâche** : dans l’éditeur, **Créer une tâche** ouvre le formulaire de tâche habituel, prérempli avec le titre et les étiquettes de l’idée ; **Reprendre le contenu de l’idée** copie le texte dans la description. Choisissez le quadrant (urgence et importance), une échéance si besoin, puis **Créer la tâche** : elle rejoint la matrice d’Eisenhower. L’idée quitte alors la liste : elle vit désormais comme tâche et reste consultable dans **Archives → Anciennes idées** (ou la vue **Archivées**), d’où **Restaurer** la ramène. Elle peut encore donner d’autres tâches depuis son éditeur.
 6. **Suivre** : le panneau **Tâches issues de cette idée** liste ces tâches avec leur statut et leur quadrant ; cliquez pour ouvrir leur détail. Depuis le détail d’une tâche, le lien **Issue de l’idée « … »** ramène à l’idée. Dans **Mes tâches**, une pastille **Idée** signale ces tâches.
 7. **Doublon** : si une tâche du même titre est déjà issue de cette idée, le formulaire le signale ; modifiez le titre ou confirmez avec **Créer quand même**.
-8. **Supprimer** : une idée sans tâche se supprime après confirmation. Si des tâches en sont issues, la suppression simple est **bloquée** et un avertissement en explique la raison ; **Supprimer quand même** supprime l’idée définitivement, ses tâches restent dans la matrice sans lien vers elle.
+8. **Supprimer ou archiver** : la corbeille propose deux choix. **Archiver** range l’idée dans les Archives. **Supprimer** efface aussitôt une idée sans tâche ; si des tâches en sont issues, l’idée reste **72 heures** dans les Archives (« Annuler la suppression » possible), puis elle est supprimée définitivement ; ses tâches restent, sans lien vers elle.
 
 Supprimer une catégorie conserve ses idées, sans catégorie.
 

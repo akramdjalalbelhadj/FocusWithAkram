@@ -30,6 +30,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 2026-11-10 | Notes & idées : **barre d'outils collée** en haut de l'écran pendant la saisie d'un long texte ; **surlignage** en quatre couleurs (jaune `==texte==`, rouge, bleu ciel, violet `<mark data-color>`), une seule couleur par passage | Lot 18 ; [cahier des charges FWA-F026 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **export en PDF** à côté du Markdown, derrière un seul bouton « Exporter » ; PDF produit dans le navigateur (pdfmake), sans serveur | Lot 19 ; [cahier des charges FWA-F033 et § 4.5](../produit/cahier-des-charges.md) |
 | 2026-11-10 | Notes & idées : **liste d'émojis** dans la barre d'outils (catégories, recherche en français, récents), insertion à la position du curseur | Lot 20 ; [cahier des charges FWA-F026](../produit/cahier-des-charges.md) |
+| 2026-11-13 | Idées transformées en tâche archivées (« anciennes idées ») ; suppression avec choix Supprimer / Archiver et délai de 72 h si des tâches en sont issues ; recherche des idées par étiquette (filtre étiquettes retiré) ; description de tâche avec l'éditeur des notes ; tâche dans plusieurs projets (sélecteur avec recherche) ; champ « Notes » et sous-tâches retirés de l'interface des tâches ; pseudo au premier lancement (« Hello pseudo ») | Lot 22 ; migration V12 |
 | 2026-11-12 | Notes & idées : **schémas ASCII** (bloc ```` ```ascii ````) — arborescence de dossiers modifiable dans les deux sens (texte ↔ hiérarchie ↔ commandes `mkdir`/`touch` ou `New-Item`), tableau encadré (grille ↔ texte), bannière | Lot 21 ; [cahier des charges FWA-F026](../produit/cahier-des-charges.md) |
 
 ## 2. Lots
@@ -369,6 +370,23 @@ Défauts trouvés par les tests et corrigés : « coeur » ne trouvait pas « c�
 | PDF | Traits et blocs Unicode remplacés caractère pour caractère (barre verticale, `-`, `=`, `+`, `#`) : Courier ne les dessine pas | `ascii.spec.ts` |
 
 Vérifications (12 novembre 2026) : 235 tests unitaires Angular, lint et build de production Angular (chargement initial inchangé). Hors périmètre : React et Krimou (voir § 4).
+
+### Lot 22 — Archives des idées, tâches multi-projets, pseudo
+
+**Livré le 13 novembre 2026**, à valider par le propriétaire. L'ASCII demandé dans le même message existait déjà (lot 21) : rien n'a été refait.
+
+| Élément | Contenu |
+| --- | --- |
+| Recherche des idées | `q` cherche aussi dans les étiquettes (`NoteSpecifications`) ; filtre déroulant des étiquettes retiré de la liste |
+| Idée → tâche | Créer une tâche range l'idée dans les archives (`archive_reason = CONVERTED`) ; la migration V12 archive les idées ayant déjà des tâches. Vue « Avec tâches » remplacée par « Archivées » ; section **Anciennes idées** en tête de la page Archives ; bandeau + **Restaurer** dans l'éditeur |
+| Suppression | `DELETE /notes/{id}?mode=archive|delete` ; `delete` avec tâches : `DELETED` + `purge_at` = +72 h, effacement par `NotePurgeJob` (démarrage puis toutes les 10 min), tâches détachées ; `POST /notes/{id}/restore`. Sans `mode` : ancien contrat (`NOTE_HAS_TASKS` / `force`) conservé pour React |
+| Description de tâche | Éditeur des notes (`ff-note-editor`, chargé à la demande par `@defer`) dans le formulaire, rendu `ff-markdown-view` dans le détail ; limite portée à 100 000 caractères |
+| Champ « Notes » | Retiré de l'interface ; V12 déplace son contenu à la fin de la description |
+| Plusieurs projets | Table `task_extra_project` ; `projectIds` (création et modification), `projects` dans la réponse, `project` = principal ; filtres et progression des projets comptent les projets supplémentaires ; statistiques de focus : projet principal seulement. Formulaire : pastilles + recherche avec liste filtrée |
+| Sous-tâches | Retirées du formulaire, du détail et des cartes (l'API reste inchangée) |
+| Pseudo | `user_settings.display_name`, `displayName` dans `/settings` ; demandé au premier lancement, « Hello pseudo » dans le tableau de bord, modifiable dans les Paramètres |
+
+Vérifications (13 novembre 2026) : tests backend (nouveaux : recherche par étiquette, archivage/suppression à 72 h, tâche multi-projets), 235 tests unitaires Angular, ESLint et build de production Angular (chargement initial inchangé grâce à `@defer`). Hors périmètre : React et Krimou.
 
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 

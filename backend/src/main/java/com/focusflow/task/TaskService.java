@@ -96,7 +96,9 @@ public class TaskService {
         task.setNotes(blankToNull(req.notes()));
         task.setEstimatedMinutes(req.estimatedMinutes());
         task.setPlannedDates(req.plannedStartAt(), req.plannedEndAt(), now);
-        if (req.projectId() != null) {
+        if (req.projectIds() != null) {
+            task.setProjects(findProjects(req.projectIds()));
+        } else if (req.projectId() != null) {
             task.setProject(projects.findById(req.projectId()).orElseThrow(() -> ApiException.notFound("Projet", req.projectId())));
         }
         applyTags(task, req.tags());
@@ -136,6 +138,10 @@ public class TaskService {
             task.setProject(projectId == null ? null
                     : projects.findById(projectId).orElseThrow(() -> ApiException.notFound("Projet", projectId)));
         }
+        if (p.has("projectIds")) {
+            List<String> raw = p.strings("projectIds");
+            task.setProjects(findProjects(raw == null ? List.of() : raw.stream().map(UUID::fromString).toList()));
+        }
         if (p.has("tags")) applyTags(task, p.strings("tags"));
         if (p.has("quadrant")) {
             Quadrant q = parseQuadrant(p.string("quadrant"));
@@ -145,6 +151,11 @@ public class TaskService {
         }
         task.touch(now);
         return mapper.toResponse(task);
+    }
+
+    private List<com.focusflow.project.Project> findProjects(List<UUID> ids) {
+        return ids.stream().filter(java.util.Objects::nonNull).distinct()
+                .map(pid -> projects.findById(pid).orElseThrow(() -> ApiException.notFound("Projet", pid))).toList();
     }
 
     @Transactional
@@ -162,7 +173,7 @@ public class TaskService {
         copy.setDescription(src.getDescription());
         copy.setNotes(src.getNotes());
         copy.setEstimatedMinutes(src.getEstimatedMinutes());
-        copy.setProject(src.getProject());
+        copy.setProjects(src.getProjects());
         copy.setSourceNoteId(src.getSourceNoteId());
         copy.getTags().addAll(src.getTags());
         src.getSubtasks().forEach(s -> copy.addSubtask(s.getTitle(), now));

@@ -103,6 +103,13 @@ public class Task {
     @BatchSize(size = 50)
     private Set<Tag> tags = new HashSet<>();
 
+    /** Projets supplementaires : une tache peut faire partie de plusieurs projets ({@link #project} = le premier). */
+    @ManyToMany
+    @JoinTable(name = "task_extra_project", joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "project_id"))
+    @BatchSize(size = 50)
+    private Set<Project> extraProjects = new HashSet<>();
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC, createdAt ASC")
     @BatchSize(size = 50)
@@ -345,7 +352,36 @@ public class Task {
     public Integer getEstimatedMinutes() { return estimatedMinutes; }
     public void setEstimatedMinutes(Integer estimatedMinutes) { this.estimatedMinutes = estimatedMinutes; }
     public Project getProject() { return project; }
-    public void setProject(Project project) { this.project = project; }
+    public void setProject(Project project) {
+        this.project = project;
+        this.extraProjects.clear();
+    }
+
+    /** Tous les projets de la tache : le principal d'abord, puis les autres par nom. */
+    public List<Project> getProjects() {
+        List<Project> all = new ArrayList<>();
+        if (project != null) {
+            all.add(project);
+        }
+        extraProjects.stream()
+                .filter(p -> project == null || !p.getId().equals(project.getId()))
+                .sorted(java.util.Comparator.comparing(Project::getName, String.CASE_INSENSITIVE_ORDER))
+                .forEach(all::add);
+        return all;
+    }
+
+    /** Remplace les projets : le premier devient le projet principal, les doublons sont ignores. */
+    public void setProjects(List<Project> projects) {
+        this.extraProjects.clear();
+        this.project = null;
+        for (Project p : projects) {
+            if (project == null) {
+                project = p;
+            } else if (!p.getId().equals(project.getId())) {
+                extraProjects.add(p);
+            }
+        }
+    }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getPlannedStartAt() { return plannedStartAt; }

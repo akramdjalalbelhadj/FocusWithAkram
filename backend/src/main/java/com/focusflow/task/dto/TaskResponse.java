@@ -36,6 +36,8 @@ public record TaskResponse(
         TaskTiming timing,
         long version,
         /** Idee d'origine (module Notes & idees), ou null. */
-        UUID sourceNoteId) {
+        UUID sourceNoteId,
+        /** Tous les projets de la tache, le principal ({@code project}) en premier. */
+        List<ProjectRef> projects) {
 
 }

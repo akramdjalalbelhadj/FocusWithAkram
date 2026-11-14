@@ -63,7 +63,7 @@
     class="input flex-1 min-w-[14rem]"
     type="search"
     aria-label="Rechercher une idée"
-    placeholder="Rechercher dans les titres et le contenu…"
+    placeholder="Rechercher dans les titres, le contenu et les étiquettes…"
     [value]="query()"
     (input)="query.set($any($event.target).value)"
   />
@@ -78,19 +78,6 @@
       <option [value]="c.id" [selected]="c.id === categoryId()">{{ c.name }}</option>
     }
   </select>
-  @if ((tags.data() ?? []).length) {
-    <select
-      class="input w-auto"
-      aria-label="Filtrer par étiquette"
-      [value]="tag()"
-      (change)="tag.set($any($event.target).value)"
-    >
-      <option value="">Toutes les étiquettes</option>
-      @for (t of tags.data() ?? []; track t) {
-        <option [value]="t" [selected]="t === tag()">{{ t }}</option>
-      }
-    </select>
-  }
   <select
     class="input w-auto"
     aria-label="Trier les idées"

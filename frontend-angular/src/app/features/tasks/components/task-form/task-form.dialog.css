@@ -1,0 +1,7 @@
+:host ::ng-deep .task-desc-editor .note-sticky {
+  top: 0;
+}
+:host ::ng-deep .task-desc-editor .note-textarea,
+:host ::ng-deep .task-desc-editor .tiptap {
+  min-height: 12rem;
+}

@@ -30,7 +30,14 @@ export interface NoteSummary {
   updatedAt: string;
   taskCount: number;
   tasksDone: number;
+  /** Archives (facultatif pour React) : date, raison et effacement programme d'une idee supprimee. */
+  archivedAt?: string | null;
+  archiveReason?: NoteArchiveReason | null;
+  purgeAt?: string | null;
 }
+
+/** CONVERTED : transformee en tache ; ARCHIVED : archivee a la main ; DELETED : effacee a `purgeAt` (72 h). */
+export type NoteArchiveReason = "CONVERTED" | "ARCHIVED" | "DELETED";
 
 /** Idee complete : contenu Markdown et taches qui en sont issues (terminees et archivees comprises). */
 export interface Note {
@@ -44,6 +51,9 @@ export interface Note {
   updatedAt: string;
   version: number;
   tasks: Task[];
+  archivedAt?: string | null;
+  archiveReason?: NoteArchiveReason | null;
+  purgeAt?: string | null;
 }
 
 export interface CreateNoteInput {
@@ -72,6 +82,8 @@ export interface NoteFilters {
   favorite?: boolean;
   /** Vrai : idees ayant donne des taches ; faux : idees encore a transformer. */
   withTasks?: boolean;
+  /** Vrai : idees des archives ; sinon idees actives. */
+  archived?: boolean;
   sort?: NoteSort;
   dir?: "asc" | "desc";
   page?: number;

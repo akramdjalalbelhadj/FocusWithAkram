@@ -31,6 +31,30 @@ class TaskLifecycleIT extends IntegrationTest {
         mvc.perform(builder.contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().is(expected));
     }
 
+    private String project(String name) throws Exception {
+        return JsonPath.read(mvc.perform(post("/api/v1/projects").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"" + name + "\"}")).andReturn().getResponse().getContentAsString(), "$.id");
+    }
+
+    @Test
+    void aTaskCanBelongToSeveralProjects() throws Exception {
+        String a = project("Alpha");
+        String b = project("Beta");
+        String id = create("{\"title\":\"Partagee\",\"projectIds\":[\"" + b + "\",\"" + a + "\"]}");
+        mvc.perform(get("/api/v1/tasks/" + id))
+                .andExpect(jsonPath("$.project.id").value(b))
+                .andExpect(jsonPath("$.projects.length()").value(2))
+                .andExpect(jsonPath("$.projects[1].id").value(a));
+        mvc.perform(get("/api/v1/tasks").param("projectId", a)).andExpect(jsonPath("$.totalItems").value(1));
+        mvc.perform(get("/api/v1/projects/" + a)).andExpect(jsonPath("$.totalTasks").value(1));
+
+        mvc.perform(patch("/api/v1/tasks/" + id).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"projectIds\":[\"" + a + "\"]}"))
+                .andExpect(jsonPath("$.projects.length()").value(1))
+                .andExpect(jsonPath("$.project.id").value(a));
+        mvc.perform(get("/api/v1/tasks").param("projectId", b)).andExpect(jsonPath("$.totalItems").value(0));
+    }
+
     @Test
     void creationRecordsCreatedAtServerSideAndLeavesActualDatesEmpty() throws Exception {
         String res = mvc.perform(post("/api/v1/tasks").contentType(MediaType.APPLICATION_JSON)

@@ -151,8 +151,12 @@ class NoteIT extends IntegrationTest {
                 .andExpect(jsonPath("$.tasks[0].status").value("DONE"))
                 .andExpect(jsonPath("$.tasks[0].archivedAt").exists()));
         assertThat((String) JsonPath.read(after, "$.updatedAt")).isEqualTo(JsonPath.read(noteBefore, "$.updatedAt"));
-        assertThat((Integer) JsonPath.read(after, "$.version")).isEqualTo(JsonPath.read(noteBefore, "$.version"));
-        mvc.perform(get("/api/v1/notes"))
+        // Seul l'archivage (premiere transformation en tache) a modifie l'idee.
+        assertThat((Integer) JsonPath.read(after, "$.version")).isEqualTo((Integer) JsonPath.read(noteBefore, "$.version") + 1);
+        // Transformee en tache, l'idee a quitte la liste : elle est dans les archives (ancienne idee).
+        mvc.perform(get("/api/v1/notes")).andExpect(jsonPath("$.totalItems").value(0));
+        mvc.perform(get("/api/v1/notes?archived=true"))
+                .andExpect(jsonPath("$.items[0].archiveReason").value("CONVERTED"))
                 .andExpect(jsonPath("$.items[0].taskCount").value(3))
                 .andExpect(jsonPath("$.items[0].tasksDone").value(1));
 
@@ -161,7 +165,7 @@ class NoteIT extends IntegrationTest {
         mvc.perform(post("/api/v1/tasks/" + t1 + "/duplicate")).andExpect(jsonPath("$.sourceNoteId").value(note));
 
         String other = createNote("{\"title\":\"Encore une idee\"}");
-        mvc.perform(get("/api/v1/notes").param("withTasks", "true"))
+        mvc.perform(get("/api/v1/notes").param("withTasks", "true").param("archived", "true"))
                 .andExpect(jsonPath("$.totalItems").value(1)).andExpect(jsonPath("$.items[0].id").value(note));
         mvc.perform(get("/api/v1/notes").param("withTasks", "false"))
                 .andExpect(jsonPath("$.totalItems").value(1)).andExpect(jsonPath("$.items[0].id").value(other));
@@ -196,6 +200,51 @@ class NoteIT extends IntegrationTest {
         taskFromNote("00000000-0000-0000-0000-000000000000", "{\"title\":\"X\"}", false).andExpect(status().isNotFound());
         mvc.perform(get("/api/v1/notes/" + note)).andExpect(jsonPath("$.tasks.length()").value(0));
         mvc.perform(get("/api/v1/tasks")).andExpect(jsonPath("$.totalItems").value(0));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private NoteService noteService;
+
+    @Test
+    void searchAlsoMatchesTags() throws Exception {
+        createNote("{\"title\":\"Sans rapport\",\"tags\":[\"Backend\",\"api\"]}");
+        createNote("{\"title\":\"Autre\"}");
+        mvc.perform(get("/api/v1/notes").param("q", "backe"))
+                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.items[0].title").value("Sans rapport"));
+    }
+
+    @Test
+    void anIdeaCanBeArchivedOrDeletedWithA72HourGraceWhenItHasTasks() throws Exception {
+        // Archiver : l'idee quitte la liste et peut revenir.
+        String archived = createNote("{\"title\":\"A ranger\"}");
+        mvc.perform(delete("/api/v1/notes/" + archived).param("mode", "archive"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.archiveReason").value("ARCHIVED"));
+        mvc.perform(get("/api/v1/notes")).andExpect(jsonPath("$.totalItems").value(0));
+        mvc.perform(post("/api/v1/notes/" + archived + "/restore")).andExpect(jsonPath("$.archivedAt").doesNotExist());
+        mvc.perform(get("/api/v1/notes")).andExpect(jsonPath("$.totalItems").value(1));
+
+        // Supprimer sans tache : effacee tout de suite.
+        mvc.perform(delete("/api/v1/notes/" + archived).param("mode", "delete")).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/notes/" + archived)).andExpect(status().isNotFound());
+
+        // Supprimer avec tache : 72 heures dans les archives, puis effacee ; la tache reste sans lien.
+        String note = createNote("{\"title\":\"Idee\"}");
+        String task = JsonPath.read(body(taskFromNote(note, "{\"title\":\"Faire\"}", false)), "$.id");
+        mvc.perform(delete("/api/v1/notes/" + note).param("mode", "delete"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.archiveReason").value("DELETED"))
+                .andExpect(jsonPath("$.purgeAt").exists());
+        clock.advance(Duration.ofHours(71));
+        assertThat(noteService.purgeExpired()).isZero();
+        mvc.perform(get("/api/v1/notes/" + note)).andExpect(status().isOk());
+        clock.advance(Duration.ofHours(2));
+        assertThat(noteService.purgeExpired()).isEqualTo(1);
+        mvc.perform(get("/api/v1/notes/" + note)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/tasks/" + task))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sourceNoteId").doesNotExist());
     }
 
     @Test
@@ -309,7 +358,8 @@ class NoteIT extends IntegrationTest {
                 .andExpect(jsonPath("$.notes.notesSkipped").value(1))
                 .andExpect(jsonPath("$.notes.categoriesReused").value(1))
                 .andExpect(jsonPath("$.errors.length()").value(0));
-        mvc.perform(get("/api/v1/notes")).andExpect(jsonPath("$.totalItems").value(1));
+        mvc.perform(get("/api/v1/notes?archived=true")).andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.items[0].archiveReason").value("CONVERTED"));
     }
 
     @Test

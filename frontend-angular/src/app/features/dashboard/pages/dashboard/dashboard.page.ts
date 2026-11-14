@@ -36,7 +36,7 @@ import { Top3PickerDialogComponent } from '../../components/top3-picker/top3-pic
 export class DashboardPage {
   protected readonly actions = inject(TaskActions);
   protected readonly engine = inject(PomodoroEngine);
-  private readonly settings = inject(SettingsStore);
+  protected readonly settings = inject(SettingsStore);
   private readonly dialog = inject(Dialog);
   private readonly tasksApi = inject(TasksApi);
   private readonly refresh = inject(RefreshService);
@@ -51,19 +51,6 @@ export class DashboardPage {
   protected readonly today = computed(() =>
     dayLabel(this.loader.data()?.today ?? this.settings.today()),
   );
-
-  protected readonly greeting = computed(() => {
-    const h = Number(
-      new Intl.DateTimeFormat('fr-FR', {
-        hour: 'numeric',
-        hourCycle: 'h23',
-        timeZone: this.settings.timeZone(),
-      })
-        .formatToParts(new Date())
-        .find((p) => p.type === 'hour')?.value,
-    );
-    return h < 5 ? 'Bonne nuit' : h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
-  });
 
   protected readonly summaryLine = computed(() => {
     const k = this.loader.data()?.kpis;

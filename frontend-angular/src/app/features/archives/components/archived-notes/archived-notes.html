@@ -1,0 +1,58 @@
+<section class="card p-4 mb-6" aria-labelledby="an-title">
+  <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+    <h2 id="an-title" class="section-title flex items-center gap-2">
+      <ff-icon name="lightbulb" [size]="18" />Anciennes idées
+      @if (total()) {
+        <span class="badge">{{ total() }}</span>
+      }
+    </h2>
+    <input
+      class="input !w-auto min-w-48"
+      type="search"
+      aria-label="Rechercher une ancienne idée"
+      placeholder="Titre, contenu ou étiquette…"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
+    />
+  </div>
+  @if (loader.error()) {
+    <p class="text-sm text-danger">Impossible de charger les anciennes idées.</p>
+  } @else if (!loader.loading() && !notes().length) {
+    <p class="text-sm text-muted">Aucune ancienne idée.</p>
+  } @else {
+    <ul class="divide-y divide-[var(--line)]">
+      @for (n of notes(); track n.id) {
+        <li class="flex flex-wrap items-center gap-3 py-2">
+          <div class="min-w-0 flex-1">
+            <a class="font-semibold hover:underline" [routerLink]="['/notes', n.id]">{{ n.title }}</a>
+            <p class="text-xs text-muted flex flex-wrap gap-x-2">
+              <span
+                class="badge"
+                [class.badge-danger]="n.archiveReason === 'DELETED'"
+                [class.badge-brand]="n.archiveReason === 'CONVERTED'"
+                >{{ label(n) }}</span
+              >
+              @if (n.archivedAt) {
+                <span>le {{ settings.fmt(n.archivedAt) }}</span>
+              }
+              @if (n.purgeAt) {
+                <span class="text-danger">· suppression définitive {{ remaining(n.purgeAt) }}</span>
+              }
+              @for (t of n.tags; track t) {
+                <span>#{{ t }}</span>
+              }
+            </p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="actions.restore(n.id)">
+            <ff-icon name="undo" [size]="14" />{{ n.archiveReason === 'DELETED' ? 'Annuler la suppression' : 'Restaurer' }}
+          </button>
+        </li>
+      }
+    </ul>
+    @if (total() > notes().length) {
+      <button type="button" class="btn btn-ghost btn-sm mt-2" (click)="limit.set(limit() + 50)">
+        Afficher plus
+      </button>
+    }
+  }
+</section>

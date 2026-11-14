@@ -23,6 +23,9 @@ public interface NoteRepository extends JpaRepository<Note, UUID>, JpaSpecificat
     @Query("select n from Note n where n.id = :id")
     Optional<Note> findForUpdate(@Param("id") UUID id);
 
+    /** Idees supprimees dont le delai de reflexion est ecoule. */
+    List<Note> findAllByPurgeAtLessThanEqual(Instant now);
+
     @Query("select distinct t from Note n join n.tags t")
     List<String> findAllTagNames();
 

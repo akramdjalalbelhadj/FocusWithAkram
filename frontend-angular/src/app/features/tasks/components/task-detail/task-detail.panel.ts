@@ -30,9 +30,11 @@ const EVENT_LABEL: Record<TimelineEventType, string> = {
   ARCHIVED: 'Archivage',
 };
 
+import { MarkdownViewComponent } from '../../../notes/components/markdown-view/markdown-view';
 @Component({
   selector: 'ff-task-detail-panel',
   imports: [
+    MarkdownViewComponent,
     IconComponent,
     StatusBadgeComponent,
     QuadrantBadgeComponent,
@@ -140,26 +142,8 @@ export class TaskDetailPanelComponent {
     return formatDuration(m * 60);
   }
 
-  protected async toggleSub(id: string, done: boolean): Promise<void> {
-    const t = this.task();
-    if (t) await this.actions.toggleSubtask(t, id, done);
-  }
 
-  protected async addSub(input: HTMLInputElement): Promise<void> {
-    const title = input.value.trim();
-    const t = this.task();
-    if (!title || !t) return;
-    await firstValueFrom(this.api.addSubtask(t.id, title));
-    input.value = '';
-    this.refresh.bump();
-  }
 
-  protected async deleteSub(id: string): Promise<void> {
-    const t = this.task();
-    if (!t) return;
-    await firstValueFrom(this.api.deleteSubtask(t.id, id));
-    this.refresh.bump();
-  }
 
   protected async remove(t: Task): Promise<void> {
     if (await this.actions.remove(t)) this.ref.close();

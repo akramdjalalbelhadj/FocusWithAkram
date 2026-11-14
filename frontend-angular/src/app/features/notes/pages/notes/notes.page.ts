@@ -29,7 +29,7 @@ import { NoteActions } from '../../services/note-actions.service';
 import { NoteTabs } from '../../services/note-tabs.service';
 
 /** Vues rapides : toutes, favorites, encore a transformer (sans tache), deja transformees (avec taches). */
-type NoteView = 'all' | 'favorites' | 'open' | 'converted';
+type NoteView = 'all' | 'favorites' | 'open' | 'archived';
 
 const PAGE = 60;
 
@@ -64,14 +64,13 @@ export class NotesPage {
     { value: 'all', label: 'Toutes' },
     { value: 'favorites', label: 'Favorites' },
     { value: 'open', label: 'À transformer' },
-    { value: 'converted', label: 'Avec tâches' },
+    { value: 'archived', label: 'Archivées' },
   ];
 
   protected readonly query = signal('');
   private readonly q = debounced(this.query);
   protected readonly view = signal<NoteView>('all');
   protected readonly categoryId = signal('');
-  protected readonly tag = signal('');
   protected readonly sort = signal<NoteSort>('updatedAt');
   protected readonly limit = signal(PAGE);
 
@@ -79,16 +78,15 @@ export class NotesPage {
     this.api.list({
       q: this.q(),
       categoryId: this.categoryId() || undefined,
-      tag: this.tag() || undefined,
       favorite: this.view() === 'favorites' ? true : undefined,
-      withTasks: this.view() === 'converted' ? true : this.view() === 'open' ? false : undefined,
+      withTasks: this.view() === 'open' ? false : undefined,
+      archived: this.view() === 'archived' || undefined,
       sort: this.sort(),
       dir: this.sort() === 'title' ? 'asc' : 'desc',
       size: this.limit(),
     }),
   );
   protected readonly categories = new Loader(() => this.api.categories());
-  protected readonly tags = new Loader(() => this.api.tags());
 
   protected readonly notes = computed(() => this.loader.data()?.items ?? []);
   protected readonly total = computed(() => this.loader.data()?.totalItems ?? 0);
@@ -96,7 +94,7 @@ export class NotesPage {
     () => this.notes().length < this.total() && this.limit() < 200,
   );
   protected readonly filtered = computed(
-    () => !!(this.query().trim() || this.categoryId() || this.tag() || this.view() !== 'all'),
+    () => !!(this.query().trim() || this.categoryId() || this.view() !== 'all'),
   );
 
   constructor() {
@@ -150,7 +148,6 @@ export class NotesPage {
   protected clearFilters(): void {
     this.query.set('');
     this.categoryId.set('');
-    this.tag.set('');
     this.view.set('all');
     this.limit.set(PAGE);
   }

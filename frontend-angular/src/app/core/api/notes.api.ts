@@ -60,6 +60,19 @@ export class NotesApi {
     });
   }
 
+  /**
+   * `archive` : range l'idee dans les archives. `delete` : efface l'idee, ou, si des taches en sont issues,
+   * la garde 72 heures dans les archives avant de l'effacer. Renvoie l'idee archivee, ou null si effacee.
+   */
+  remove(id: string, mode: 'archive' | 'delete'): Observable<Note | null> {
+    return this.http.delete<Note | null>(`${BASE}/notes/${id}`, { params: { mode }, headers: SILENT });
+  }
+
+  /** Sort une idee des archives (annule une suppression programmee). */
+  restore(id: string): Observable<Note> {
+    return this.http.post<Note>(`${BASE}/notes/${id}/restore`, {});
+  }
+
   /** Cree une tache issue de l'idee ; 409 NOTE_TASK_DUPLICATE tant que le doublon n'est pas confirme. */
   createTask(id: string, task: CreateTaskInput, allowDuplicate = false): Observable<Task> {
     return this.http.post<Task>(

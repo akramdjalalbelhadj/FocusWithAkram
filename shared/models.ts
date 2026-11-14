@@ -61,6 +61,8 @@ export interface Task {
   version: number;
   /** Idee (module Notes & idees) dont la tache est issue ; absent ou null sinon. */
   sourceNoteId?: string | null;
+  /** Tous les projets de la tache, le principal (`project`) en premier (facultatif pour React). */
+  projects?: ProjectRef[];
 }
 
 export interface Page<T> {
@@ -80,6 +82,8 @@ export interface CreateTaskInput {
   plannedEndAt?: string | null;
   estimatedMinutes?: number | null;
   projectId?: string | null;
+  /** Projets de la tache (le premier est le principal) ; s'il est fourni, remplace `projectId`. */
+  projectIds?: string[];
   tags?: string[];
   subtasks?: string[];
 }
@@ -94,7 +98,7 @@ export type TaskPatch = Partial<
     | "plannedEndAt"
     | "estimatedMinutes"
   >
-> & { projectId?: string | null; tags?: string[]; quadrant?: Quadrant };
+> & { projectId?: string | null; projectIds?: string[]; tags?: string[]; quadrant?: Quadrant };
 
 export interface TaskFilters {
   q?: string;
@@ -267,6 +271,8 @@ export interface Settings {
   notesTutorialDone?: boolean;
   /** Tutoriel de la matrice d'Eisenhower termine ou passe (facultatif : React l'ignore). */
   matrixTutorialDone?: boolean;
+  /** Pseudo affiche dans le tableau de bord (« Hello pseudo »), null tant qu'il n'a pas ete saisi. */
+  displayName?: string | null;
 }
 
 // ---- Dashboard / statistiques ---------------------------------------------

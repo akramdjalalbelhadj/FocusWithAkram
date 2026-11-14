@@ -100,4 +100,9 @@ public class UpdateSettingsRequest extends PatchRequest {
     public void setMatrixTutorialDone(Boolean value) {
         set("matrixTutorialDone", value);
     }
+
+    @JsonSetter("displayName")
+    public void setDisplayName(String value) {
+        set("displayName", value);
+    }
 }

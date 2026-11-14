@@ -11,5 +11,5 @@ import { IconComponent } from '../../icon/icon';
 })
 export class ConfirmDialogComponent {
   protected readonly data = inject<ConfirmData>(DIALOG_DATA);
-  protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
+  protected readonly ref = inject<DialogRef<boolean | 'alt'>>(DialogRef);
 }

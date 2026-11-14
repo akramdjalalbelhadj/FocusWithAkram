@@ -11,6 +11,7 @@ public record NotesBackupData(List<Category> categories, List<Note> notes) {
     }
 
     public record Note(UUID id, String title, String content, UUID categoryId, List<String> tags, Boolean favorite,
-                       Instant createdAt, Instant updatedAt) {
+                       Instant createdAt, Instant updatedAt, String archiveReason, Instant archivedAt,
+                       Instant purgeAt) {
     }
 }

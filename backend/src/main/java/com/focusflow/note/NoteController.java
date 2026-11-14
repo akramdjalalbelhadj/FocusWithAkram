@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,11 +40,12 @@ public class NoteController {
             @RequestParam(required = false) String tag,
             @RequestParam(required = false) Boolean favorite,
             @RequestParam(required = false) Boolean withTasks,
+            @RequestParam(required = false) Boolean archived,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(defaultValue = "updatedAt") String sort,
             @RequestParam(defaultValue = "desc") String dir) {
-        return service.search(new NoteFilter(q, categoryId, tag, favorite, withTasks), page, size, sort,
+        return service.search(new NoteFilter(q, categoryId, tag, favorite, withTasks, archived), page, size, sort,
                 !"asc".equalsIgnoreCase(dir));
     }
 
@@ -68,11 +70,28 @@ public class NoteController {
         return service.update(id, request.toPatch());
     }
 
-    /** Refusee (409 NOTE_HAS_TASKS) si des taches sont issues de l'idee, sauf avec {@code force=true}. */
+    /**
+     * Sans {@code mode} : ancien comportement (409 NOTE_HAS_TASKS si des taches en sont issues, sauf
+     * {@code force=true}). {@code mode=archive} : range l'idee dans les archives. {@code mode=delete} : supprime
+     * l'idee ; si des taches en sont issues, elle reste 72 heures dans les archives avant d'etre effacee.
+     * Renvoie l'idee archivee (200), ou rien (204) si elle a ete effacee.
+     */
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id, @RequestParam(defaultValue = "false") boolean force) {
-        service.delete(id, force);
+    public ResponseEntity<NoteResponse> delete(@PathVariable UUID id,
+                                               @RequestParam(defaultValue = "false") boolean force,
+                                               @RequestParam(required = false) String mode) {
+        if (mode == null) {
+            service.delete(id, force);
+            return ResponseEntity.noContent().build();
+        }
+        NoteResponse archived = service.remove(id, mode);
+        return archived == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(archived);
+    }
+
+    /** Sort une idee des archives (annule aussi une suppression programmee). */
+    @PostMapping("/{id}/restore")
+    public NoteResponse restore(@PathVariable UUID id) {
+        return service.restore(id);
     }
 
     @PostMapping("/{id}/tasks")

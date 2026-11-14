@@ -11,7 +11,7 @@
 
 <section class="card welcome mb-5 p-6">
   <p class="text-xs font-bold text-brand">TON ESPACE DE PRODUCTIVITÉ</p>
-  <h2 class="text-3xl font-extrabold">{{ greeting() }} Akram 👋</h2>
+  <h2 class="text-3xl font-extrabold">Hello {{ settings.settings().displayName ?? '' }} 👋</h2>
   <p class="text-muted mt-2">Une nouvelle journée pour avancer sur ce qui compte vraiment.</p>
 </section>
 @if (loader.error()) {

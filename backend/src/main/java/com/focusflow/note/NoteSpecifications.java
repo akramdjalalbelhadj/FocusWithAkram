@@ -22,9 +22,16 @@ final class NoteSpecifications {
             List<Predicate> ps = new ArrayList<>();
             if (f.q() != null && !f.q().isBlank()) {
                 String like = "%" + escape(f.q().strip().toLowerCase(Locale.ROOT)) + "%";
+                Subquery<UUID> tagged = query.subquery(UUID.class);
+                Root<Note> tn = tagged.from(Note.class);
+                Join<Note, String> tagName = tn.join("tags");
+                tagged.select(tn.get("id")).where(cb.equal(tn.get("id"), root.get("id")),
+                        cb.like(cb.lower(tagName), like, '\\'));
                 ps.add(cb.or(cb.like(cb.lower(root.get("title")), like, '\\'),
-                        cb.like(cb.lower(root.get("content")), like, '\\')));
+                        cb.like(cb.lower(root.get("content")), like, '\\'), cb.exists(tagged)));
             }
+            ps.add(Boolean.TRUE.equals(f.archived()) ? cb.isNotNull(root.get("archivedAt"))
+                    : cb.isNull(root.get("archivedAt")));
             if (f.categoryId() != null) {
                 ps.add(cb.equal(root.get("category").get("id"), f.categoryId()));
             }

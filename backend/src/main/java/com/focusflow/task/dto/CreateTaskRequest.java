@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public record CreateTaskRequest(
         @NotBlank(message = "Le titre est obligatoire.") @Size(max = 200, message = "200 caracteres maximum.") String title,
-        @Size(max = 10_000, message = "10 000 caracteres maximum.") String description,
+        @Size(max = 100_000, message = "100 000 caracteres maximum.") String description,
         @Size(max = 10_000, message = "10 000 caracteres maximum.") String notes,
         Quadrant quadrant,
         Instant plannedStartAt,
@@ -19,5 +19,7 @@ public record CreateTaskRequest(
         @Min(value = 1, message = "Minimum 1 minute.") @Max(value = 100_000, message = "Maximum 100000 minutes.") Integer estimatedMinutes,
         UUID projectId,
         @Size(max = 10, message = "10 etiquettes maximum.") List<@Size(max = 40, message = "40 caracteres maximum.") String> tags,
-        @Size(max = 100, message = "100 sous-taches maximum.") List<@Size(max = 200) String> subtasks) {
+        @Size(max = 100, message = "100 sous-taches maximum.") List<@Size(max = 200) String> subtasks,
+        /** Projets de la tache (le premier est le principal) ; s'il est fourni, remplace {@code projectId}. */
+        @Size(max = 20, message = "20 projets maximum.") List<UUID> projectIds) {
 }

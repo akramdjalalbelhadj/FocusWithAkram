@@ -315,17 +315,30 @@ export class NotePage {
     }
   }
 
+  protected async restore(): Promise<void> {
+    const note = this.note();
+    if (!note) return;
+    if (await this.noteActions.restore(note.id)) {
+      this.note.set({ ...note, archivedAt: null, archiveReason: null, purgeAt: null });
+    }
+  }
+
   /** Enregistre d'abord la saisie en cours, puis ouvre le formulaire de tache prerempli. */
   protected async createTask(): Promise<void> {
     await this.flush();
     const note = this.note();
     if (!note) return;
-    await this.noteActions.createTask({
+    const task = await this.noteActions.createTask({
       ...note,
       title: this.title().trim() || note.title,
       content: this.content(),
       tags: parseTags(this.tagsText()),
     });
+    // L'idee devient une tache : elle quitte la liste des idees et rejoint les Archives.
+    if (task && !note.archivedAt) {
+      this.tabs.close(note.id);
+      void this.router.navigate(['/notes']);
+    }
   }
 
   /** Categorie choisie a l'ecran (saisie en cours comprise), pour les exports. */

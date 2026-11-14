@@ -9,5 +9,6 @@ import java.util.UUID;
  * (calcule a la lecture ; une idee n'a pas de statut propre).
  */
 public record NoteSummary(UUID id, String title, String excerpt, NoteCategoryRef category, List<String> tags,
-                          boolean favorite, Instant createdAt, Instant updatedAt, long taskCount, long tasksDone) {
+                          boolean favorite, Instant createdAt, Instant updatedAt, long taskCount, long tasksDone,
+                          Instant archivedAt, String archiveReason, Instant purgeAt) {
 }

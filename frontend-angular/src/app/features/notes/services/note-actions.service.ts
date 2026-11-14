@@ -2,13 +2,12 @@ import { Dialog } from '@angular/cdk/dialog';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AppError } from '../../../core/api/app-error';
-import { NOTE_ERRORS, Note, NoteCategory, Task } from '../../../core/api/models';
+import { Note, NoteCategory, Task } from '../../../core/api/models';
 import { NotesApi } from '../../../core/api/notes.api';
 import { RefreshService } from '../../../core/services/refresh.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogComponent } from '../../../shared/ui/dialogs/index';
-import { ConfirmData } from '../../../shared/ui/dialogs/confirm-dialog/confirm-data';
+import { ConfirmData, ConfirmResult } from '../../../shared/ui/dialogs/confirm-dialog/confirm-data';
 import { TaskActions } from '../../tasks/services/task-actions.service';
 import { NoteCategoryDialogComponent } from '../components/note-category-dialog/note-category-dialog';
 import {
@@ -56,7 +55,7 @@ export class NoteActions {
     }
   }
 
-  /** Transforme l'idee en tache avec le formulaire de tache habituel ; l'idee reste intacte. */
+  /** Transforme l'idee en tache avec le formulaire de tache habituel ; l'idee rejoint ensuite les Archives. */
   createTask(note: Note): Promise<Task | undefined> {
     return this.tasks.create({
       fromNote: { id: note.id, title: note.title, content: note.content, tags: note.tags },
@@ -64,36 +63,52 @@ export class NoteActions {
   }
 
   /**
-   * Supprime une idee. Si des taches en sont issues, la suppression simple est bloquee : un avertissement en
-   * explique la raison et propose une suppression forcee, qui conserve les taches sans lien vers l'idee.
+   * Supprime ou archive une idee (choix propose). Supprimer une idee dont des taches sont issues la garde 72 heures
+   * dans les archives, restaurable, avant son effacement definitif ; ses taches restent, sans lien vers elle.
    */
   async remove(note: NoteRef): Promise<boolean> {
-    const force = note.taskCount > 0;
-    if (
-      !(await this.confirm(
-        force ? blockedDeletion(note.title, note.taskCount) : simpleDeletion(note.title),
-      ))
-    ) {
+    const linked = note.taskCount > 0;
+    const choice = await this.ask({
+      title: 'Supprimer ou archiver cette idée ?',
+      message: linked
+        ? `« ${note.title} » a donné naissance à ${note.taskCount === 1 ? 'une tâche' : `${note.taskCount} tâches`}. ` +
+          'Si vous la supprimez, elle reste 72 heures dans les Archives (vous pouvez encore changer d’avis), puis elle est ' +
+          'supprimée définitivement ; ses tâches restent, sans lien vers elle. Vous pouvez aussi simplement l’archiver.'
+        : `« ${note.title} » : la supprimer l’efface définitivement ; l’archiver la range dans les Archives.`,
+      confirmLabel: 'Supprimer',
+      altLabel: 'Archiver',
+      danger: true,
+    });
+    if (!choice) return false;
+    const mode = choice === 'alt' ? 'archive' : 'delete';
+    let archived: Note | null;
+    try {
+      archived = await firstValueFrom(this.api.remove(note.id, mode));
+    } catch (e) {
+      this.toast.errorFrom(e, mode === 'archive' ? 'Archivage impossible.' : 'Suppression impossible.');
       return false;
     }
-    try {
-      await firstValueFrom(this.api.delete(note.id, force));
-    } catch (e) {
-      // Des taches ont ete creees entre-temps (autre onglet) : meme avertissement, avec le message du serveur.
-      if (!(e instanceof AppError) || e.problem.code !== NOTE_ERRORS.hasTasks) {
-        this.toast.errorFrom(e, 'Suppression impossible.');
-        return false;
-      }
-      if (!(await this.confirm(blockedDeletion(note.title, null, e.problem.detail)))) return false;
-      try {
-        await firstValueFrom(this.api.delete(note.id, true));
-      } catch (again) {
-        this.toast.errorFrom(again, 'Suppression impossible.');
-        return false;
-      }
-    }
-    this.toast.success(force ? 'Idée supprimée ; ses tâches sont conservées.' : 'Idée supprimée.');
+    this.toast.success(
+      mode === 'archive'
+        ? 'Idée archivée.'
+        : archived
+          ? 'Idée placée dans les Archives : suppression définitive dans 72 heures.'
+          : 'Idée supprimée.',
+    );
     this.tabs.close(note.id);
+    this.refresh.bump();
+    return true;
+  }
+
+  /** Sort une idee des archives (annule aussi une suppression programmee). */
+  async restore(id: string): Promise<boolean> {
+    try {
+      await firstValueFrom(this.api.restore(id));
+    } catch (e) {
+      this.toast.errorFrom(e, 'Restauration impossible.');
+      return false;
+    }
+    this.toast.success('Idée restaurée dans Notes & idées.');
     this.refresh.bump();
     return true;
   }
@@ -133,37 +148,17 @@ export class NoteActions {
     }
   }
 
+  private async ask(data: ConfirmData): Promise<ConfirmResult> {
+    return await firstValueFrom(
+      this.dialog.open<boolean | 'alt'>(ConfirmDialogComponent, { data, backdropClass: 'ff-backdrop' })
+        .closed,
+    );
+  }
+
   private async confirm(data: ConfirmData): Promise<boolean> {
     return !!(await firstValueFrom(
       this.dialog.open<boolean>(ConfirmDialogComponent, { data, backdropClass: 'ff-backdrop' })
         .closed,
     ));
   }
-}
-
-function simpleDeletion(title: string): ConfirmData {
-  return {
-    title: 'Supprimer cette idée ?',
-    message: `« ${title} » sera supprimée définitivement.`,
-    confirmLabel: 'Supprimer',
-    danger: true,
-  };
-}
-
-/** Avertissement de suppression bloquee ; `serverDetail` remplace le decompte quand il n'est pas connu. */
-function blockedDeletion(title: string, count: number | null, serverDetail?: string): ConfirmData {
-  const origin =
-    count === null
-      ? (serverDetail ?? 'Des tâches sont issues de cette idée.')
-      : count === 1
-        ? `« ${title} » a donné naissance à une tâche.`
-        : `« ${title} » a donné naissance à ${count} tâches.`;
-  return {
-    title: 'Suppression bloquée',
-    message:
-      `${origin} La suppression simple est refusée pour ne pas perdre le lien entre l’idée et ce qu’elle a produit. ` +
-      'Si vous forcez la suppression, l’idée disparaît définitivement ; ses tâches restent dans la matrice, sans lien vers elle.',
-    confirmLabel: 'Supprimer quand même',
-    danger: true,
-  };
 }

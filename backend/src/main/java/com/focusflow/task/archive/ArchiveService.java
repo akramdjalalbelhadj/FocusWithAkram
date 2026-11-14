@@ -91,7 +91,7 @@ public class ArchiveService {
                 ps.add(cb.like(cb.lower(root.get("title")), like, '\\'));
             }
             if (f.projectId() != null) {
-                ps.add(cb.equal(root.get("project").get("id"), f.projectId()));
+                ps.add(com.focusflow.task.TaskSpecifications.inProject(root, query, cb, f.projectId()));
             }
             if (f.quadrant() != null) {
                 ps.add(cb.equal(root.get("important"), f.quadrant().important()));

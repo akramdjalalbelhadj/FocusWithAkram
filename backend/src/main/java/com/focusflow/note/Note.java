@@ -4,6 +4,8 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -61,6 +63,16 @@ public class Note {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "archived_at")
+    private Instant archivedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "archive_reason")
+    private NoteArchiveReason archiveReason;
+
+    @Column(name = "purge_at")
+    private Instant purgeAt;
 
     @Version
     private long version;
@@ -129,6 +141,25 @@ public class Note {
         tags.clear();
         tags.addAll(wanted.values());
     }
+
+    /** Range l'idee dans les archives ; {@code purgeAt} n'est renseigne que pour une suppression differee. */
+    public void archive(NoteArchiveReason reason, Instant now, Instant purgeAt) {
+        this.archivedAt = now;
+        this.archiveReason = reason;
+        this.purgeAt = reason == NoteArchiveReason.DELETED ? purgeAt : null;
+    }
+
+    /** Sort l'idee des archives (annule aussi une suppression differee). */
+    public void restore() {
+        this.archivedAt = null;
+        this.archiveReason = null;
+        this.purgeAt = null;
+    }
+
+    public boolean isArchived() { return archivedAt != null; }
+    public Instant getArchivedAt() { return archivedAt; }
+    public NoteArchiveReason getArchiveReason() { return archiveReason; }
+    public Instant getPurgeAt() { return purgeAt; }
 
     public void touch(Instant now) {
         this.updatedAt = now;

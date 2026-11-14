@@ -32,7 +32,7 @@ public final class TaskSpecifications {
                 ps.add(cb.equal(root.get("urgent"), f.quadrant().urgent()));
             }
             if (f.projectId() != null) {
-                ps.add(cb.equal(root.get("project").get("id"), f.projectId()));
+                ps.add(inProject(root, query, cb, f.projectId()));
             }
             if (f.tag() != null && !f.tag().isBlank()) {
                 Join<Task, Tag> tag = root.join("tags");
@@ -53,6 +53,17 @@ public final class TaskSpecifications {
             }
             return cb.and(ps.toArray(Predicate[]::new));
         };
+    }
+
+    /** La tache fait partie du projet, comme projet principal ou supplementaire. */
+    public static Predicate inProject(jakarta.persistence.criteria.Root<Task> root,
+                                      jakarta.persistence.criteria.CriteriaQuery<?> query,
+                                      jakarta.persistence.criteria.CriteriaBuilder cb, java.util.UUID projectId) {
+        jakarta.persistence.criteria.Subquery<java.util.UUID> extra = query.subquery(java.util.UUID.class);
+        jakarta.persistence.criteria.Root<Task> t = extra.from(Task.class);
+        Join<Task, com.focusflow.project.Project> p = t.join("extraProjects");
+        extra.select(t.get("id")).where(cb.equal(t.get("id"), root.get("id")), cb.equal(p.get("id"), projectId));
+        return cb.or(cb.equal(root.get("project").get("id"), projectId), cb.exists(extra));
     }
 
     private static String escape(String s) {

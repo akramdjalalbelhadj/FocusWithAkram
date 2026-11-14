@@ -11,6 +11,8 @@ import com.focusflow.task.OriginProgress;
 import com.focusflow.task.TaskService;
 import com.focusflow.task.dto.TaskResponse;
 import java.time.Clock;
+import java.time.Duration;
+import java.util.Locale;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -117,8 +119,53 @@ public class NoteService {
         return NoteMapper.toResponse(n, tasks.fromNote(id));
     }
 
+    /** Delai de reflexion avant l'effacement d'une idee supprimee dont des taches sont issues. */
+    public static final Duration DELETE_GRACE = Duration.ofHours(72);
+
     /**
-     * Supprime une idee. Refuse tant que des taches en sont issues, sauf suppression forcee : l'idee est alors
+     * Suppression demandee depuis l'interface. {@code archive} : l'idee rejoint les archives. {@code delete} :
+     * sans tache liee, l'idee est effacee tout de suite (renvoie null) ; sinon elle reste {@link #DELETE_GRACE}
+     * dans les archives, restaurable, puis est effacee et ses taches perdent seulement le lien.
+     */
+    @Transactional
+    public NoteResponse remove(UUID id, String mode) {
+        Note n = find(id);
+        Instant now = now();
+        switch (mode.toLowerCase(Locale.ROOT)) {
+            case "archive" -> n.archive(NoteArchiveReason.ARCHIVED, now, null);
+            case "delete" -> {
+                if (tasks.countFromNote(id) == 0) {
+                    notes.delete(n);
+                    return null;
+                }
+                n.archive(NoteArchiveReason.DELETED, now, now.plus(DELETE_GRACE));
+            }
+            default -> throw new IllegalArgumentException("Mode de suppression inconnu : " + mode + " (archive ou delete).");
+        }
+        return NoteMapper.toResponse(n, tasks.fromNote(id));
+    }
+
+    @Transactional
+    public NoteResponse restore(UUID id) {
+        Note n = find(id);
+        n.restore();
+        return NoteMapper.toResponse(n, tasks.fromNote(id));
+    }
+
+    /** Efface les idees supprimees dont le delai est ecoule ; leurs taches restent, sans lien. */
+    @Transactional
+    public int purgeExpired() {
+        List<UUID> expired = notes.findAllByPurgeAtLessThanEqual(now()).stream().map(Note::getId).toList();
+        for (UUID id : expired) {
+            // Mise a jour groupee (vide le contexte de persistance) : suppression par identifiant ensuite.
+            tasks.detachFromNote(id);
+        }
+        notes.deleteAllById(expired);
+        return expired.size();
+    }
+
+    /**
+     * Ancien contrat (sans mode). Supprime une idee. Refuse tant que des taches en sont issues, sauf suppression forcee : l'idee est alors
      * supprimee et ses taches, conservees dans la matrice, perdent seulement le lien.
      */
     @Transactional
@@ -145,7 +192,7 @@ public class NoteService {
      * Cree une tache issue de l'idee, avec les regles habituelles des taches (quadrant, dates...). L'idee est
      * verrouillee pendant la creation : deux envois simultanes ne produisent pas deux taches. Un titre deja
      * utilise par une tache de cette idee exige une confirmation explicite ({@code allowDuplicate}).
-     * L'idee elle-meme n'est pas modifiee.
+     * L'idee quitte ensuite la liste des idees : elle rejoint les archives comme « ancienne idee » (CONVERTED).
      */
     @Transactional
     public TaskResponse createTask(UUID noteId, CreateTaskFromNoteRequest req) {
@@ -154,7 +201,12 @@ public class NoteService {
             throw ApiException.conflict("NOTE_TASK_DUPLICATE",
                     "Une tache « " + req.task().title().strip() + " » issue de cette idee existe deja.");
         }
-        return tasks.create(req.task(), noteId);
+        TaskResponse created = tasks.create(req.task(), noteId);
+        Note n = find(noteId);
+        if (!n.isArchived()) {
+            n.archive(NoteArchiveReason.CONVERTED, now(), null);
+        }
+        return created;
     }
 
     // ---- Utilitaires --------------------------------------------------------------------------

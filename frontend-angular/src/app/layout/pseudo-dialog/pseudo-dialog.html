@@ -1,0 +1,24 @@
+<form
+  class="card w-[min(26rem,calc(100vw-2rem))] p-6 anim-pop shadow-modal"
+  role="dialog"
+  aria-labelledby="pseudo-title"
+  (submit)="$event.preventDefault(); save()"
+>
+  <h2 id="pseudo-title" class="text-lg font-bold">Bienvenue 👋</h2>
+  <p class="text-muted mt-1">Quel est votre pseudo ? Il s’affichera dans le tableau de bord.</p>
+  <label class="field-label mt-4" for="pseudo-input">Pseudo</label>
+  <input
+    id="pseudo-input"
+    class="input"
+    maxlength="40"
+    autocomplete="nickname"
+    cdkFocusInitial
+    [value]="name()"
+    (input)="name.set($any($event.target).value)"
+  />
+  <div class="flex justify-end gap-2 mt-6">
+    <button type="submit" class="btn btn-primary" [disabled]="!name().trim() || saving()">
+      Continuer
+    </button>
+  </div>
+</form>

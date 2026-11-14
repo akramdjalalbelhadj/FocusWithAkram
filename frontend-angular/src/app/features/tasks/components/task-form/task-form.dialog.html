@@ -1,5 +1,5 @@
 <form
-  class="card w-[min(40rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] flex flex-col anim-pop shadow-modal"
+  class="card w-[min(56rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-2rem)] flex flex-col anim-pop shadow-modal"
   [formGroup]="form"
   (ngSubmit)="submit()"
   role="dialog"
@@ -52,20 +52,24 @@
 
     <div>
       <div class="flex items-center justify-between gap-2">
-        <label class="field-label" for="tf-desc">Description</label>
+        <span class="field-label" id="tf-desc-label">Description</span>
         @if (fromNote?.content) {
           <button type="button" class="btn btn-ghost btn-sm -mt-1" (click)="useNoteContent()">
             <ff-icon name="file-text" [size]="14" />Reprendre le contenu de l’idée
           </button>
         }
       </div>
-      <textarea
-        id="tf-desc"
-        class="input"
-        formControlName="description"
-        rows="3"
-        placeholder="Détails, contexte, critères de réussite…"
-      ></textarea>
+      <div class="task-desc-editor rounded-xl border border-line">
+        @defer (on immediate) {
+          <ff-note-editor
+            label="Description de la tâche"
+            [(value)]="description"
+            [(mode)]="editorMode"
+          />
+        } @placeholder {
+          <p class="p-4 text-sm text-muted">Chargement de l’éditeur…</p>
+        }
+      </div>
     </div>
 
     <fieldset>
@@ -115,14 +119,67 @@
     </fieldset>
 
     <div class="grid sm:grid-cols-2 gap-3">
-      <div>
-        <label class="field-label" for="tf-project">Projet</label>
-        <select id="tf-project" class="input" formControlName="projectId">
-          <option value="">Aucun projet</option>
-          @for (p of projects(); track p.id) {
-            <option [value]="p.id">{{ p.name }}</option>
-          }
-        </select>
+      <div class="relative">
+        <label class="field-label" for="tf-project-search">Projets</label>
+        @if (selectedProjects().length) {
+          <div class="flex flex-wrap gap-1.5 mb-1.5">
+            @for (p of selectedProjects(); track p.id; let first = $first) {
+              <span class="chip" [title]="first ? 'Projet principal' : ''">
+                <span class="size-2 rounded-full" [style.background]="p.color"></span>{{ p.name }}
+                <button
+                  type="button"
+                  class="ml-1 opacity-60 hover:opacity-100"
+                  [attr.aria-label]="'Retirer le projet ' + p.name"
+                  (click)="toggleProject(p.id, false)"
+                >
+                  <ff-icon name="x" [size]="11" />
+                </button>
+              </span>
+            }
+          </div>
+        }
+        <input
+          id="tf-project-search"
+          class="input"
+          type="search"
+          role="combobox"
+          autocomplete="off"
+          aria-controls="tf-project-list"
+          [attr.aria-expanded]="projectOpen()"
+          [placeholder]="projects().length ? 'Rechercher un projet…' : 'Aucun projet'"
+          [disabled]="!projects().length"
+          [value]="projectQuery()"
+          (input)="projectQuery.set($any($event.target).value); projectOpen.set(true)"
+          (focus)="projectOpen.set(true)"
+          (blur)="closeProjects()"
+          (keydown.escape)="projectOpen.set(false)"
+          (keydown.enter)="$event.preventDefault(); pickFirstProject()"
+        />
+        @if (projectOpen()) {
+          <ul
+            id="tf-project-list"
+            role="listbox"
+            aria-label="Projets"
+            class="absolute z-30 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-line bg-surface shadow-modal p-1"
+          >
+            @for (p of filteredProjects(); track p.id) {
+              <li
+                role="option"
+                [attr.aria-selected]="projectIds().includes(p.id)"
+                class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm cursor-pointer hover:bg-surface-2"
+                (mousedown)="$event.preventDefault(); toggleProject(p.id, !projectIds().includes(p.id))"
+              >
+                <span class="size-2 rounded-full flex-none" [style.background]="p.color"></span>
+                <span class="truncate flex-1">{{ p.name }}</span>
+                @if (projectIds().includes(p.id)) {
+                  <ff-icon name="check" [size]="14" class="text-brand" />
+                }
+              </li>
+            } @empty {
+              <li class="px-2 py-1.5 text-sm text-muted">Aucun projet trouvé.</li>
+            }
+          </ul>
+        }
       </div>
       <div>
         <label class="field-label" for="tf-est">Estimation (minutes)</label>
@@ -154,23 +211,6 @@
       }
     </div>
 
-    @if (!editing) {
-      <div>
-        <label class="field-label" for="tf-sub">Sous-tâches</label>
-        <textarea
-          id="tf-sub"
-          class="input"
-          formControlName="subtasks"
-          rows="3"
-          placeholder="Une sous-tâche par ligne"
-        ></textarea>
-      </div>
-    }
-
-    <div>
-      <label class="field-label" for="tf-notes">Notes</label>
-      <textarea id="tf-notes" class="input" formControlName="notes" rows="2"></textarea>
-    </div>
 
     @if (duplicate()) {
       <div

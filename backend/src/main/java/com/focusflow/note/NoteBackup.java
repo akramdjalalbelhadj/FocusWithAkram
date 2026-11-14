@@ -44,7 +44,9 @@ public class NoteBackup {
                 notes.findAll(Sort.by("createdAt", "id")).stream()
                         .map(n -> new NotesBackupData.Note(n.getId(), n.getTitle(), n.getContent(),
                                 n.getCategory() == null ? null : n.getCategory().getId(), NoteMapper.tags(n),
-                                n.isFavorite(), n.getCreatedAt(), n.getUpdatedAt()))
+                                n.isFavorite(), n.getCreatedAt(), n.getUpdatedAt(),
+                                n.getArchiveReason() == null ? null : n.getArchiveReason().name(), n.getArchivedAt(),
+                                n.getPurgeAt()))
                         .toList());
     }
 
@@ -102,6 +104,10 @@ public class NoteBackup {
                 }
                 Note n = Note.imported(nd.id(), nd.title(), nd.content(), Boolean.TRUE.equals(nd.favorite()), nd.tags(),
                         nd.createdAt(), nd.updatedAt());
+                if (nd.archiveReason() != null) {
+                    n.archive(NoteArchiveReason.valueOf(nd.archiveReason()),
+                            nd.archivedAt() != null ? nd.archivedAt() : n.getUpdatedAt(), nd.purgeAt());
+                }
                 if (nd.categoryId() != null) {
                     n.setCategory(categoryByFileId.get(nd.categoryId()));
                 }

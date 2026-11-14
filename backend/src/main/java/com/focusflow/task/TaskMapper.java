@@ -76,6 +76,7 @@ public class TaskMapper {
                 t.getTags().stream().map(Tag::getName).sorted(String.CASE_INSENSITIVE_ORDER).toList(),
                 subtasks, done, subtasks.size(), t.getCreatedAt(), t.getUpdatedAt(), t.getPlannedStartAt(),
                 t.getPlannedEndAt(), t.getActualStartAt(), t.getActualEndAt(), t.getArchivedAt(), t.getExecutionNumber(),
-                t.isOverdue(now), worked.total().getOrDefault(t.getId(), 0L), timing, t.getVersion(), t.getSourceNoteId());
+                t.isOverdue(now), worked.total().getOrDefault(t.getId(), 0L), timing, t.getVersion(), t.getSourceNoteId(),
+                t.getProjects().stream().map(p -> new ProjectRef(p.getId(), p.getName(), p.getColor())).toList());
     }
 }

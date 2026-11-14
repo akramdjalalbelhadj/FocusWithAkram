@@ -11,6 +11,17 @@
 <div class="settings-layout">
   <section class="card p-5 space-y-5" aria-labelledby="s-look">
     <h2 id="s-look" class="font-bold text-lg">Apparence et région</h2>
+    <div>
+      <label class="field-label" for="set-pseudo">Pseudo</label>
+      <input
+        id="set-pseudo"
+        class="input"
+        maxlength="40"
+        autocomplete="nickname"
+        [value]="s().displayName ?? ''"
+        (change)="$any($event.target).value.trim() && set({ displayName: $any($event.target).value.trim() })"
+      />
+    </div>
     <fieldset>
       <legend class="field-label">Thème</legend>
       <div class="grid grid-cols-3 gap-2" role="radiogroup">

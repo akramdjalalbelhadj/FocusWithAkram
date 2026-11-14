@@ -111,6 +111,16 @@ public class SettingsService {
         if (p.has("compactMode")) s.setCompactMode(Boolean.TRUE.equals(p.bool("compactMode")));
         if (p.has("notesTutorialDone")) s.setNotesTutorialDone(Boolean.TRUE.equals(p.bool("notesTutorialDone")));
         if (p.has("matrixTutorialDone")) s.setMatrixTutorialDone(Boolean.TRUE.equals(p.bool("matrixTutorialDone")));
+        if (p.has("displayName")) s.setDisplayName(displayName(p.string("displayName")));
+    }
+
+    /** Pseudo affiche dans le tableau de bord : espaces retires, vide = aucun, 40 caracteres maximum. */
+    private static String displayName(String raw) {
+        String v = raw == null ? "" : raw.strip();
+        if (v.length() > 40) {
+            throw new IllegalArgumentException("Le pseudo ne peut pas depasser 40 caracteres.");
+        }
+        return v.isEmpty() ? null : v;
     }
 
     private static int range(String field, Integer value, int min, int max) {

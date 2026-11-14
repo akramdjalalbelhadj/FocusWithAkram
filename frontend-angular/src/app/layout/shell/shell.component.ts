@@ -1,10 +1,12 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NAV, NavItem } from '../../config/navigation';
 import { PomodoroEngine, SESSION_LABEL } from '../../core/services/pomodoro.engine';
+import { SettingsStore } from '../../core/services/settings.store';
 import { ShortcutsService } from '../../core/services/shortcuts.service';
+import { PseudoDialogComponent } from '../pseudo-dialog/pseudo-dialog';
 import { TaskActions } from '../../features/tasks/services/task-actions.service';
 import { IconComponent } from '../../shared/ui/icon/icon';
 import { ToastHostComponent } from '../../shared/ui/toast-host/toast-host';
@@ -41,6 +43,21 @@ export class ShellComponent {
 
   constructor() {
     this.shortcuts.register({ palette: () => this.openPalette(), help: () => this.openHelp() });
+    // Premier lancement : le serveur renvoie displayName = null tant qu'aucun pseudo n'a ete saisi
+    // (absent = serveur injoignable, on ne demande rien).
+    const settings = inject(SettingsStore);
+    let asked = false;
+    effect(() => {
+      if (asked || !settings.loaded() || settings.settings().displayName !== null) return;
+      asked = true;
+      untracked(() =>
+        this.dialog.open(PseudoDialogComponent, {
+          backdropClass: 'ff-backdrop',
+          ariaModal: true,
+          disableClose: true,
+        }),
+      );
+    });
   }
 
   protected label(type: 'WORK' | 'SHORT_BREAK' | 'LONG_BREAK'): string {

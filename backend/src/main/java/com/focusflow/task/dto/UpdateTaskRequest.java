@@ -45,6 +45,11 @@ public class UpdateTaskRequest extends PatchRequest {
         set("projectId", value);
     }
 
+    @JsonSetter("projectIds")
+    public void setProjectIds(List<UUID> value) {
+        set("projectIds", value);
+    }
+
     @JsonSetter("tags")
     public void setTags(List<String> value) {
         set("tags", value);

@@ -59,9 +59,10 @@ interface SectionGroup {
   days: DayGroup[];
 }
 
+import { ArchivedNotesComponent } from '../../components/archived-notes/archived-notes';
 @Component({
   selector: 'ff-archives-page',
-  imports: [IconComponent, EmptyComponent, ErrorComponent, SkeletonComponent],
+  imports: [ArchivedNotesComponent, IconComponent, EmptyComponent, ErrorComponent, SkeletonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './archives.page.html',
 })

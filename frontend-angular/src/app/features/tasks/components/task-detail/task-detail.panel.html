@@ -94,14 +94,17 @@
       </div>
 
       @if (t.description) {
-        <p class="whitespace-pre-wrap text-muted">{{ t.description }}</p>
+        @defer (on immediate) {
+          <ff-markdown-view [markdown]="t.description" label="Description de la tâche" />
+        } @placeholder {
+          <p class="whitespace-pre-wrap text-muted">{{ t.description }}</p>
+        }
       }
 
       <div class="flex flex-wrap gap-2 text-sm">
-        @if (t.project) {
+        @for (p of t.projects ?? (t.project ? [t.project] : []); track p.id) {
           <span class="chip"
-            ><span class="size-2 rounded-full" [style.background]="t.project.color"></span
-            >{{ t.project.name }}</span
+            ><span class="size-2 rounded-full" [style.background]="p.color"></span>{{ p.name }}</span
           >
         }
         @for (tag of t.tags; track tag) {
@@ -164,73 +167,6 @@
           }
         </ol>
       </section>
-
-      <section aria-labelledby="st-h">
-        <div class="flex items-center justify-between mb-2">
-          <h3 id="st-h" class="section-title">Sous-tâches</h3>
-          @if (t.subtasksTotal) {
-            <span class="text-xs text-muted tabular-nums"
-              >{{ t.subtasksDone }}/{{ t.subtasksTotal }}</span
-            >
-          }
-        </div>
-        @if (t.subtasksTotal) {
-          <div
-            class="h-1.5 rounded-full bg-surface-3 overflow-hidden mb-3"
-            role="progressbar"
-            aria-label="Progression des sous-tâches"
-            [attr.aria-valuenow]="t.subtasksDone"
-            aria-valuemin="0"
-            [attr.aria-valuemax]="t.subtasksTotal"
-          >
-            <div
-              class="h-full bg-brand transition-all"
-              [style.width.%]="(t.subtasksDone / t.subtasksTotal) * 100"
-            ></div>
-          </div>
-        }
-        <ul class="space-y-1">
-          @for (s of t.subtasks; track s.id) {
-            <li class="flex items-center gap-2 group">
-              <input
-                type="checkbox"
-                class="size-4 accent-[var(--brand)]"
-                [checked]="s.done"
-                [attr.aria-label]="s.title"
-                (change)="toggleSub(s.id, $any($event.target).checked)"
-              />
-              <span class="flex-1" [class.line-through]="s.done" [class.text-muted]="s.done">{{
-                s.title
-              }}</span>
-              <button
-                type="button"
-                class="btn btn-ghost btn-sm btn-icon opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                [attr.aria-label]="'Supprimer ' + s.title"
-                (click)="deleteSub(s.id)"
-              >
-                <ff-icon name="x" [size]="14" />
-              </button>
-            </li>
-          }
-        </ul>
-        <form class="flex gap-2 mt-2" (submit)="$event.preventDefault(); addSub(newSub)">
-          <input
-            #newSub
-            class="input !min-h-9"
-            placeholder="Ajouter une sous-tâche"
-            aria-label="Nouvelle sous-tâche"
-            maxlength="200"
-          />
-          <button type="submit" class="btn btn-secondary btn-sm">Ajouter</button>
-        </form>
-      </section>
-
-      @if (t.notes) {
-        <section>
-          <h3 class="section-title mb-2">Notes</h3>
-          <p class="whitespace-pre-wrap text-muted">{{ t.notes }}</p>
-        </section>
-      }
 
       @if (
         executions().length > 1 || (executions().length === 1 && executions()[0].sessions.length)

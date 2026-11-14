@@ -12,6 +12,6 @@ public final class SettingsMapper {
                 s.isAutoStartBreaks(), s.isAutoStartWork(), s.isNotificationsEnabled(), s.isSoundEnabled(),
                 s.getSoundName(), s.getDailyFocusGoalMinutes(), s.isSubtasksCompleteParent(),
                 s.isShortcutsEnabled(), s.isCompactMode(), s.getNoteEditorMode(),
-                s.isNotesTutorialDone(), s.isMatrixTutorialDone());
+                s.isNotesTutorialDone(), s.isMatrixTutorialDone(), s.getDisplayName());
     }
 }

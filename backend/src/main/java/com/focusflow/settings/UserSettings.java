@@ -76,6 +76,9 @@ public class UserSettings {
     @Column(name = "matrix_tutorial_done", nullable = false)
     private boolean matrixTutorialDone;
 
+    @Column(name = "display_name")
+    private String displayName;
+
     @Version
     private long version;
 
@@ -117,4 +120,6 @@ public class UserSettings {
     public void setNotesTutorialDone(boolean notesTutorialDone) { this.notesTutorialDone = notesTutorialDone; }
     public boolean isMatrixTutorialDone() { return matrixTutorialDone; }
     public void setMatrixTutorialDone(boolean matrixTutorialDone) { this.matrixTutorialDone = matrixTutorialDone; }
+    public String getDisplayName() { return displayName; }
+    public void setDisplayName(String displayName) { this.displayName = displayName; }
 }

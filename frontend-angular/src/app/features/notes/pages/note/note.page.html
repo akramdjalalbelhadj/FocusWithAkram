@@ -66,6 +66,22 @@
     </div>
   </div>
 
+  @if (n.archivedAt) {
+    <div class="rounded-xl border border-line bg-warning-soft p-3 mb-3 text-sm flex flex-wrap items-center gap-3" role="status">
+      <ff-icon name="archive" [size]="16" />
+      <span class="flex-1 min-w-0">
+        @switch (n.archiveReason) {
+          @case ('CONVERTED') { Ancienne idée : elle a été transformée en tâche et se trouve dans les Archives. }
+          @case ('DELETED') { Idée supprimée : elle sera effacée définitivement le {{ settings.fmt(n.purgeAt!) }}. }
+          @default { Idée archivée. }
+        }
+      </span>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="restore()">
+        <ff-icon name="undo" [size]="14" />{{ n.archiveReason === 'DELETED' ? 'Annuler la suppression' : 'Restaurer' }}
+      </button>
+    </div>
+  }
+
   <div class="note-layout">
     <section class="note-main" aria-label="Idée">
       <label class="sr-only-text" for="note-title">Titre de l’idée</label>

@@ -40,12 +40,17 @@ final class NoteMapper {
     static NoteSummary toSummary(Note n, OriginProgress progress) {
         OriginProgress p = progress == null ? new OriginProgress(0, 0) : progress;
         return new NoteSummary(n.getId(), n.getTitle(), excerpt(n.getContent()), ref(n.getCategory()), tags(n),
-                n.isFavorite(), n.getCreatedAt(), n.getUpdatedAt(), p.total(), p.done());
+                n.isFavorite(), n.getCreatedAt(), n.getUpdatedAt(), p.total(), p.done(), n.getArchivedAt(), reason(n),
+                n.getPurgeAt());
     }
 
     static NoteResponse toResponse(Note n, List<TaskResponse> tasks) {
         return new NoteResponse(n.getId(), n.getTitle(), n.getContent(), ref(n.getCategory()), tags(n), n.isFavorite(),
-                n.getCreatedAt(), n.getUpdatedAt(), n.getVersion(), tasks);
+                n.getCreatedAt(), n.getUpdatedAt(), n.getVersion(), tasks, n.getArchivedAt(), reason(n), n.getPurgeAt());
+    }
+
+    private static String reason(Note n) {
+        return n.getArchiveReason() == null ? null : n.getArchiveReason().name();
     }
 
     static List<String> tags(Note n) {
