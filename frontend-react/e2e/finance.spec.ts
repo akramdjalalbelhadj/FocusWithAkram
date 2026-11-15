@@ -75,11 +75,21 @@ test("Mes achats : solde, visite guidée, feuille du mois, montants datés, plaf
     .poll(async () => (await (await request.get(api + "finance/preferences")).json()).tutorialDone)
     .toBe(true);
   await page.reload();
-  await expect(section(page, "Revenus")).toBeVisible();
+  // « Mon mois » : tableau de bord, sans le detail des lignes.
+  const balance = page.locator('[data-tour="month-balance"]');
+  await expect(balance).toBeVisible();
   await page.waitForTimeout(800);
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByRole("main").getByText(money("1 200,00")).first()).toBeVisible();
+  await expect(balance.getByText(money("1 200,00"))).toBeVisible();
   await expect(page.getByRole("heading", { name: "Pour bien démarrer" })).toBeVisible();
+  await expect(section(page, "Revenus")).toHaveCount(0);
+  await expect(page.getByRole("main").getByText(/épargne prévue/i)).toHaveCount(0);
+
+  // Le detail du mois est dans son propre onglet.
+  const tabs = page.getByRole("navigation", { name: "Sections de Mes achats" });
+  await tabs.getByRole("link", { name: "Détails du mois" }).click();
+  await expect(page).toHaveURL(/\/finance\/details/);
+  await expect(section(page, "Revenus")).toBeVisible();
 
   // Bulle d'aide : ouverte au clic, fermee par Echap.
   await section(page, "Revenus").getByRole("button", { name: "Aide : Revenus" }).click();
@@ -118,14 +128,14 @@ test("Mes achats : solde, visite guidée, feuille du mois, montants datés, plaf
   await dialog.getByRole("button", { name: "Enregistrer" }).click();
   await closed(page);
   await expect(row(page, "Dépenses fixes", "Loyer").getByText(money("350,00")).first()).toBeVisible();
-  await page.goto("/finance/month?mois=2026-12");
+  await page.goto("/finance/details?mois=2026-12");
   await expect(row(page, "Dépenses fixes", "Loyer").getByText(money("350,00")).first()).toBeVisible();
   await expect(row(page, "Revenus", "Salaire")).toHaveCount(1);
-  await page.goto("/finance/month?mois=2027-01");
+  await page.goto("/finance/details?mois=2027-01");
   await expect(row(page, "Dépenses fixes", "Loyer").getByText(money("400,00")).first()).toBeVisible();
-  await page.goto("/finance/month?mois=2027-03");
+  await page.goto("/finance/details?mois=2027-03");
   await expect(row(page, "Revenus", "Salaire")).toHaveCount(0);
-  await page.goto("/finance/month?mois=2026-11");
+  await page.goto("/finance/details?mois=2026-11");
 
   // Salaire reellement recu plus bas (absence), explique en commentaire ; loyer paye.
   await section(page, "Revenus").getByRole("button", { name: "Saisir le montant reçu : Salaire" }).click();
@@ -136,7 +146,8 @@ test("Mes achats : solde, visite guidée, feuille du mois, montants datés, plaf
   await closed(page);
   const salary = row(page, "Revenus", "Salaire");
   await expect(salary.getByText(money("2 100,00")).first()).toBeVisible();
-  await expect(salary.getByText(/190,00/).first()).toBeVisible();
+  // Pas d'ecart pour un revenu : le prevu ne sert qu'aux calculs des achats prevus.
+  await expect(salary.getByText(/190,00/)).toHaveCount(0);
   await expect(section(page, "Revenus").getByText("Deux jours d’absence")).toBeVisible();
 
   await section(page, "Dépenses fixes").getByRole("button", { name: "Saisir le montant payé : Loyer" }).click();
@@ -220,10 +231,18 @@ test("Mes achats : solde, visite guidée, feuille du mois, montants datés, plaf
 
   // Epargne reelle de novembre : 2 100 - (350 + 340 + 50) = 1 360 EUR.
   await expect(section(page, "Épargne du mois").getByText(money("1 360,00")).first()).toBeVisible();
+  await expect(section(page, "Épargne du mois").getByRole("columnheader", { name: "Prévu" })).toHaveCount(0);
+  await axe(page, "Détails du mois");
+
+  // Tableau de bord du meme mois : recu 2 100 EUR (prevu 2 290 EUR pour les calculs), epargne reelle 1 360 EUR.
+  await tabs.getByRole("link", { name: "Mon mois" }).click();
+  await expect(page.locator('[data-tour="month-revenue"]').getByText(money("2 100,00"))).toBeVisible();
+  await expect(page.locator('[data-tour="month-revenue"]').getByText(/Prévu 2\s?290,00/)).toBeVisible();
+  await expect(page.locator('[data-tour="month-savings"]').getByText(money("1 360,00"))).toBeVisible();
+  await expect(page.getByRole("main").locator("table")).toHaveCount(0);
   await axe(page, "Mon mois");
 
   // Operations : historique et vue des recurrents.
-  const tabs = page.getByRole("navigation", { name: "Sections de Mes achats" });
   await tabs.getByRole("link", { name: "Opérations" }).click();
   for (const label of ["Marché", "Marché bis", "Prêt à Sami"]) {
     await expect(page.getByRole("main").getByText(label, { exact: true }).first()).toBeVisible();
@@ -264,6 +283,8 @@ test("Mes achats : solde, visite guidée, feuille du mois, montants datés, plaf
   for (const path of [
     "month",
     "month?mois=2027-01",
+    "details",
+    "details?mois=2027-01",
     "operations",
     "operations?vue=recurrents",
     "purchases",
@@ -276,8 +297,11 @@ test("Mes achats : solde, visite guidée, feuille du mois, montants datés, plaf
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `débordement horizontal de /finance/${path} à 390 px`).toBeLessThanOrEqual(0);
   }
-  await page.goto("/finance/month");
+  await page.goto("/finance/details");
   await expect(section(page, "Dépenses variables").getByText("Invités dimanche")).toBeVisible();
+  await axe(page, "Détails du mois à 390 px");
+  await page.goto("/finance/month");
+  await expect(page.locator('[data-tour="month-savings"]')).toBeVisible();
   await axe(page, "Mon mois à 390 px");
 
   expect(errors, "erreurs JavaScript").toEqual([]);

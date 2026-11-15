@@ -3,6 +3,7 @@ import {
   differenceTone,
   envelopePercent,
   envelopeTone,
+  incomeState,
   rowStatusLabel,
   savingsProgress,
   sheetIsEmpty,
@@ -46,5 +47,16 @@ describe('month-view', () => {
   it('detecte le premier usage', () => {
     expect(sheetIsEmpty({ incomes: [], fixed: [], variable: [] })).toBe(true);
     expect(sheetIsEmpty({ incomes: [], fixed: [], variable: [{} as never] })).toBe(false);
+  });
+
+  it('revenus du tableau de bord : prochain attendu, puis dernier reçu', () => {
+    const row = (date: string, status: 'PLANNED' | 'LATE' | 'DONE' | 'SKIPPED') => ({ date, status }) as never;
+    const pending = incomeState([row('2026-11-28', 'PLANNED'), row('2026-11-05', 'LATE'), row('2026-11-02', 'DONE')]);
+    expect(pending.pending).toBe(2);
+    expect((pending.next as unknown as { date: string }).date).toBe('2026-11-05');
+    const done = incomeState([row('2026-11-27', 'DONE'), row('2026-11-02', 'DONE'), row('2026-11-10', 'SKIPPED')]);
+    expect(done.next).toBeNull();
+    expect((done.lastReceived as unknown as { date: string }).date).toBe('2026-11-27');
+    expect(incomeState([])).toEqual({ next: null, pending: 0, lastReceived: null });
   });
 });

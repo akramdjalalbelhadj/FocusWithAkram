@@ -1,0 +1,24 @@
+<div class="month-nav" data-tour="month-nav">
+  <div class="flex items-center gap-1 min-w-0">
+    <button type="button" class="btn btn-ghost btn-sm btn-icon" aria-label="Mois précédent" (click)="shift.emit(-1)">
+      <ff-icon name="chevron-left" />
+    </button>
+    <h2 class="month-title" aria-live="polite">{{ title() }}</h2>
+    <button type="button" class="btn btn-ghost btn-sm btn-icon" aria-label="Mois suivant" (click)="shift.emit(1)">
+      <ff-icon name="chevron-right" />
+    </button>
+    <ff-help-tip label="Le mois affiché" [text]="help()" />
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    @if (period() === 'PAST') {
+      <span class="badge badge-todo">Mois passé · modifiable</span>
+    } @else if (period() === 'FUTURE') {
+      <span class="badge badge-progress">Mois à venir</span>
+    }
+    @if (period() !== 'CURRENT') {
+      <button type="button" class="btn btn-secondary btn-sm" (click)="current.emit()">
+        <ff-icon name="calendar-check" [size]="15" />Mois en cours
+      </button>
+    }
+  </div>
+</div>

@@ -13,7 +13,9 @@ Chaque mois est une **feuille** : un tableau qui montre, pour le mois choisi, ce
 | **Dépenses variables** | Courses, restaurants… avec un **plafond** mensuel (ex. courses 300 €) | On saisit les dépenses au fil du mois, ou le total du mois. Au-delà du plafond, la feuille demande un **commentaire** qui explique le dépassement. |
 | **Autres dépenses** | Tout le reste (imprévus, achats prévus réalisés) | Saisie libre (bouton Dépense, touche E). |
 
-En bas de la feuille : **épargne prévue** (revenus prévus − dépenses prévues) et **épargne réelle** (revenus reçus − dépenses payées), comparées à l'objectif d'épargne du mois.
+En bas de la feuille : **épargne réelle** (revenus reçus − dépenses payées), comparée à l'objectif d'épargne du mois. Il n'y a **pas d'épargne prévue** (lot 28, 15 novembre 2026) : l'épargne de chaque mois est seulement constatée, pour les statistiques.
+
+**Revenus (lot 28)** : le reçu reste à 0 € tant que le montant réellement reçu n'est pas saisi. Le salaire prévu sert uniquement aux calculs des achats prévus (prévision, faisabilité) : **aucun écart** reçu − prévu n'est affiché pour un revenu. Chaque période a son propre salaire prévu (2 290 € de novembre à janvier, 2 400 € à partir de février : revenir sur novembre montre toujours 2 290 €).
 
 ### Montants qui changent dans le temps
 
@@ -28,7 +30,7 @@ Tout l'argent (banque, épargne, espèces) est dans un compte unique. L'épargne
 - **Revenu prévu** et **dépense fixe** : échéanciers mensuels (`fin_schedule`, fréquence `MONTHLY`). Un revenu pour un seul mois est un échéancier dont la première et la dernière échéance sont dans ce mois. Une dépense fixe est `essential = true`, avec une catégorie.
 - **Montant à partir d'un mois** : `fin_schedule_amount (schedule_id, from_month, amount)`. Le montant d'une échéance est celui de la version la plus récente dont `from_month` ≤ mois de l'échéance ; sans version, le montant de l'échéancier. Les échéances déjà enregistrées (réalisées, sautées, ajustées) gardent leur montant.
 - **Ce mois seulement** : ajustement d'une échéance (existant : `PUT /schedules/{id}/occurrences/{due}`).
-- **Réel** : réalisation d'une échéance (montant, date, commentaire facultatif conservé dans la description de l'opération). Le montant prévu est conservé : l'écart est affiché.
+- **Réel** : réalisation d'une échéance (montant, date, commentaire facultatif conservé dans la description de l'opération). Le montant prévu est conservé ; l'écart est affiché pour une dépense fixe, pas pour un revenu (lot 28).
 - **Dépense variable plafonnée** (« enveloppe ») : `fin_envelope (id, category_id, label, position, start_month, end_month)`, plafonds datés `fin_envelope_amount (envelope_id, from_month, amount)`, suivi mensuel `fin_envelope_month (envelope_id, month, comment, total_operation_id)`.
   - Dépensé du mois = dépenses réalisées de la catégorie (et de ses sous-catégories pour une catégorie racine), nettes des remboursements d'achats, hors échéances d'échéancier et hors achats d'objectifs.
   - « Saisir le total du mois » crée ou met à jour **une** opération de total pour que le dépensé égale le montant saisi (les autres dépenses de la catégorie restent comptées).
@@ -63,14 +65,15 @@ Erreurs au format ProblemDetail avec `code` stable : `INVALID_ENVELOPE`, `ENVELO
 - `variablePlanned` = somme des plafonds ; `variableActual` = somme des dépensés.
 - `expensesActual` = dépenses payées du mois (nettes des remboursements), comme le bilan du mois ; `othersActual` = `expensesActual − fixedActual − variableActual`.
 - `expensesPlanned` = `fixedPlanned + variablePlanned`.
-- `savingsPlanned` = `incomePlanned − expensesPlanned` ; `savingsActual` = `incomeActual − expensesActual`.
+- `savingsActual` = `incomeActual − expensesActual`. Le champ `savingsPlanned` a été retiré au lot 28 (pas d'épargne prévue).
 
 Une opération ponctuelle (non liée à un échéancier) de revenu apparaît dans les revenus : prévue → `planned` = montant ; réalisée → `actual` = montant, `planned` = montant prévu conservé s'il existe.
 
 ## 4. Interface
 
-- Onglets : **Mon mois** (la feuille, par défaut) · **Opérations** (historique ; vue « Revenus et charges récurrents ») · **Projets d'achat** · **Analyses** (statistiques, calendrier) · icône ⚙ **Réglages** · bouton **?** (visite guidée).
+- Onglets : **Mon mois** (tableau de bord du mois, par défaut : solde, revenus reçus avec le salaire prévu en rappel, dépenses payées, épargne du mois, lien vers le détail ; lot 28) · **Détails du mois** (`details`, la feuille ligne par ligne ; le mois `?mois=` est gardé entre ces deux onglets) · **Opérations** (historique ; vue « Revenus et charges récurrents ») · **Projets d'achat** · **Analyses** (statistiques, calendrier) · icône ⚙ **Réglages** · bouton **?** (visite guidée).
 - Anciennes adresses redirigées : `overview`, `budget`, `loans` → `month` ; `schedules` → `operations?vue=recurrents` ; `statistics` → `analyses` ; `calendar` → `analyses?vue=calendrier`.
 - **Visite guidée** au premier passage (enregistrée dans les préférences, `tutorialDone`), relançable par **?** ; chaque étape a **Suivant**, **Précédent**, **Passer**.
 - **Bulles d'aide** (icône ?) à côté de chaque section et des notions (prévu, réel, plafond, épargne, « à partir de », « ce mois seulement »), accessibles au clavier et au lecteur d'écran.
-- Repères pour la visite : attributs `data-tour` = `finance-tabs`, `quick-expense`, `tour-button` (en-tête), `month-nav`, `month-summary`, `month-income`, `month-fixed`, `month-variable`, `month-others` (feuille).
+- Repères pour la visite : attributs `data-tour` = `finance-tabs`, `quick-expense`, `settings-link`, `tour-button` (en-tête), `month-nav`, `month-summary`, `month-balance`, `month-revenue`, `month-savings`, `month-details-link` (tableau de bord). La feuille de « Détails du mois » garde `month-income`, `month-fixed`, `month-variable`, `month-others`.
+- Alertes liées à la feuille (plafond, dépassement d'une dépense variable) : lien vers **Détails du mois**.

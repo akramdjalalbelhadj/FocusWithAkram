@@ -33,27 +33,26 @@ describe('étapes de la visite guidée', () => {
     expect(FINANCE_TOUR_STEPS.at(-1)?.target).toBe('tour-button');
   });
 
-  it('couvre chaque repère de la feuille du mois et de l’en-tête', () => {
+  it('couvre chaque repère du tableau de bord du mois et de l’en-tête', () => {
     const targets = FINANCE_TOUR_STEPS.map((s) => s.target);
     for (const t of [
       'finance-tabs',
       'quick-expense',
       'tour-button',
       'month-nav',
-      'month-summary',
-      'month-income',
-      'month-fixed',
-      'month-variable',
-      'month-others',
+      'month-balance',
+      'month-revenue',
+      'month-savings',
+      'month-details-link',
     ]) {
       expect(targets).toContain(t);
     }
   });
 
   it('saute les étapes dont la cible est absente, dans l’ordre', () => {
-    const present = new Set(['finance-tabs', 'month-summary', 'tour-button']);
+    const present = new Set(['finance-tabs', 'month-savings', 'tour-button']);
     const steps = availableSteps(FINANCE_TOUR_STEPS, (t) => present.has(t));
-    expect(steps.map((s) => s.target)).toEqual(['finance-tabs', 'month-summary', 'tour-button']);
+    expect(steps.map((s) => s.target)).toEqual(['finance-tabs', 'month-savings', 'tour-button']);
     expect(availableSteps(FINANCE_TOUR_STEPS, () => false)).toEqual([]);
   });
 });

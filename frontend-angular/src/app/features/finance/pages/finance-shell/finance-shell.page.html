@@ -67,6 +67,7 @@
     @for (t of tabs; track t.path) {
       <a
         [routerLink]="t.path"
+        [queryParamsHandling]="t.keepMonth ? 'preserve' : ''"
         routerLinkActive="fin-tab-active"
         ariaCurrentWhenActive="page"
         class="fin-tab"

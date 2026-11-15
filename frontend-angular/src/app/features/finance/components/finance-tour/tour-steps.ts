@@ -17,43 +17,38 @@ export type { Box, BubblePlacement, Size, TourStep } from '../../../../shared/ui
 
 /**
  * Visite guidee de « Mes achats ». Toutes les cibles sont visibles depuis l'onglet « Mon mois » (en-tete du module
- * et feuille du mois) ; une etape dont la cible est absente est sautee.
+ * et tableau de bord du mois) ; une etape dont la cible est absente est sautee.
  */
 export const FINANCE_TOUR_STEPS: readonly TourStep[] = [
   {
     target: 'finance-tabs',
-    title: 'Quatre onglets pour s’y retrouver',
-    text: '« Mon mois » est la feuille du mois. « Opérations » garde l’historique et ce qui revient chaque mois. « Projets d’achat » dit si un achat est possible. « Analyses » montre vos statistiques et votre calendrier.',
+    title: 'Cinq onglets pour s’y retrouver',
+    text: '« Mon mois » donne l’essentiel du mois ; « Détails du mois » le montre ligne par ligne. « Opérations » garde l’historique et ce qui revient chaque mois. « Projets d’achat » dit si un achat est possible. « Analyses » montre vos statistiques et votre calendrier.',
   },
   {
     target: 'month-nav',
-    title: 'Mon mois, mois par mois',
-    text: 'Chaque mois a sa feuille : ce qui était prévu et ce qui s’est réellement passé. Changez de mois ici pour revoir un mois passé ou préparer un mois à venir.',
+    title: 'Mois par mois',
+    text: 'Changez de mois ici pour revoir un mois passé ou préparer un mois à venir.',
   },
   {
-    target: 'month-summary',
-    title: 'Prévu, réel et épargne',
-    text: 'Le prévu, c’est ce que vous attendiez ; le réel, ce qui a vraiment été reçu ou payé. L’épargne, c’est ce qui reste (revenus moins dépenses), comparée à votre objectif du mois.',
+    target: 'month-balance',
+    title: 'Votre solde',
+    text: 'L’argent dont vous disposez aujourd’hui. S’il ne correspond plus à votre argent réel, « Corriger » enregistre l’écart.',
   },
   {
-    target: 'month-income',
-    title: 'Vos revenus',
-    text: 'Saisissez un revenu une seule fois, pour un mois ou pour une période (par exemple votre salaire de novembre à février). Chaque mois, confirmez le montant réellement reçu : un salaire peut baisser, après une absence par exemple.',
+    target: 'month-revenue',
+    title: 'Vos revenus reçus',
+    text: 'Ils restent à 0 € tant que vous n’avez pas saisi le salaire du mois. Le salaire prévu de la période (2 290 € de novembre à janvier, par exemple) sert seulement à calculer si vos achats prévus sont possibles.',
   },
   {
-    target: 'month-fixed',
-    title: 'Vos dépenses fixes',
-    text: 'Loyer, téléphone, transport… Saisies une fois, elles sont déjà remplies chaque mois : vous confirmez le paiement. Pour changer un montant, choisissez « à partir de ce mois » (les mois suivants changent aussi) ou « ce mois seulement ».',
+    target: 'month-savings',
+    title: 'L’épargne du mois',
+    text: 'Ce qui reste réellement : revenus reçus moins dépenses payées. Elle est gardée mois par mois pour vos statistiques.',
   },
   {
-    target: 'month-variable',
-    title: 'Vos dépenses variables',
-    text: 'Courses, restaurants… Chacune a un plafond par mois. Saisissez le total du mois ou vos dépenses au fil du mois. Au-delà du plafond, un commentaire vous est demandé pour expliquer le dépassement.',
-  },
-  {
-    target: 'month-others',
-    title: 'Les autres dépenses',
-    text: 'Tout le reste : imprévus, achats ponctuels, projets d’achat réalisés. Elles comptent dans le réel du mois et dans votre épargne.',
+    target: 'month-details-link',
+    title: 'Le détail du mois',
+    text: 'Revenus, dépenses fixes (loyer, téléphone…), dépenses variables avec leur plafond (courses…) et autres dépenses, ligne par ligne : c’est là que vous saisissez et corrigez.',
   },
   {
     target: 'quick-expense',

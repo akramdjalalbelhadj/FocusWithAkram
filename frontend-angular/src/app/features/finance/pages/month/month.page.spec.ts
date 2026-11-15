@@ -3,123 +3,33 @@ import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FinanceApi } from '../../../../core/api/finance.api';
-import { CategoryRef, MonthSheet } from '../../../../core/api/models';
+import { MonthSheet, SheetRow } from '../../../../core/api/models';
 import { FinanceMonthPage } from './month.page';
+import { sheet } from './month-sheet.fixture';
 
-const housing: CategoryRef = {
-  id: 'c1',
-  name: 'Logement',
-  rootId: 'c1',
-  rootName: 'Logement',
-  icon: 'house',
-  color: null,
-};
-const groceries: CategoryRef = { ...housing, id: 'c2', name: 'Courses', rootId: 'c2', rootName: 'Courses' };
-
-function sheet(month: string, overrides: Partial<MonthSheet> = {}): MonthSheet {
+function pendingSalary(month: string): SheetRow {
   return {
-    month,
-    today: `${month}-05`,
-    period: 'CURRENT',
-    account: {
-      id: 'a1',
-      name: 'Compte',
-      type: 'CURRENT',
-      archived: false,
-      position: 0,
-      balance: 1234.5,
-      hasOperations: true,
-    },
-    incomes: [
-      {
-        key: `s1/${month}-28`,
-        scheduleId: 's1',
-        dueDate: `${month}-28`,
-        operationId: 'o1',
-        label: 'Salaire',
-        category: null,
-        incomeKind: 'SALARY',
-        date: `${month}-03`,
-        planned: 2290,
-        actual: 2240,
-        difference: -50,
-        status: 'DONE',
-        comment: 'Absence de deux jours',
-        adjusted: false,
-        essential: false,
-      },
-    ],
-    fixed: [
-      {
-        key: `s2/${month}-05`,
-        scheduleId: 's2',
-        dueDate: `${month}-05`,
-        operationId: null,
-        label: 'Loyer',
-        category: housing,
-        incomeKind: null,
-        date: `${month}-05`,
-        planned: 350,
-        actual: null,
-        difference: null,
-        status: 'PLANNED',
-        comment: null,
-        adjusted: false,
-        essential: true,
-      },
-    ],
-    variable: [
-      {
-        envelopeId: 'e1',
-        label: 'Courses',
-        category: groceries,
-        cap: 300,
-        spent: 345,
-        remaining: -45,
-        exceeded: true,
-        comment: null,
-        commentRequired: true,
-        operationCount: 6,
-      },
-    ],
-    others: [],
-    totals: {
-      incomePlanned: 2290,
-      incomeActual: 2240,
-      fixedPlanned: 350,
-      fixedActual: 0,
-      variablePlanned: 300,
-      variableActual: 345,
-      othersActual: 0,
-      expensesPlanned: 650,
-      expensesActual: 345,
-      savingsPlanned: 1640,
-      savingsActual: 1895,
-    },
-    savingsTarget: 300,
-    ...overrides,
+    ...sheet(month).incomes[0],
+    operationId: null,
+    date: `${month}-28`,
+    actual: null,
+    difference: null,
+    status: 'PLANNED',
+    comment: null,
   };
 }
 
-describe('FinanceMonthPage', () => {
-  let current: Partial<MonthSheet>;
-  let requested: string[];
+describe('FinanceMonthPage (tableau de bord)', () => {
+  let current: (month: string) => Partial<MonthSheet>;
 
   beforeEach(() => {
-    current = {};
-    requested = [];
+    current = () => ({});
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
         {
           provide: FinanceApi,
-          useValue: {
-            monthSheet: (month: string) => {
-              requested.push(month);
-              return of(sheet(month, current));
-            },
-            alerts: () => of([]),
-          },
+          useValue: { monthSheet: (month: string) => of(sheet(month, current(month))), alerts: () => of([]) },
         },
       ],
     });
@@ -133,48 +43,61 @@ describe('FinanceMonthPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('affiche les sections de la feuille avec leurs reperes de visite', async () => {
+  it('montre l’essentiel du mois sans le détail des lignes', async () => {
     const el = await render();
-    for (const tour of ['month-nav', 'month-summary', 'month-income', 'month-fixed', 'month-variable', 'month-others']) {
+    for (const tour of [
+      'month-nav',
+      'month-summary',
+      'month-balance',
+      'month-revenue',
+      'month-savings',
+      'month-details-link',
+    ]) {
       expect(el.querySelector(`[data-tour="${tour}"]`), tour).not.toBeNull();
     }
-    expect(el.textContent).toContain('Salaire');
-    expect(el.textContent).toContain('Reçu');
-    expect(el.textContent).toContain('Absence de deux jours');
-    expect(el.textContent).not.toContain('Pour bien démarrer');
+    const text = el.textContent ?? '';
+    expect(text).toMatch(/1\s?234,50/);
+    expect(text).toMatch(/2\s?240,00/);
+    expect(text).toMatch(/1\s?895,00/);
+    expect(text).toContain('Reçu le');
+    expect(el.querySelector('table')).toBeNull();
+    expect(text).not.toContain('Loyer');
+    expect(text).not.toMatch(/épargne prévue|prévue/i);
   });
 
-  it('propose de saisir le reel d’une depense fixe et signale le depassement d’un plafond', async () => {
+  it('revenus à 0 € tant que le salaire n’est pas saisi, le prévu sert aux calculs', async () => {
+    current = (month) => ({
+      incomes: [pendingSalary(month)],
+      totals: { ...sheet(month).totals, incomeActual: 0, savingsActual: -345 },
+    });
     const el = await render();
-    const record = el.querySelector('button[aria-label="Saisir le montant payé : Loyer"]');
-    expect(record).not.toBeNull();
-    const over = el.querySelector('[data-tour="month-variable"] tr.is-over');
-    expect(over).not.toBeNull();
-    expect(over!.textContent).toContain('Expliquez le dépassement');
+    const card = el.querySelector('[data-tour="month-revenue"]')!;
+    expect(card.textContent).toMatch(/0,00/);
+    expect(card.textContent).toMatch(/Prévu 2\s?290,00/);
+    expect(card.textContent).toContain('achats prévus');
+    expect(card.textContent).toContain('Attendu le');
+    expect(card.querySelector('button[aria-label="Saisir le montant reçu : Salaire"]')).not.toBeNull();
   });
 
-  it('nomme les tableaux et leurs colonnes, sans identifiant en double', async () => {
+  it('lien vers les détails du mois', async () => {
     const el = await render();
-    expect(el.querySelectorAll('table caption').length).toBe(4);
-    expect(el.querySelectorAll('th[scope="col"]').length).toBeGreaterThan(10);
-    const ids = [...el.querySelectorAll('[id]')].map((n) => n.id);
-    expect(new Set(ids).size).toBe(ids.length);
+    const link = el.querySelector('a[data-tour="month-details-link"]')!;
+    expect(link.getAttribute('href')).toContain('details');
   });
 
   it('premier usage : la carte « Pour bien démarrer » propose les trois saisies', async () => {
-    current = { incomes: [], fixed: [], variable: [] };
+    current = () => ({ incomes: [], fixed: [], variable: [] });
     const el = await render();
     const start = el.querySelector('[aria-labelledby="mon-start"]');
     expect(start).not.toBeNull();
     expect(start!.querySelectorAll('button').length).toBe(3);
   });
 
-  it('mois futur : le reel n’est pas saisissable', async () => {
+  it('mois futur : pas de saisie du reçu', async () => {
+    current = (month) => ({ incomes: [pendingSalary(month)] });
     await TestBed.inject(Router).navigateByUrl('/?mois=2999-01');
     const el = await render();
-    expect(requested).toContain('2999-01');
     expect(el.textContent).toContain('Mois à venir');
-    expect(el.querySelector('button[aria-label^="Saisir le montant"]')).toBeNull();
-    expect(el.querySelector('button[aria-label^="Ajouter une dépense"]')).toBeNull();
+    expect(el.querySelector('button[aria-label^="Saisir le montant reçu"]')).toBeNull();
   });
 });

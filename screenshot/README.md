@@ -21,7 +21,7 @@ Chaque variante contient les mêmes fichiers, numérotés dans l'ordre de lectur
 
 | Module | Date | Données |
 | --- | --- | --- |
-| [Finance — « Mes achats »](#finance--mes-achats) | 15 novembre 2026 | scénario `finance.spec.ts` (novembre 2026 à février 2027) |
+| [Finance — « Mes achats »](#finance--mes-achats) | 15 novembre 2026 (lot 28 : Mon mois en tableau de bord) | scénario `finance.spec.ts` (novembre 2026 à février 2027) |
 
 ### Finance — « Mes achats »
 
@@ -30,17 +30,19 @@ Chaque variante contient les mêmes fichiers, numérotés dans l'ordre de lectur
 | `00a-premier-acces.png` | Premier accès : une seule question, le total disponible |
 | `00b-mon-argent-aujourdhui.png` | Dialogue « Mon argent aujourd'hui » rempli (1 200 €) |
 | `00c-visite-guidee.png` | Visite guidée, étape 1 |
-| `01-mon-mois.png` | Mon mois, novembre 2026 : salaire reçu plus bas et commenté, loyer payé, courses au-delà du plafond expliquées, prêt, épargne du mois |
-| `02-mon-mois-janvier.png` | Mon mois, janvier 2027 : loyer passé à 400 € |
-| `03-operations-historique.png` | Opérations, historique |
-| `04-operations-recurrents.png` | Opérations, revenus et charges récurrents |
-| `05-projets-achat.png` | Projets d'achat par priorité, prévision de trésorerie et verdict |
-| `05b-projets-achat-matrice.png` | Projets d'achat en matrice |
-| `06-analyses-statistiques.png` | Analyses : épargne et plafond, mois par mois |
-| `07-analyses-calendrier.png` | Analyses : calendrier du mois |
-| `08-reglages.png` | Réglages de « Mes achats » |
-| `09-dialogue-nouvelle-operation.png` | Dialogue « Nouvelle opération » (bouton Dépense) |
-| `10-dialogue-projet-achat.png` | Dialogue « Nouvel achat prévu » avec le calcul de faisabilité |
+| `01-mon-mois.png` | Mon mois (tableau de bord), novembre 2026 : solde, salaire reçu (2 100 €, prévu 2 290 € rappelé pour les calculs), dépenses payées, épargne du mois, lien vers le détail |
+| `02-mon-mois-decembre.png` | Mon mois, décembre 2026 (mois à venir) : revenus reçus à 0 €, salaire prévu et date attendue |
+| `03-details-du-mois.png` | Détails du mois, novembre 2026 : revenus (sans écart), loyer payé, courses au-delà du plafond expliquées, prêt, épargne réelle |
+| `04-details-du-mois-janvier.png` | Détails du mois, janvier 2027 : loyer passé à 400 € |
+| `05-operations-historique.png` | Opérations, historique |
+| `06-operations-recurrents.png` | Opérations, revenus et charges récurrents |
+| `07-projets-achat.png` | Projets d'achat par priorité, prévision de trésorerie et verdict |
+| `08-projets-achat-matrice.png` | Projets d'achat en matrice |
+| `09-analyses-statistiques.png` | Analyses : épargne et plafond, mois par mois |
+| `10-analyses-calendrier.png` | Analyses : calendrier du mois |
+| `11-reglages.png` | Réglages de « Mes achats » |
+| `12-dialogue-nouvelle-operation.png` | Dialogue « Nouvelle opération » (bouton Dépense) |
+| `13-dialogue-projet-achat.png` | Dialogue « Nouvel achat prévu » avec le calcul de faisabilité |
 
 ## Régénérer
 
@@ -56,6 +58,8 @@ $env:E2E_ANGULAR_URL='http://127.0.0.1:4300'
 npm --prefix frontend-react exec -- playwright test e2e/finance.spec.ts --project angular
 # 3. Pages remplies
 node scripts/screenshots-angular.mjs finance
+# Visite guidée seule, sur une base avec compte (après un changement de ses étapes)
+node scripts/screenshots-angular.mjs finance visite
 ```
 
 Le script n'agit que sur `127.0.0.1:18080` et `127.0.0.1:4300` (jamais sur l'application personnelle) et remet le

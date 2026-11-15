@@ -1,0 +1,15 @@
+.month-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.month-title {
+  min-width: 9.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: capitalize;
+}

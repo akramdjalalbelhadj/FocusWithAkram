@@ -1,4 +1,4 @@
-import type { EnvelopeRow, MonthSheet, SheetRowStatus } from '../../../../core/api/models';
+import type { EnvelopeRow, MonthSheet, SheetRow, SheetRowStatus } from '../../../../core/api/models';
 
 /** Section d'une ligne de la feuille : revenu ou depense fixe (« Reçu » ou « Payé »). */
 export type SheetKind = 'income' | 'fixed';
@@ -71,4 +71,26 @@ export function savingsProgress(actual: number, target: number | null): SavingsP
 /** Premier usage : aucune ligne de revenu, de depense fixe ni de depense variable. */
 export function sheetIsEmpty(sheet: Pick<MonthSheet, 'incomes' | 'fixed' | 'variable'>): boolean {
   return sheet.incomes.length === 0 && sheet.fixed.length === 0 && sheet.variable.length === 0;
+}
+
+/** Etat des revenus du mois pour le tableau de bord. */
+export interface IncomeState {
+  /** Premier revenu attendu pas encore saisi (prevu ou en retard), dans l'ordre des dates. */
+  next: SheetRow | null;
+  /** Nombre de revenus prevus pas encore saisis. */
+  pending: number;
+  /** Dernier revenu recu du mois. */
+  lastReceived: SheetRow | null;
+}
+
+/**
+ * Revenus du mois vus du tableau de bord : le recu reste a 0 tant qu'aucun montant n'est saisi ; le prevu (salaire de
+ * la periode) ne sert qu'aux calculs des achats prevus, sans ecart avec le recu.
+ */
+export function incomeState(incomes: readonly SheetRow[]): IncomeState {
+  const waiting = incomes
+    .filter((r) => r.status === 'PLANNED' || r.status === 'LATE')
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const received = incomes.filter((r) => r.status === 'DONE').sort((a, b) => b.date.localeCompare(a.date));
+  return { next: waiting[0] ?? null, pending: waiting.length, lastReceived: received[0] ?? null };
 }

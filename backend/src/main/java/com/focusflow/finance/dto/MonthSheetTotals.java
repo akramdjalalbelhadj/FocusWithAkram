@@ -9,12 +9,12 @@ import java.math.BigDecimal;
  *   <li>{@code variablePlanned} = somme des plafonds, {@code variableActual} = somme des depenses des enveloppes ;</li>
  *   <li>{@code expensesActual} : depenses payees du mois, nettes des remboursements d'achats ;
  *       {@code othersActual} = expensesActual - fixedActual - variableActual ;</li>
- *   <li>{@code expensesPlanned} = fixedPlanned + variablePlanned ; {@code savingsPlanned} = incomePlanned -
- *       expensesPlanned ; {@code savingsActual} = incomeActual - expensesActual.</li>
+ *   <li>{@code expensesPlanned} = fixedPlanned + variablePlanned ; {@code savingsActual} = incomeActual -
+ *       expensesActual. Pas d'epargne prevue : l'epargne est seulement constatee, mois par mois.</li>
  * </ul>
  */
 public record MonthSheetTotals(BigDecimal incomePlanned, BigDecimal incomeActual, BigDecimal fixedPlanned,
                                BigDecimal fixedActual, BigDecimal variablePlanned, BigDecimal variableActual,
                                BigDecimal othersActual, BigDecimal expensesPlanned, BigDecimal expensesActual,
-                               BigDecimal savingsPlanned, BigDecimal savingsActual) {
+                               BigDecimal savingsActual) {
 }

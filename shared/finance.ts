@@ -574,7 +574,6 @@ export interface MonthSheetTotals {
   othersActual: number;
   expensesPlanned: number;
   expensesActual: number;
-  savingsPlanned: number;
   savingsActual: number;
 }
 

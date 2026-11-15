@@ -15,7 +15,8 @@ import { FinanceActions } from '../../services/finance-actions.service';
 import { FinanceReferenceStore } from '../../services/finance-reference.store';
 
 /**
- * Entree unique du module « Mes achats » : en-tete (depense rapide, visite guidee, reglages) et quatre onglets.
+ * Entree unique du module « Mes achats » : en-tete (depense rapide, visite guidee, reglages) et cinq onglets ; « Mon mois » et
+ * « Détails du mois » gardent le mois affiche (`?mois=`) quand on passe de l'un a l'autre.
  * Tant qu'aucun compte n'existe, une seule question : l'argent disponible aujourd'hui. A la premiere visite avec un
  * compte, la visite guidee demarre d'elle-meme.
  */
@@ -39,10 +40,11 @@ export class FinanceShellPage {
   protected readonly actions = inject(FinanceActions);
   protected readonly tour = inject(FinanceTourService);
   protected readonly tabs = [
-    { path: 'month', label: 'Mon mois', icon: 'sheet' },
-    { path: 'operations', label: 'Opérations', icon: 'receipt' },
-    { path: 'purchases', label: 'Projets d’achat', icon: 'cart' },
-    { path: 'analyses', label: 'Analyses', icon: 'chart' },
+    { path: 'month', label: 'Mon mois', icon: 'dashboard', keepMonth: true },
+    { path: 'details', label: 'Détails du mois', icon: 'sheet', keepMonth: true },
+    { path: 'operations', label: 'Opérations', icon: 'receipt', keepMonth: false },
+    { path: 'purchases', label: 'Projets d’achat', icon: 'cart', keepMonth: false },
+    { path: 'analyses', label: 'Analyses', icon: 'chart', keepMonth: false },
   ];
   protected readonly needsSetup = computed(
     () => this.store.loaded() && !this.store.error() && this.store.account() === null,

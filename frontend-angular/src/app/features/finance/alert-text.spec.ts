@@ -17,7 +17,7 @@ describe('alertView', () => {
     const v = alertView({ ...base, amount: 20, count: 120 });
     expect(v.text).toContain('dépassé de 20,00');
     expect(v.text).toContain('120 %');
-    expect(v.link).toBe('month');
+    expect(v.link).toBe('details');
   });
 
   it('distingue une seule échéance de plusieurs', () => {
@@ -34,12 +34,12 @@ describe('alertView', () => {
     expect(v.link).toBe('purchases');
   });
 
-  it('demande d’expliquer le dépassement d’une dépense variable dans Mon mois', () => {
+  it('demande d’expliquer le dépassement d’une dépense variable dans Détails du mois', () => {
     const v = alertView({ ...base, code: 'ENVELOPE_OVER', severity: 'WARNING', label: 'Courses', amount: 42.5 });
     expect(v.text).toMatch(/^Dépenses « Courses » au-dessus du plafond de 42,50\s?€ ce mois-ci/);
-    expect(v.text).toContain('expliquez le dépassement dans Mon mois');
+    expect(v.text).toContain('expliquez le dépassement dans Détails du mois');
     expect(v.icon).toBe('alert');
-    expect(v.link).toBe('month');
+    expect(v.link).toBe('details');
     expect(v.severity).toBe('WARNING');
   });
 
@@ -57,7 +57,7 @@ describe('alertView', () => {
     ];
     for (const code of codes) {
       const v = alertView({ ...base, code, label: 'Loyer', date: '2026-11-03', amount: 10, count: 2 });
-      expect(['month', 'operations', 'purchases', 'analyses'], code).toContain(v.link);
+      expect(['details', 'operations', 'purchases', 'analyses'], code).toContain(v.link);
       expect(v.text.trim(), code).not.toBe('');
     }
   });

@@ -11,9 +11,11 @@
         <th scope="col" class="c-num">
           <span class="th-inner">Réel<ff-help-tip label="Réel" [text]="help.actual" /></span>
         </th>
-        <th scope="col" class="c-num">
-          <span class="th-inner">Écart<ff-help-tip label="Écart" [text]="help.difference" /></span>
-        </th>
+        @if (!income()) {
+          <th scope="col" class="c-num">
+            <span class="th-inner">Écart<ff-help-tip label="Écart" [text]="help.difference" /></span>
+          </th>
+        }
         <th scope="col" class="c-status">Statut</th>
         <th scope="col" class="c-menu"><span class="sr-only-text">Actions</span></th>
       </tr>
@@ -62,7 +64,9 @@
               <span class="text-muted">—</span>
             }
           </td>
-          <td class="c-num c-diff" data-label="Écart" [class]="tone(row)">{{ difference(row) }}</td>
+          @if (!income()) {
+            <td class="c-num c-diff" data-label="Écart" [class]="tone(row)">{{ difference(row) }}</td>
+          }
           <td class="c-status">
             <span class="badge" [class]="badge[row.status]">{{ status(row) }}</span>
           </td>

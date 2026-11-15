@@ -2,24 +2,6 @@
   display: block;
 }
 
-/* Navigation de mois */
-.month-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.month-title {
-  min-width: 9.5rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  text-align: center;
-  text-transform: capitalize;
-}
-
 /* Feuille d'un autre mois pendant le chargement du mois choisi */
 .month-body {
   transition: opacity 0.15s;
@@ -74,26 +56,7 @@
   margin-top: 0.4rem;
 }
 
-/* Indicateurs du mois */
-.kpis {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-@media (min-width: 1024px) {
-  .kpis {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.kpi {
-  display: flex;
-  flex-direction: column;
-  padding: 0.85rem 1rem;
-}
-
+/* Libelles des cartes du tableau de bord */
 .kpi-label {
   display: flex;
   align-items: center;
@@ -103,21 +66,6 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.kpi-value {
-  margin-top: 0.15rem;
-  font-size: 1.125rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
-@media (min-width: 640px) {
-  .kpi-value {
-    font-size: 1.375rem;
-  }
 }
 
 .kpi-sub {
@@ -143,25 +91,6 @@
   margin-right: -0.45rem;
   color: var(--brand);
   gap: 0.3rem;
-}
-
-.gauge {
-  display: block;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: var(--surface-3);
-  overflow: hidden;
-}
-
-.gauge-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--success);
-}
-
-.gauge-fill[data-tone='warn'] {
-  background: var(--q3-accent);
 }
 
 /* Information (mois a venir) */
@@ -248,7 +177,7 @@
   font-size: 0.875rem;
 }
 
-/* Bilan : epargne prevue et reelle */
+/* Bilan : epargne reelle du mois */
 .balance-table {
   width: 100%;
   border-collapse: collapse;
@@ -296,4 +225,78 @@
   margin-top: 0.75rem;
   color: var(--muted);
   font-size: 0.875rem;
+}
+
+/* Tableau de bord de « Mon mois » */
+.dash {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .dash {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+.dash-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 9rem;
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .dash-card {
+    padding: 1.25rem;
+  }
+}
+
+.dash-icon {
+  margin-right: 0.35rem;
+  color: var(--brand);
+}
+
+.dash-value {
+  margin-top: 0.4rem;
+  font-size: 1.375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .dash-value {
+    font-size: 1.875rem;
+  }
+}
+
+.dash-hint {
+  display: block;
+}
+
+.dash-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.15s;
+}
+
+.dash-link:hover {
+  border-color: var(--brand);
+}
+
+.dash-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Meme hauteur de libelle, avec ou sans bulle d'aide : les montants restent alignes. */
+.dash-card .kpi-label {
+  min-height: 1.75rem;
 }

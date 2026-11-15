@@ -42,7 +42,7 @@ Version **1.0 du 1 novembre 2026 — validée** (décisions D1 à D6 ci-dessous)
 | Montant « à partir d'un mois » | Nouveau montant d'un revenu, d'une dépense fixe ou d'un plafond, valable à partir d'un mois et jusqu'au changement suivant ; les mois précédents gardent leur montant. |
 | Montant « ce mois seulement » | Ajustement d'une seule échéance, sans effet sur les autres mois. |
 | Plafond variable | Montant maximal de dépenses variables du mois : **somme des plafonds des enveloppes** actives ce mois-là ; sans enveloppe, plafond fixé pour le mois ou par défaut. |
-| Épargne prévue du mois | Revenus prévus − dépenses prévues (dépenses fixes + plafond variable). Remplace l'« épargne théorique ». |
+| Épargne prévue du mois | Retirée au lot 28 (15 novembre 2026) : seule l'épargne réelle du mois est calculée. |
 | Épargne réelle du mois | Revenus reçus − dépenses payées du mois (nettes des remboursements d'achats). L'épargne n'est pas un compte : c'est **ce qui reste du mois** (D9). Remplace l'« épargne mise de côté » et l'« argent non dépensé ». |
 | Objectif d'épargne | Montant mensuel visé, comparé chaque mois à l'épargne réelle (atteint ou manqué) et protégé dans les prévisions. |
 | Réserve de sécurité | Solde disponible minimal à ne jamais entamer dans les prévisions. |
@@ -77,7 +77,7 @@ Compte (unique), type, montant, date, libellé, description facultative, statut 
 
 Retirés au lot 13 : `VIREMENT` (avec un seul compte, un virement serait interne ; les virements existants sont supprimés par la migration V8 et ignorés à l'import) et les mouvements de prêt `PRET_ACCORDE`, `REMBOURSEMENT_RECU`, `EMPRUNT_RECU`, `REMBOURSEMENT_VERSE` (convertis en `DEPENSE` ou `REVENU` de la catégorie « Prêts », § 4.9).
 
-Un revenu planifié conserve son **montant prévu** quand il est reçu : « prévu 2 200 €, reçu 2 150 €, écart −50 € ». Le commentaire facultatif saisi avec un réel est conservé dans la description de l'opération.
+Un revenu planifié conserve son **montant prévu** quand il est reçu : « prévu 2 200 €, reçu 2 150 € ». Depuis le lot 28, aucun écart n'est calculé pour un revenu : le prévu sert seulement aux calculs des achats prévus, et le reçu reste à 0 € tant qu'il n'est pas saisi. Chaque période a son propre prévu (montants « à partir d'un mois »). Le commentaire facultatif saisi avec un réel est conservé dans la description de l'opération.
 
 ### 4.4 Échéancier
 Modèle commun au salaire, aux revenus prévus, aux abonnements et aux dépenses fixes : libellé, sens (revenu ou dépense), montant habituel, catégorie (facultative pour un revenu), périodicité (mensuelle, annuelle, tous les N mois, hebdomadaire), jour d'échéance, date de début, date de fin facultative (ce qui couvre les paiements en plusieurs fois), indispensable, statut (`ACTIF`, `SUSPENDU`, `RESILIE`). Toutes les échéances portent sur le compte unique.
@@ -135,7 +135,7 @@ Ces opérations comptent dans les dépenses et revenus du mois, donc dans l'épa
 | Reste variable | Plafond − dépenses variables payées (négatif = dépassement) |
 | État | Vert sous 80 %, orange de 80 % à 100 %, rouge au-delà, avec avertissement explicite. L'enregistrement d'une dépense réelle n'est **jamais** bloqué. |
 | Enveloppes | Pour chacune : plafond, dépensé, reste ; dépassement signalé, commentaire demandé (§ 4.5) |
-| Épargne prévue / réelle | § 3 ; comparée à l'objectif d'épargne du mois |
+| Épargne réelle | § 3 ; comparée à l'objectif d'épargne du mois (pas d'épargne prévue depuis le lot 28) |
 
 Les dépenses exceptionnelles sont signalées à part dans le bilan du mois ; elles comptent dans l'indispensable ou le variable selon leur propre marquage. La **feuille du mois** présente ce budget section par section (revenus, dépenses fixes, dépenses variables, autres dépenses) avec prévu, réel et écart ; le calcul de ses totaux est fixé dans la [feuille du mois](feuille-du-mois.md) § 3.
 
@@ -198,8 +198,8 @@ Statuts saisis : `ENVISAGE`, `PLANIFIE`, `REPORTE`, `ACHETE`, `ABANDONNE`. « En
 | Cas | Traitement |
 | --- | --- |
 | Saisie rétroactive | Acceptée ; soldes et prévisions recalculés (rien n'est mis en cache). |
-| Salaire reçu en retard ou différent | Le revenu prévu devient réalisé avec la date et le montant réels ; l'écart est affiché. |
-| Salaire plus bas un mois (absence) | Saisir le réel de ce mois ; le prévu reste affiché avec l'écart ; les autres mois ne changent pas. |
+| Salaire reçu en retard ou différent | Le revenu prévu devient réalisé avec la date et le montant réels ; aucun écart n'est affiché (lot 28 : le prévu ne sert qu'aux calculs). |
+| Salaire plus bas un mois (absence) | Saisir le réel de ce mois ; le prévu reste affiché, sans écart ; les autres mois ne changent pas. |
 | Mois sans salaire | Occurrence « sautée » ; la prévision n'attend aucun salaire ce mois-là. |
 | Plusieurs revenus dans le mois | Tous comptés ; un échéancier par source régulière. |
 | Montant fixe qui augmente | Nouveau montant **à partir du mois** concerné ; les mois précédents gardent l'ancien. |
@@ -248,7 +248,7 @@ Plafond variable à 80 % puis dépassé ; plafond d'une dépense variable plafon
 
 ## 13. Organisation de l'interface
 
-Une seule entrée **« Mes achats »** dans la navigation (D6). Depuis le lot 13 (D11), quatre onglets : **Mon mois** (la feuille du mois, par défaut) · **Opérations** (historique ; vue « Revenus et charges récurrents ») · **Projets d'achat** (liste, matrice, prévision, « Et si… ? ») · **Analyses** (statistiques, calendrier) ; l'icône ⚙ **Réglages** (compte unique, préférences, catégories) et le bouton **?** (visite guidée). Des bulles d'aide accompagnent chaque section et les notions (prévu, réel, plafond, épargne, « à partir de », « ce mois seulement »). Un bouton « Dépense » accessible partout, ainsi qu'un raccourci clavier (E), ouvrent la saisie rapide. Adresses, redirections des anciennes adresses et repères de la visite : [feuille du mois § 4](feuille-du-mois.md#4-interface).
+Une seule entrée **« Mes achats »** dans la navigation (D6). Depuis le lot 13 (D11), quatre onglets, cinq depuis le lot 28 (D13) : **Mon mois** (tableau de bord du mois, par défaut) · **Détails du mois** (la feuille du mois) · **Opérations** (historique ; vue « Revenus et charges récurrents ») · **Projets d'achat** (liste, matrice, prévision, « Et si… ? ») · **Analyses** (statistiques, calendrier) ; l'icône ⚙ **Réglages** (compte unique, préférences, catégories) et le bouton **?** (visite guidée). Des bulles d'aide accompagnent chaque section et les notions (prévu, réel, plafond, épargne, « à partir de », « ce mois seulement »). Un bouton « Dépense » accessible partout, ainsi qu'un raccourci clavier (E), ouvrent la saisie rapide. Adresses, redirections des anciennes adresses et repères de la visite : [feuille du mois § 4](feuille-du-mois.md#4-interface).
 
 ## 14. Décisions
 
@@ -266,3 +266,4 @@ Une seule entrée **« Mes achats »** dans la navigation (D6). Depuis le lot 13
 | D10 | Feuille du mois : revenus saisis une fois pour un mois ou une période, réel à confirmer ; dépenses fixes pré-remplies ; montants « à partir d'un mois » ou « ce mois seulement » ; dépenses variables plafonnées (dépensé, reste, total du mois, commentaire en cas de dépassement) ; autres dépenses ; épargne prévue / réelle | **Validé** le 5 novembre 2026 ; [feuille du mois](feuille-du-mois.md) |
 | D11 | Quatre onglets (Mon mois, Opérations, Projets d'achat, Analyses) et ⚙ Réglages ; visite guidée (première visite, passable, relançable) et bulles d'aide ; anciennes adresses redirigées | **Validé** le 5 novembre 2026 |
 | D12 | Sauvegarde v5 (montants datés, enveloppes, commentaires), versions antérieures importables et converties ; priorité inchangée : Angular d'abord, React et mobile après la version stable | **Validé** le 5 novembre 2026 |
+| D13 | Lot 28 (15 novembre 2026) : « Mon mois » devient un tableau de bord simple (solde, revenus reçus, dépenses payées, épargne du mois) ; la feuille passe dans « Détails du mois ». Revenus reçus à 0 € jusqu'à la saisie ; salaire prévu par période, utilisé seulement pour les calculs des achats prévus, sans écart ; plus d'épargne prévue. |

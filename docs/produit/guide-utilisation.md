@@ -147,7 +147,7 @@ Depuis le format v2, la sauvegarde complète contient les préférences (thème,
 
 Le module **Mes achats** (menu, ou G puis B ; Angular) suit votre argent réel, mois par mois. Règles complètes : [spécification](mes-achats/specification.md) et [feuille du mois](mes-achats/feuille-du-mois.md).
 
-En bref : **un seul compte** pour tout votre argent, une **feuille par mois** (prévu, réel, écart), et votre **épargne = ce qui reste** à la fin du mois.
+En bref : **un seul compte** pour tout votre argent, un **tableau de bord par mois** (Mon mois) avec son **détail** (Détails du mois), et votre **épargne = ce qui reste réellement** à la fin du mois.
 
 ### 11.1 Premier accès : votre argent aujourd’hui
 
@@ -157,26 +157,36 @@ En bref : **un seul compte** pour tout votre argent, une **feuille par mois** (p
 
 À la première visite, une **visite guidée** présente les écrans (§ 11.9).
 
-### 11.2 Lire « Mon mois »
+### 11.2 Lire « Mon mois » et « Détails du mois »
 
-**Mon mois** est l’onglet par défaut. Choisissez le mois en haut de la feuille ; le résumé reprend les totaux. Chaque ligne montre le **prévu**, le **réel** (ce qui a vraiment été reçu ou payé) et l’**écart** (réel − prévu).
+**Mon mois** est l’onglet par défaut : un **tableau de bord** du mois choisi, sans le détail. Changez de mois avec les flèches.
+
+| Carte | Vous y voyez |
+| --- | --- |
+| Solde du compte | L’argent dont vous disposez aujourd’hui ; **Corriger** s’il ne correspond plus |
+| Revenus reçus | Ce que vous avez réellement reçu : **0 €** tant que le salaire du mois n’est pas saisi. En dessous, le **salaire prévu** de la période (ex. 2 290 €), qui sert seulement à calculer vos achats prévus, et la date attendue ; **Saisir le reçu** quand il arrive |
+| Dépenses payées | Le total payé du mois (fixes, variables et autres) |
+| Épargne du mois | Revenus reçus − dépenses payées |
+
+Le lien **Voir le détail du mois** (ou l’onglet **Détails du mois**, qui garde le mois choisi) ouvre la feuille ligne par ligne :
 
 | Section | Vous y voyez | Vous y faites |
 | --- | --- | --- |
-| Revenus | Salaire et autres revenus prévus du mois | Confirmer le montant reçu (§ 11.3) |
-| Dépenses fixes | Loyer, téléphone, transport… déjà remplis | Confirmer « payé » (§ 11.4) |
+| Revenus | Salaire et autres revenus du mois : prévu et reçu (pas d’écart : le prévu ne sert qu’aux calculs) | Confirmer le montant reçu (§ 11.3) |
+| Dépenses fixes | Loyer, téléphone, transport… déjà remplis, avec l’écart réel − prévu | Confirmer « payé » (§ 11.4) |
 | Dépenses variables | Courses, restaurants… : plafond, dépensé, reste | Ajouter les dépenses ou le total du mois ; commenter un dépassement (§ 11.5) |
 | Autres dépenses | Imprévus, achats réalisés | Bouton **Dépense** ou touche **E** (§ 11.6) |
-| En bas | Épargne prévue, épargne réelle, objectif | Vérifier que l’objectif est atteint (§ 11.8) |
+| En bas | Épargne réelle du mois, objectif | Vérifier que l’objectif est atteint (§ 11.8) |
 
-Seul le **réel** change votre solde ; le prévu sert à anticiper.
+Seul le **réel** change votre solde ; le prévu sert à anticiper vos achats.
 
 ### 11.3 Votre salaire : une saisie pour plusieurs mois
 
-1. Ajoutez un **revenu prévu** (section **Revenus** de Mon mois, ou **Opérations → Revenus et charges récurrents → Revenu prévu**).
-2. Indiquez le montant, le jour de versement et la période : un seul mois, ou plusieurs (ex. 2 290 € le 28, de novembre 2026 à février 2027).
-3. Le revenu apparaît **prévu** dans chaque mois de la période. Le jour venu, confirmez le montant **réellement reçu** : il peut être plus bas (absence, prime en moins). Le prévu reste affiché avec l’écart ; les autres mois ne changent pas.
-4. Erreur de saisie ? Confirmez de nouveau avec le bon montant, ou annulez l’enregistrement : la ligne redevient prévue.
+1. Ajoutez un **revenu prévu** (section **Revenus** de Détails du mois, ou **Opérations → Revenus et charges récurrents → Revenu prévu**).
+2. Indiquez le montant, le jour de versement et la période : un seul mois, ou plusieurs (ex. 2 290 € de novembre 2026 à février 2027). Un salaire versé entre le 25 et le 28 : choisissez le **28**, il ne sera signalé « en attente » qu’après cette date.
+3. Le revenu apparaît **prévu** dans chaque mois de la période, mais les **revenus reçus** restent à 0 € tant que vous n’avez pas saisi le montant **réellement reçu** (il peut être plus bas : absence, prime en moins). Aucun écart n’est calculé : le prévu sert seulement à savoir si vos achats prévus sont possibles.
+4. **Chaque période a son propre salaire prévu.** Le salaire passe à 2 400 € en février ? Menu **⋯ → Changer à partir de ce mois** sur la ligne du salaire de février : novembre à janvier restent à 2 290 €, même quand vous y revenez plus tard ; février et la suite passent à 2 400 €.
+5. Erreur de saisie ? Confirmez de nouveau avec le bon montant, ou annulez l’enregistrement : la ligne redevient prévue.
 
 Un revenu ponctuel (cadeau, vente) se saisit dans **Opérations → + Opération**, type Revenu.
 
@@ -191,7 +201,7 @@ Un revenu ponctuel (cadeau, vente) se saisit dans **Opérations → + Opération
 
 ### 11.5 Dépenses variables : un plafond par poste
 
-1. Dans la section **Dépenses variables** de Mon mois, créez une **dépense variable plafonnée** : une catégorie et un plafond mensuel (ex. courses 300 €), à partir d’un mois.
+1. Dans la section **Dépenses variables** de Détails du mois, créez une **dépense variable plafonnée** : une catégorie et un plafond mensuel (ex. courses 300 €), à partir d’un mois.
 2. Au fil du mois, chaque dépense de cette catégorie (bouton **Dépense**, touche **E**) s’ajoute au **dépensé** ; la feuille affiche le **reste**.
 3. Vous ne gardez pas chaque ticket ? **Saisir le total du mois** : indiquez ce que vous avez dépensé en tout ; l’application complète les dépenses déjà saisies. Impossible pour un mois futur ou pour un total plus bas que ce qui est déjà saisi.
 4. **Dépassement** : la dépense n’est jamais bloquée, mais la ligne le signale et la feuille vous demande un **commentaire** (« invités pour un anniversaire »). Il reste attaché à ce mois.
@@ -220,8 +230,8 @@ La catégorie d’un revenu est facultative : choisissez « Prêts » dans le fo
 
 ### 11.8 Épargne et objectif
 
-- L’épargne n’est pas un compte : c’est **ce qui reste** du mois. **Épargne prévue** = revenus prévus − dépenses prévues ; **épargne réelle** = revenus reçus − dépenses payées.
-- Fixez votre **objectif d’épargne** dans **⚙ Réglages → Préférences financières** (objectif par défaut, repris chaque mois), ou pour un mois précis avec le bouton **Objectif d’épargne** de **Mon mois**. En bas de la feuille, l’épargne réelle est comparée à cet objectif.
+- L’épargne n’est pas un compte : c’est **ce qui reste réellement** du mois, revenus reçus − dépenses payées. Il n’y a pas d’épargne prévue : l’épargne de chaque mois est constatée et gardée pour vos statistiques.
+- Fixez votre **objectif d’épargne** dans **⚙ Réglages → Préférences financières** (objectif par défaut, repris chaque mois), ou pour un mois précis avec le bouton **Objectif d’épargne** de **Détails du mois**. En bas de la feuille, l’épargne réelle est comparée à cet objectif.
 - **Analyses** montre, mois par mois, l’épargne, l’objectif **atteint** ou **manqué** et le plafond variable **tenu** ou **dépassé**.
 - Rien à « virer » vers l’épargne : l’argent qui reste sur le compte est votre épargne.
 

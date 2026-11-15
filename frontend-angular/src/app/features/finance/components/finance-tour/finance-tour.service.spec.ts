@@ -55,12 +55,12 @@ describe('FinanceTourService', () => {
   });
 
   it('démarre seule à la première visite avec les seules étapes présentes', async () => {
-    show('finance-tabs', 'month-summary', 'quick-expense', 'tour-button');
+    show('finance-tabs', 'month-savings', 'quick-expense', 'tour-button');
     await tour.autoStart();
     expect(tour.active()).toBe(true);
     expect(tour.steps().map((s) => s.target)).toEqual([
       'finance-tabs',
-      'month-summary',
+      'month-savings',
       'quick-expense',
       'tour-button',
     ]);
@@ -70,21 +70,21 @@ describe('FinanceTourService', () => {
 
   it('ne démarre pas seule une fois la visite terminée ou passée', async () => {
     prefs.tutorialDone = true;
-    show('finance-tabs', 'month-summary');
+    show('finance-tabs', 'month-savings');
     await tour.autoStart();
     expect(tour.active()).toBe(false);
   });
 
   it('ouvre Mon mois avant de commencer depuis un autre onglet', async () => {
     router.url = '/finance/settings';
-    show('finance-tabs', 'month-summary');
+    show('finance-tabs', 'month-savings');
     await tour.start();
     expect(router.navigate).toHaveBeenCalledWith(['/finance', 'month']);
     expect(tour.active()).toBe(true);
   });
 
   it('avance, recule, puis enregistre la fin en gardant les autres préférences', async () => {
-    show('finance-tabs', 'month-summary', 'tour-button');
+    show('finance-tabs', 'month-savings', 'tour-button');
     await tour.start();
     tour.previous();
     expect(tour.index()).toBe(0);
@@ -99,7 +99,7 @@ describe('FinanceTourService', () => {
   });
 
   it('« Passer » enregistre aussi la visite, qui ne revient plus dans la session', async () => {
-    show('finance-tabs', 'month-summary');
+    show('finance-tabs', 'month-savings');
     await tour.autoStart();
     tour.skip();
     expect(tour.active()).toBe(false);
@@ -111,7 +111,7 @@ describe('FinanceTourService', () => {
   });
 
   it('une sortie du module interrompt la visite sans l’enregistrer', async () => {
-    show('finance-tabs', 'month-summary');
+    show('finance-tabs', 'month-savings');
     await tour.start();
     tour.stop();
     expect(tour.active()).toBe(false);

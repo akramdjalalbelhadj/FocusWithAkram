@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -146,6 +147,25 @@ class MonthSheetIT extends IntegrationTest {
     }
 
     @Test
+    void eachPeriodKeepsItsOwnPlannedSalaryAndReceivedStaysAtZeroUntilEntered() throws Exception {
+        String account = account();
+        String salary = salary(account);
+        // 2 290 EUR de novembre a janvier, puis 2 400 EUR a partir de fevrier.
+        send(put(API + "/schedules/" + salary + "/amount"), """
+                {"fromMonth":"2027-02","amount":2400}""").andExpect(status().isOk());
+        for (String month : List.of("2026-11", "2026-12", "2027-01")) {
+            String s = sheet(month);
+            assertThat(amount(s, "$.incomes[0].planned")).as(month).isEqualByComparingTo("2290");
+            assertThat(amount(s, "$.totals.incomePlanned")).as(month).isEqualByComparingTo("2290");
+            // Recu a 0 tant que le salaire du mois n'est pas saisi.
+            assertThat(amount(s, "$.totals.incomeActual")).as(month).isEqualByComparingTo("0");
+        }
+        assertThat(amount(sheet("2027-02"), "$.incomes[0].planned")).isEqualByComparingTo("2400");
+        // Revenir sur novembre apres le changement : toujours 2 290 EUR.
+        assertThat(amount(sheet("2026-11"), "$.incomes[0].planned")).isEqualByComparingTo("2290");
+    }
+
+    @Test
     void salaryOverFourMonthsWithActualCommentResetAndSkip() throws Exception {
         String account = account();
         String salary = salary(account);
@@ -239,7 +259,7 @@ class MonthSheetIT extends IntegrationTest {
     }
 
     @Test
-    void totalsCompareThePlannedAndActualSavings() throws Exception {
+    void totalsGiveTheActualSavings() throws Exception {
         String account = account();
         String logement = category("Logement");
         String courses = category("Courses");
@@ -287,7 +307,8 @@ class MonthSheetIT extends IntegrationTest {
         assertThat(amount(nov, "$.totals.expensesActual")).isEqualByComparingTo("510");
         assertThat(amount(nov, "$.totals.othersActual")).isEqualByComparingTo("40");
         assertThat(amount(nov, "$.totals.expensesPlanned")).isEqualByComparingTo("650");
-        assertThat(amount(nov, "$.totals.savingsPlanned")).isEqualByComparingTo("1680");
+        // Pas d'epargne prevue (lot 28) : seulement l'epargne reelle du mois.
+        assertThat((Map<String, Object>) JsonPath.read(nov, "$.totals")).doesNotContainKey("savingsPlanned");
         assertThat(amount(nov, "$.totals.savingsActual")).isEqualByComparingTo("1780");
         assertThat(amount(nov, "$.savingsTarget")).isEqualByComparingTo("500");
         assertThat(amount(nov, "$.account.balance")).isEqualByComparingTo("2780");

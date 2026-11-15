@@ -9,7 +9,8 @@ function toView(tab: string, vue: string): RedirectFunction {
 }
 
 /**
- * Module « Mes achats » : une entree de navigation, quatre onglets (Mon mois, Operations, Projets d'achat, Analyses)
+ * Module « Mes achats » : une entree de navigation, cinq onglets (Mon mois, Details du mois, Operations, Projets d'achat,
+ * Analyses)
  * et les reglages. Les adresses des anciens onglets restent valides et menent a leur nouvel emplacement.
  */
 export const FINANCE_ROUTES: Routes = [
@@ -22,6 +23,12 @@ export const FINANCE_ROUTES: Routes = [
         path: 'month',
         title: 'Mon mois — Mes achats',
         loadComponent: () => import('./pages/month/month.page').then((m) => m.FinanceMonthPage),
+      },
+      {
+        path: 'details',
+        title: 'Détails du mois — Mes achats',
+        loadComponent: () =>
+          import('./pages/month/month-details.page').then((m) => m.FinanceMonthDetailsPage),
       },
       {
         path: 'operations',

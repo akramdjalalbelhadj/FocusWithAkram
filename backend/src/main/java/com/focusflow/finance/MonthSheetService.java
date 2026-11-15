@@ -95,7 +95,7 @@ public class MonthSheetService {
         BigDecimal expensesPlanned = fixedPlanned.add(variablePlanned);
         MonthSheetTotals totals = new MonthSheetTotals(incomePlanned, incomeActual, fixedPlanned, fixedActual,
                 variablePlanned, variableActual, expensesActual.subtract(fixedActual).subtract(variableActual),
-                expensesPlanned, expensesActual, incomePlanned.subtract(expensesPlanned),
+                expensesPlanned, expensesActual,
                 incomeActual.subtract(expensesActual));
         return new MonthSheet(month, today, period, account, incomes, fixed, ledger.rows(), others, totals,
                 budgets.savingsTargetFor(month));

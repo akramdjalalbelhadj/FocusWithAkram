@@ -64,6 +64,7 @@ Document vivant de la phase v2 (branche `refonte-v2`, démarrée le 1 novembre 2
 | 26 | Fenêtre d'export retravaillée : cases toujours cliquables sur petit écran, liste intégrée au 3ᵉ choix, compteur de sélection (Angular seulement) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-26-export-dialog`) |
 | 25 | Export par une fenêtre à trois choix ; import avec détection des conflits (Ignorer / Remplacer) et aperçu en langage simple (API et Angular) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-25-import-conflits`) |
 | 24 | Page Projets simplifiée : ni icône ni échéance, dossiers fermés par défaut, vue « Projets inactifs », boutons « Nouveau » et « Importer / Exporter » (Angular seulement) | Livré le 14 novembre 2026, à valider par le propriétaire (branche `lot-24-projets-simplifies`) |
+| 28 | « Mes achats » : « Mon mois » en tableau de bord simple, feuille dans un onglet « Détails du mois » ; revenus reçus à 0 € jusqu'à la saisie, salaire prévu par période pour les seuls calculs, sans écart ; plus d'épargne prévue (API et Angular) | Livré le 15 novembre 2026, à valider par le propriétaire |
 
 ## 3. Constats de l'audit du 1 novembre 2026
 
@@ -460,6 +461,21 @@ Vérifications (14 novembre 2026) : 242 tests unitaires Angular, ESLint et build
 
 Vérifications (14 novembre 2026) : suite backend complète (204 tests sans échec), 244 tests unitaires Angular, ESLint et build de production ; E2E `projects.spec.ts` (deux scénarios) et `smoke.spec.ts` sans échec sur backend et base jetables ; React compile sans changement. Hors périmètre : React et Krimou (voir § 4).
 
+### Lot 28 — « Mon mois » en tableau de bord
+
+**Livré le 15 novembre 2026**, à valider par le propriétaire. Demande : une première page simple, sans le détail ; le solde du compte ; des revenus à 0 € jusqu'à la saisie du salaire du mois (reçu entre le 25 et le 28), avec un salaire prévu propre à chaque période (2 290 € sur trois mois, puis peut-être 2 400 €, les mois passés gardant 2 290 €) qui ne sert qu'à calculer les achats prévus, donc sans écart reçu − prévu ; plus d'épargne prévue, seulement l'épargne de chaque mois pour les statistiques ; le détail des revenus et des dépenses dans un autre onglet.
+
+| Élément | Contenu | Vérification |
+| --- | --- | --- |
+| Mon mois | Tableau de bord : **Solde du compte** (Corriger), **Revenus reçus** (0 € jusqu'à la saisie ; « Prévu 2 290 € · pour calculer vos achats prévus » ; « Attendu le 28 nov. » ou « En attente depuis le… » ; bouton **Saisir le reçu**), **Dépenses payées**, **Épargne du mois** (reçu − payé) ; carte « Pour bien démarrer » au premier usage ; lien **Voir le détail du mois** | `month.page.spec.ts`, E2E `finance.spec.ts` |
+| Détails du mois | Nouvel onglet `/finance/details` : la feuille (revenus, dépenses fixes, variables, autres, épargne) ; le mois `?mois=` est gardé entre les deux onglets ; colonne **Écart** retirée pour les revenus ; bilan d'épargne en une colonne (réel) | `month-details.page.spec.ts`, E2E |
+| Épargne prévue | Retirée de l'interface et de l'API (`MonthSheetTotals.savingsPlanned`) | `MonthSheetIT` (`doesNotContainKey`) |
+| Salaire par période | Déjà possible par « Changer à partir de ce mois » ; test ajouté : 2 290 € de novembre à janvier, 2 400 € à partir de février, novembre toujours à 2 290 € ensuite, reçu à 0 € tant qu'il n'est pas saisi | `MonthSheetIT.eachPeriodKeepsItsOwnPlannedSalary…` |
+| Fenêtre 25–28 | Pas de nouveau modèle : le jour de versement choisi est le **28** (dernier jour de la fenêtre) ; la ligne n'est « en attente » qu'après cette date | Guide § 11.3 |
+| Visite guidée | Réécrite pour le tableau de bord (9 étapes : onglets, mois, solde, revenus reçus, épargne, détail du mois, dépense rapide, réglages, relance) ; alertes de la feuille dirigées vers Détails du mois | `tour-steps.spec.ts`, `alert-text.spec.ts` |
+
+Vérifications (15 novembre 2026) : suite backend complète (205 tests sans échec, dont le nouveau test du salaire par période), 251 tests unitaires Angular, ESLint, build de production, compilation React ; E2E `finance.spec.ts` adapté (tableau de bord puis onglet Détails du mois, pas d'écart sur le salaire, pas d'épargne prévue, audits axe des deux onglets, aucun débordement à 390 px — il a révélé un débordement de 15 px du tableau de bord, corrigé). Captures régénérées dans `screenshot/Finance/`.
+
 ## 4. Adaptations React à prévoir (après la version stable Angular)
 
 Backlog **gelé** jusqu'à la version stable d'Angular (décision du 5 novembre 2026). Toute évolution des contrats `shared/` doit rester compatible : React doit continuer à compiler sans modification.
@@ -481,5 +497,7 @@ Backlog **gelé** jusqu'à la version stable d'Angular (décision du 5 novembre 
 | Lot 25 | Paramètre `conflicts` de `POST /import` et `ImportReport.conflicts` / `conflictMode` / `projectsReplaced` / `projectsIgnored` / `tasksReplaced` / `tasksIgnored` : à proposer si l'import de projets est porté. Sans paramètre, comportement inchangé |
 | Lot 27 | `Project.folderIds` remplace `folderId` (React ne l'utilise pas) ; `ImportConflict.existingProjects[].currentFolders` ; suppression de dossiers `POST /project-folders/deletion` (`FolderDeletionMode`, `FolderDeletionReport`) |
 | Lot 27 (Krimou) | Plusieurs dossiers par projet et format v7 (`folderIds`) dans `engine.focus` ; suppression de dossiers avec les mêmes règles et scénarios (exemple A {X, Y} / B {Y, Z}) |
+| Lot 28 | `MonthSheetTotals.savingsPlanned` retiré (React n'implémente pas encore « Mes achats ») : à l'implémentation, « Mon mois » en tableau de bord et feuille dans « Détails du mois », sans écart sur les revenus |
+| Lot 28 (Krimou) | Même découpage tableau de bord / détails dans `engine.focus.finance` et retrait de l'épargne prévue |
 | Lot 23 (Krimou) | Importer et exporter le format v6 (`folders`, `folderId`, `projectIds`) dans `engine.focus` ; jusque-là, une sauvegarde v6 est refusée par Krimou |
 | Lot 0 | La suite E2E (`frontend-react/e2e`, `playwright.config.ts`) écrit dans `docs/test-results/` et `docs/screenshots/`, désormais ignorés par Git ; envisager de la déplacer hors du dossier React puisqu'elle teste aussi Angular |
