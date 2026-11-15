@@ -33,6 +33,7 @@ docs/
 | [Refonte v2](suivi/refonte-v2.md) | Quelles décisions et quels lots pour la phase en cours ? Quel backlog React pour après la version stable ? | Produit, développement |
 | [Historique](historique/README.md) | Que s'est-il passé lors des lots précédents ? | Référence |
 | [Maquettes](maquettes/README.md) | À quoi les écrans doivent-ils ressembler ? | Design, frontend |
+| [Captures d'écran Angular](../screenshot/README.md) | À quoi ressemble chaque page aujourd'hui (clair, sombre, mobile), module par module ? | Produit, design, recette |
 
 Les identifiants `FWA-Fxxx`, `FWA-Nxxx` et `FWA-Txxx` relient les exigences, les états d'avancement et les contrôles. « Implémenté » décrit le code ; « vérifié » nécessite une preuve identifiée.
 
@@ -44,4 +45,4 @@ Les identifiants `FWA-Fxxx`, `FWA-Nxxx` et `FWA-Txxx` relient les exigences, les
 4. Modifier le guide si un parcours ou un libellé visible change ; modifier l'exploitation si une commande, un port ou un chemin change.
 5. Dater les validations, indiquer leur périmètre et conserver les limites connues.
 6. Un rapport ponctuel (audit, recette, comparaison) va dans `historique/<aaaa-mm-sujet>/` et n'est plus modifié ensuite ; les informations durables sont reportées dans les documents courants.
-7. Les sorties générées (`docs/test-results/`, `docs/screenshots/`, produites par la suite E2E) ne sont pas versionnées.
+7. Les sorties générées (`docs/test-results/`, `docs/screenshots/`, produites par la suite E2E) ne sont pas versionnées. Les captures de référence du frontend Angular, elles, sont versionnées dans `screenshot/<Module>/` (racine du dépôt) et régénérées par `scripts/screenshots-angular.mjs`.
