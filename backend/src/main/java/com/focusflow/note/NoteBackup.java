@@ -43,7 +43,8 @@ public class NoteBackup {
                         .toList(),
                 notes.findAll(Sort.by("createdAt", "id")).stream()
                         .map(n -> new NotesBackupData.Note(n.getId(), n.getTitle(), n.getContent(),
-                                n.getCategory() == null ? null : n.getCategory().getId(), NoteMapper.tags(n),
+                                n.getCategories().isEmpty() ? null : n.getCategories().getFirst().getId(),
+                                n.getCategories().stream().map(NoteCategory::getId).toList(), NoteMapper.tags(n),
                                 n.isFavorite(), n.getCreatedAt(), n.getUpdatedAt(),
                                 n.getArchiveReason() == null ? null : n.getArchiveReason().name(), n.getArchivedAt(),
                                 n.getPurgeAt()))
@@ -108,9 +109,10 @@ public class NoteBackup {
                     n.archive(NoteArchiveReason.valueOf(nd.archiveReason()),
                             nd.archivedAt() != null ? nd.archivedAt() : n.getUpdatedAt(), nd.purgeAt());
                 }
-                if (nd.categoryId() != null) {
-                    n.setCategory(categoryByFileId.get(nd.categoryId()));
-                }
+                List<UUID> categoryIds = nd.categoryIds() != null ? nd.categoryIds()
+                        : nd.categoryId() != null ? List.of(nd.categoryId()) : List.of();
+                n.setCategories(categoryIds.stream().filter(java.util.Objects::nonNull).map(categoryByFileId::get)
+                        .filter(java.util.Objects::nonNull).distinct().toList());
                 Note saved = notes.save(n);
                 if (nd.id() != null) {
                     noteIds.put(nd.id(), saved.getId());

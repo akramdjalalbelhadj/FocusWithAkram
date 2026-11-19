@@ -10,10 +10,17 @@ import {
   untracked,
 } from '@angular/core';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
+import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AppError } from '../../../../core/api/app-error';
-import { Note, NoteEditorMode, NotePatch, Task } from '../../../../core/api/models';
+import {
+  Note,
+  NoteCategoryRef,
+  NoteEditorMode,
+  NotePatch,
+  Task,
+} from '../../../../core/api/models';
 import { NotesApi } from '../../../../core/api/notes.api';
 import { RefreshService } from '../../../../core/services/refresh.service';
 import { SettingsStore } from '../../../../core/services/settings.store';
@@ -39,7 +46,7 @@ import { noteFileName, noteToMarkdownFile } from '../../util/markdown-blocks';
 const SAVE_DELAY = 800;
 
 type SaveState = 'saved' | 'pending' | 'saving' | 'error';
-type EditableField = 'title' | 'content' | 'categoryId' | 'tags';
+type EditableField = 'title' | 'content' | 'categoryIds' | 'tags';
 
 /**
  * Enregistrements lances par un editeur qui se ferme (retour a la liste, changement d'onglet), par idee. Rouvrir
@@ -48,7 +55,7 @@ type EditableField = 'title' | 'content' | 'categoryId' | 'tags';
 const closingSaves = new Map<string, Promise<void>>();
 
 /**
- * Editeur d'une idee. Titre, contenu, categorie et etiquettes sont enregistres automatiquement (champs modifies
+ * Editeur d'une idee. Titre, contenu, categories et etiquettes sont enregistres automatiquement (champs modifies
  * seulement) ; le favori est enregistre immediatement. Les taches issues de l'idee sont rechargees apres chaque
  * mutation sans toucher a la saisie en cours.
  */
@@ -62,6 +69,8 @@ const closingSaves = new Map<string, Promise<void>>();
     CdkMenu,
     CdkMenuItem,
     CdkMenuTrigger,
+    CdkConnectedOverlay,
+    CdkOverlayOrigin,
     StatusBadgeComponent,
     QuadrantBadgeComponent,
     EmptyComponent,
@@ -93,7 +102,10 @@ export class NotePage {
   // Saisie en cours (source de verite de l'ecran tant qu'elle n'est pas enregistree).
   protected readonly title = signal('');
   protected readonly content = signal('');
-  protected readonly categoryId = signal('');
+  /** Categories cochees (une idee peut en avoir plusieurs, ou aucune). */
+  protected readonly categoryIds = signal<string[]>([]);
+  /** Liste des categories ouverte (fenetre a cocher sous le champ). */
+  protected readonly categoriesOpen = signal(false);
   protected readonly tagsText = signal('');
 
   protected readonly saveState = signal<SaveState>('saved');
@@ -110,6 +122,19 @@ export class NotePage {
   protected readonly mode = computed<NoteEditorMode>(
     () => this.settings.settings().noteEditorMode ?? 'MARKDOWN',
   );
+  /**
+   * Categories cochees, par nom, avec leur couleur : celles de la liste chargee, sinon celles de l'idee (liste pas
+   * encore chargee).
+   */
+  protected readonly chosenCategories = computed<NoteCategoryRef[]>(() => {
+    const known = new Map<string, NoteCategoryRef>();
+    for (const c of this.note()?.categories ?? []) known.set(c.id, c);
+    for (const c of this.categories.data() ?? []) known.set(c.id, c);
+    return this.categoryIds()
+      .map((id) => known.get(id))
+      .filter((c): c is NoteCategoryRef => !!c)
+      .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+  });
   protected readonly titleInvalid = computed(() => !this.title().trim());
   protected readonly tasks = computed<Task[]>(() => this.note()?.tasks ?? []);
   protected readonly activeTasks = computed(() => this.tasks().filter((t) => !t.archivedAt));
@@ -131,17 +156,13 @@ export class NotePage {
       }
       untracked(() => void this.reloadTasks());
     });
-    // L'onglet suit la saisie : titre (s'il n'est pas vide) et couleur de la categorie choisie.
+    // L'onglet suit la saisie : titre (s'il n'est pas vide) et couleur de la premiere categorie cochee.
     effect(() => {
       const note = this.note();
       if (!note) return;
       const title = this.title();
-      const categoryId = this.categoryId();
-      const category = categoryId
-        ? ((this.categories.data() ?? []).find((c) => c.id === categoryId) ??
-          (note.category?.id === categoryId ? note.category : null))
-        : null;
-      untracked(() => this.tabs.update(note.id, { title, color: category?.color ?? null }));
+      const color = this.chosenCategories()[0]?.color ?? null;
+      untracked(() => this.tabs.update(note.id, { title, color }));
     });
     inject(DestroyRef).onDestroy(() => {
       this.destroyed = true;
@@ -170,7 +191,7 @@ export class NotePage {
       this.note.set(note);
       this.title.set(note.title);
       this.content.set(note.content);
-      this.categoryId.set(note.category?.id ?? '');
+      this.categoryIds.set(note.categories.map((c) => c.id));
       this.tagsText.set(note.tags.join(', '));
       this.dirty.clear();
       this.saveState.set('saved');
@@ -204,21 +225,73 @@ export class NotePage {
 
   // ---- Saisie et enregistrement automatique -----------------------------------------------
 
-  protected edit(field: EditableField, raw: string): void {
+  protected edit(field: Exclude<EditableField, 'categoryIds'>, raw: string): void {
     // Un titre colle sur plusieurs lignes reste un titre d'une ligne.
     const value = field === 'title' ? raw.replace(/\s*[\r\n]+\s*/g, ' ') : raw;
     const target = {
       title: this.title,
       content: this.content,
-      categoryId: this.categoryId,
       tags: this.tagsText,
     }[field];
     if (target() === value) return;
     target.set(value);
+    this.markDirty(field);
+  }
+
+  /** Coche ou decoche une categorie ; enregistre aussitot (comme l'ancienne liste deroulante). */
+  protected toggleCategory(id: string, on: boolean): void {
+    const current = this.categoryIds();
+    if (on === current.includes(id)) return;
+    this.categoryIds.set(on ? [...current, id] : current.filter((c) => c !== id));
+    this.markDirty('categoryIds');
+  }
+
+  /** Retire toutes les categories de l'idee. */
+  protected clearCategories(): void {
+    if (!this.categoryIds().length) return;
+    this.categoryIds.set([]);
+    this.markDirty('categoryIds');
+  }
+
+  protected isChosen(id: string): boolean {
+    return this.categoryIds().includes(id);
+  }
+
+  /** Ouvre la liste a cocher ; le focus va sur la premiere case. */
+  protected onCategoriesAttached(): void {
+    setTimeout(() =>
+      document.querySelector<HTMLElement>('#note-categories-panel :is(input, a)')?.focus(),
+    );
+  }
+
+  /** Echap ferme la liste et rend le focus au champ. */
+  protected onCategoriesKey(event: KeyboardEvent, trigger: HTMLElement): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.categoriesOpen.set(false);
+      trigger.focus();
+    }
+  }
+
+  private markDirty(field: EditableField): void {
     this.dirty.add(field);
     this.saveState.set('pending');
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.flush(), field === 'categoryId' ? 0 : SAVE_DELAY);
+    this.timer = setTimeout(() => void this.flush(), field === 'categoryIds' ? 0 : SAVE_DELAY);
+  }
+
+  /** Valeur comparable d'un champ (saisie en cours), pour savoir s'il a change pendant un envoi. */
+  private snapshot(field: EditableField): string {
+    switch (field) {
+      case 'title':
+        return this.title();
+      case 'content':
+        return this.content();
+      case 'categoryIds':
+        return [...this.categoryIds()].sort().join(',');
+      case 'tags':
+        return this.tagsText();
+    }
   }
 
   /** Enregistre les champs modifies ; une saisie faite pendant l'envoi reste a enregistrer. */
@@ -234,17 +307,14 @@ export class NotePage {
         // Un titre vide n'est pas envoye : l'erreur reste affichee jusqu'a correction.
         if (this.titleInvalid()) continue;
         patch.title = this.title().trim();
-        sent.set(field, this.title());
       } else if (field === 'content') {
         patch.content = this.content();
-        sent.set(field, this.content());
-      } else if (field === 'categoryId') {
-        patch.categoryId = this.categoryId() || null;
-        sent.set(field, this.categoryId());
+      } else if (field === 'categoryIds') {
+        patch.categoryIds = this.categoryIds();
       } else {
         patch.tags = parseTags(this.tagsText());
-        sent.set(field, this.tagsText());
       }
+      sent.set(field, this.snapshot(field));
     }
     if (!sent.size) {
       this.saveState.set('error');
@@ -256,14 +326,8 @@ export class NotePage {
       try {
         const saved = await firstValueFrom(this.api.update(note.id, patch));
         this.note.set(saved);
-        const current = {
-          title: this.title(),
-          content: this.content(),
-          categoryId: this.categoryId(),
-          tags: this.tagsText(),
-        };
         for (const [field, value] of sent) {
-          if (current[field] === value) this.dirty.delete(field);
+          if (this.snapshot(field) === value) this.dirty.delete(field);
         }
         this.saveError.set('');
         this.saveState.set(this.dirty.size ? 'pending' : 'saved');
@@ -341,13 +405,9 @@ export class NotePage {
     }
   }
 
-  /** Categorie choisie a l'ecran (saisie en cours comprise), pour les exports. */
-  private categoryName(note: Note): string | null {
-    const categoryId = this.categoryId();
-    return (
-      (this.categories.data() ?? []).find((c) => c.id === categoryId)?.name ??
-      (note.category?.id === categoryId ? note.category.name : null)
-    );
+  /** Categories cochees a l'ecran (saisie en cours comprise), pour les exports. */
+  private categoryNames(): string[] {
+    return this.chosenCategories().map((c) => c.name);
   }
 
   /** Telecharge la note en .md (en-tete de metadonnees + contenu), saisie en cours comprise. */
@@ -358,7 +418,7 @@ export class NotePage {
     const file = noteToMarkdownFile({
       title,
       content: this.content(),
-      category: this.categoryName(note),
+      categories: this.categoryNames(),
       tags: parseTags(this.tagsText()),
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
@@ -376,10 +436,12 @@ export class NotePage {
     if (!note || this.exportingPdf()) return;
     this.exportingPdf.set(true);
     const title = this.title().trim() || note.title;
-    const category = this.categoryName(note);
+    const categories = this.categoryNames();
     const tags = parseTags(this.tagsText());
     const meta = [
-      ...(category ? [`Catégorie : ${category}`] : []),
+      ...(categories.length
+        ? [`${categories.length > 1 ? 'Catégories' : 'Catégorie'} : ${categories.join(', ')}`]
+        : []),
       ...(tags.length ? [`Étiquettes : ${tags.join(', ')}`] : []),
       `Créée le ${this.settings.fmt(note.createdAt)}`,
       `Modifiée le ${this.settings.fmt(note.updatedAt)}`,

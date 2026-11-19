@@ -78,6 +78,36 @@
   margin: 1rem 0;
 }
 
+/* Champ des categories : montre les categories cochees (plusieurs possibles) et ouvre la liste a cocher. */
+.note-cat-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.3125rem;
+  padding-bottom: 0.3125rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-cat-chips {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.note-cat-chips .chip {
+  max-width: 100%;
+}
+
+.note-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 999px;
+}
+
 .note-side {
   position: sticky;
   top: calc(var(--app-header-height) + 1rem);

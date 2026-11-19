@@ -143,14 +143,15 @@ export function visualLosses(original: string, converted: string): string[] {
 export interface ExportableNote {
   title: string;
   content: string;
-  category: string | null;
+  /** Noms des categories (aucune, une ou plusieurs). */
+  categories: string[];
   tags: string[];
   createdAt: string;
   updatedAt: string;
 }
 
 /**
- * Fichier Markdown d'une note : en-tete YAML (titre, categorie, etiquettes, dates : lu par Obsidian, GitHub,
+ * Fichier Markdown d'une note : en-tete YAML (titre, categorie(s), etiquettes, dates : lu par Obsidian, GitHub,
  * les generateurs de sites...), titre, puis le contenu exactement tel qu'il est saisi.
  */
 export function noteToMarkdownFile(note: ExportableNote): string {
@@ -158,7 +159,9 @@ export function noteToMarkdownFile(note: ExportableNote): string {
   const header = [
     '---',
     `title: ${q(note.title)}`,
-    ...(note.category ? [`category: ${q(note.category)}`] : []),
+    // Une seule categorie : `category` (forme historique) ; plusieurs : liste `categories`.
+    ...(note.categories.length === 1 ? [`category: ${q(note.categories[0])}`] : []),
+    ...(note.categories.length > 1 ? [`categories: [${note.categories.map(q).join(', ')}]`] : []),
     `tags: [${note.tags.map(q).join(', ')}]`,
     `created: ${note.createdAt}`,
     `updated: ${note.updatedAt}`,

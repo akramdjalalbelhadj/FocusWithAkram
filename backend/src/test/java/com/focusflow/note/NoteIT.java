@@ -302,6 +302,65 @@ class NoteIT extends IntegrationTest {
     }
 
     @Test
+    void anIdeaCanHaveSeveralCategories() throws Exception {
+        String technique = createCategory("Technique");
+        String perso = createCategory("Perso");
+        String admin = createCategory("Administratif");
+        String note = createNote("{\"title\":\"Idee\",\"categoryIds\":[\"%s\",\"%s\",\"%s\"]}"
+                .formatted(technique, perso, technique));
+        // Par nom, sans doublon ; « category » reste la premiere (ancien contrat).
+        mvc.perform(get("/api/v1/notes/" + note))
+                .andExpect(jsonPath("$.categories.length()").value(2))
+                .andExpect(jsonPath("$.categories[0].name").value("Perso"))
+                .andExpect(jsonPath("$.categories[1].name").value("Technique"))
+                .andExpect(jsonPath("$.category.name").value("Perso"));
+
+        // L'idee est trouvee par chacune de ses categories, une seule fois.
+        mvc.perform(get("/api/v1/notes").param("categoryId", technique)).andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.items[0].categories.length()").value(2));
+        mvc.perform(get("/api/v1/notes").param("categoryId", perso)).andExpect(jsonPath("$.totalItems").value(1));
+        mvc.perform(get("/api/v1/notes").param("categoryId", admin)).andExpect(jsonPath("$.totalItems").value(0));
+        mvc.perform(get("/api/v1/notes")).andExpect(jsonPath("$.totalItems").value(1));
+        mvc.perform(get("/api/v1/note-categories"))
+                .andExpect(jsonPath("$[0].noteCount").value(0))
+                .andExpect(jsonPath("$[1].noteCount").value(1))
+                .andExpect(jsonPath("$[2].noteCount").value(1));
+
+        // Remplacement de la liste, puis ancienne forme (une seule categorie), puis liste vide.
+        send(patch("/api/v1/notes/" + note), "{\"categoryIds\":[\"%s\",\"%s\"]}".formatted(admin, perso))
+                .andExpect(jsonPath("$.categories[0].name").value("Administratif"))
+                .andExpect(jsonPath("$.categories[1].name").value("Perso"));
+        send(patch("/api/v1/notes/" + note), "{\"categoryId\":\"" + technique + "\"}")
+                .andExpect(jsonPath("$.categories.length()").value(1))
+                .andExpect(jsonPath("$.categories[0].name").value("Technique"));
+        send(patch("/api/v1/notes/" + note), "{\"categoryIds\":[\"%s\",\"%s\"]}".formatted(technique, perso))
+                .andExpect(status().isOk());
+        send(patch("/api/v1/notes/" + note), "{\"categoryIds\":[\"" + java.util.UUID.randomUUID() + "\"]}")
+                .andExpect(status().isNotFound());
+
+        // Supprimer une categorie ne retire que celle-ci.
+        mvc.perform(delete("/api/v1/note-categories/" + technique)).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/notes/" + note))
+                .andExpect(jsonPath("$.categories.length()").value(1))
+                .andExpect(jsonPath("$.categories[0].name").value("Perso"));
+
+        send(patch("/api/v1/notes/" + note), "{\"categoryIds\":[]}")
+                .andExpect(jsonPath("$.categories.length()").value(0))
+                .andExpect(jsonPath("$.category").doesNotExist());
+
+        // Sauvegarde : les categories survivent a l'aller-retour.
+        send(patch("/api/v1/notes/" + note), "{\"categoryIds\":[\"%s\",\"%s\"]}".formatted(admin, perso))
+                .andExpect(status().isOk());
+        String backup = body(mvc.perform(get("/api/v1/export/backup")).andExpect(status().isOk()));
+        assertThat((List<?>) JsonPath.read(backup, "$.notes.notes[0].categoryIds")).hasSize(2);
+        resetState();
+        send(post("/api/v1/import"), backup).andExpect(jsonPath("$.errors.length()").value(0));
+        mvc.perform(get("/api/v1/notes/" + note))
+                .andExpect(jsonPath("$.categories.length()").value(2))
+                .andExpect(jsonPath("$.categories[0].name").value("Administratif"));
+    }
+
+    @Test
     void theEditorModeIsAValidatedSetting() throws Exception {
         mvc.perform(get("/api/v1/settings")).andExpect(jsonPath("$.noteEditorMode").value("MARKDOWN"));
         send(patch("/api/v1/settings"), "{\"noteEditorMode\":\"RICH\"}")

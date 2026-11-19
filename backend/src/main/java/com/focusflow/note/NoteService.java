@@ -79,15 +79,17 @@ public class NoteService {
         n.rewrite(req.content());
         n.retag(req.tags());
         n.setFavorite(Boolean.TRUE.equals(req.favorite()));
-        if (req.categoryId() != null) {
-            n.setCategory(categories.find(req.categoryId()));
+        if (req.categoryIds() != null) {
+            n.setCategories(findCategories(req.categoryIds()));
+        } else if (req.categoryId() != null) {
+            n.setCategories(List.of(categories.find(req.categoryId())));
         }
         return NoteMapper.toResponse(notes.save(n), List.of());
     }
 
     /**
      * Modification partielle (enregistrement automatique de l'editeur). La date de modification suit le titre,
-     * le contenu, la categorie et les etiquettes ; mettre en favori ne compte pas comme une modification.
+     * le contenu, les categories et les etiquettes ; mettre en favori ne compte pas comme une modification.
      */
     @Transactional
     public NoteResponse update(UUID id, Patch p) {
@@ -101,9 +103,13 @@ public class NoteService {
             n.rewrite(p.string("content"));
             edited = true;
         }
-        if (p.has("categoryId")) {
+        if (p.has("categoryIds")) {
+            List<String> ids = p.strings("categoryIds");
+            n.setCategories(findCategories(ids == null ? List.of() : ids.stream().map(UUID::fromString).toList()));
+            edited = true;
+        } else if (p.has("categoryId")) {
             UUID categoryId = p.uuid("categoryId");
-            n.setCategory(categoryId == null ? null : categories.find(categoryId));
+            n.setCategories(categoryId == null ? List.of() : List.of(categories.find(categoryId)));
             edited = true;
         }
         if (p.has("tags")) {
@@ -210,6 +216,10 @@ public class NoteService {
     }
 
     // ---- Utilitaires --------------------------------------------------------------------------
+
+    private List<NoteCategory> findCategories(List<UUID> ids) {
+        return ids.stream().filter(java.util.Objects::nonNull).distinct().map(categories::find).toList();
+    }
 
     private Note find(UUID id) {
         return notes.findById(id).orElseThrow(() -> ApiException.notFound("Idee", id));

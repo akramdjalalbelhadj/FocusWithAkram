@@ -65,7 +65,7 @@ public class NoteCategoryService {
         return NoteMapper.toResponse(c, count);
     }
 
-    /** Supprime la categorie ; ses idees sont conservees, sans categorie (la base remet category_id a NULL). */
+    /** Supprime la categorie ; ses idees sont conservees, elles perdent seulement cette categorie (liens effaces par la base). */
     @Transactional
     public void delete(UUID id) {
         categories.delete(find(id));

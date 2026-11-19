@@ -154,12 +154,11 @@
             <p class="note-card-excerpt italic">Pas encore développée.</p>
           }
         </a>
-        @if (n.category || n.tags.length) {
+        @if (n.categories.length || n.tags.length) {
           <div class="flex flex-wrap gap-1">
-            @if (n.category) {
+            @for (c of n.categories; track c.id) {
               <span class="chip"
-                ><span class="note-dot" [style.background]="n.category.color"></span
-                >{{ n.category.name }}</span
+                ><span class="note-dot" [style.background]="c.color"></span>{{ c.name }}</span
               >
             }
             @for (t of n.tags; track t) {

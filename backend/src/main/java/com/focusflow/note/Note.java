@@ -9,10 +9,13 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,9 +48,12 @@ public class Note {
     @Column(nullable = false)
     private String content = "";
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private NoteCategory category;
+    /** Categories de l'idee (aucune, une ou plusieurs). */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "note_category_link", joinColumns = @JoinColumn(name = "note_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id"))
+    @BatchSize(size = 50)
+    private Set<NoteCategory> categories = new HashSet<>();
 
     @Column(nullable = false)
     private boolean favorite;
@@ -168,8 +174,21 @@ public class Note {
     public UUID getId() { return id; }
     public String getTitle() { return title; }
     public String getContent() { return content; }
-    public NoteCategory getCategory() { return category; }
-    public void setCategory(NoteCategory category) { this.category = category; }
+    /** Categories de l'idee, par nom. */
+    public List<NoteCategory> getCategories() {
+        return categories.stream()
+                .sorted(Comparator.comparing(NoteCategory::getName, String.CASE_INSENSITIVE_ORDER)).toList();
+    }
+
+    /** Remplace les categories de l'idee (doublons ignores). */
+    public void setCategories(Collection<NoteCategory> wanted) {
+        categories.clear();
+        for (NoteCategory c : wanted) {
+            if (categories.stream().noneMatch(x -> x.getId().equals(c.getId()))) {
+                categories.add(c);
+            }
+        }
+    }
     public boolean isFavorite() { return favorite; }
     public void setFavorite(boolean favorite) { this.favorite = favorite; }
     public Set<String> getTags() { return tags; }

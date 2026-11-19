@@ -73,7 +73,7 @@ describe('export Markdown', () => {
   const note = {
     title: 'Visa « Canada »',
     content: '> [!NOTE]\n> Copies du passeport\n',
-    category: 'Administratif',
+    categories: ['Administratif'],
     tags: ['visa', 'voyage'],
     createdAt: '2026-11-01T10:00:00Z',
     updatedAt: '2026-11-06T08:30:00Z',
@@ -103,14 +103,21 @@ describe('export Markdown', () => {
     const file = noteToMarkdownFile({
       ...note,
       title: 'Plan "B"',
-      category: null,
+      categories: [],
       tags: [],
       content: '# Plan "B"\n\ntexte',
     });
     expect(file).toContain('title: "Plan \\"B\\""');
     expect(file).not.toContain('category:');
+    expect(file).not.toContain('categories:');
     expect(file).toContain('tags: []');
     expect(file.match(/# Plan "B"/g)).toHaveLength(1);
+  });
+
+  it('liste les categories quand la note en a plusieurs', () => {
+    const file = noteToMarkdownFile({ ...note, categories: ['Administratif', 'Voyage'] });
+    expect(file).toContain('categories: ["Administratif", "Voyage"]');
+    expect(file).not.toContain('category:');
   });
 
   it('tire un nom de fichier portable du titre', () => {

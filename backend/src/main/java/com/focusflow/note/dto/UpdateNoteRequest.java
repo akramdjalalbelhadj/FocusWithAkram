@@ -18,6 +18,13 @@ public class UpdateNoteRequest extends PatchRequest {
         set("content", value);
     }
 
+    /** Categories de l'idee (remplace la liste ; vide ou null : sans categorie). */
+    @JsonSetter("categoryIds")
+    public void setCategoryIds(List<UUID> value) {
+        set("categoryIds", value);
+    }
+
+    /** Ancienne forme : une seule categorie ; null retire toutes les categories. */
     @JsonSetter("categoryId")
     public void setCategoryId(UUID value) {
         set("categoryId", value);

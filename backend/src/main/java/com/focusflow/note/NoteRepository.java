@@ -30,7 +30,7 @@ public interface NoteRepository extends JpaRepository<Note, UUID>, JpaSpecificat
     List<String> findAllTagNames();
 
     /** Lignes [categorie, nombre d'idees]. */
-    @Query("select n.category.id, count(n) from Note n where n.category is not null group by n.category.id")
+    @Query("select c.id, count(n) from Note n join n.categories c group by c.id")
     List<Object[]> countByCategory();
 
     @Query("select n.id from Note n where lower(n.title) = lower(:title) and n.createdAt = :createdAt")

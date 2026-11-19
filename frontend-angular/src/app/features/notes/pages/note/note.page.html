@@ -107,24 +107,118 @@
       <div class="note-meta">
         <div>
           <div class="flex items-center justify-between">
-            <label class="field-label" for="note-category">Catégorie</label>
+            <span class="field-label" id="note-categories-label">Catégories</span>
             <a routerLink="/notes/categories" class="text-xs text-muted underline hover:text-fg"
               >Gérer les catégories</a
             >
           </div>
-          <select
-            id="note-category"
-            class="input"
-            [value]="categoryId()"
-            (change)="edit('categoryId', $any($event.target).value)"
+          <!-- Champ qui montre les categories cochees ; un clic ouvre la liste a cocher (plusieurs choix). -->
+          <button
+            #catTrigger
+            type="button"
+            id="note-categories"
+            class="input note-cat-trigger"
+            cdkOverlayOrigin
+            #catOrigin="cdkOverlayOrigin"
+            aria-haspopup="dialog"
+            [attr.aria-expanded]="categoriesOpen()"
+            aria-labelledby="note-categories-label note-categories"
+            (click)="categoriesOpen.set(!categoriesOpen())"
           >
-            <option value="" [selected]="!categoryId()">Sans catégorie</option>
-            @for (c of categories.data() ?? []; track c.id) {
-              <!-- [selected] : les options arrivent apres la note, [value] du select seul ne suffit pas. -->
-              <option [value]="c.id" [selected]="c.id === categoryId()">{{ c.name }}</option>
+            @if (chosenCategories().length) {
+              <span class="note-cat-chips">
+                @for (c of chosenCategories(); track c.id) {
+                  <span class="chip"
+                    ><span class="note-dot" [style.background]="c.color"></span>{{ c.name }}</span
+                  >
+                }
+              </span>
+            } @else {
+              <span class="flex-1 text-left text-muted">Sans catégorie</span>
             }
-          </select>
+            <ff-icon name="chevron-down" [size]="16" class="flex-none text-muted" />
+          </button>
         </div>
+
+        <ng-template
+          cdkConnectedOverlay
+          [cdkConnectedOverlayOrigin]="catOrigin"
+          [cdkConnectedOverlayOpen]="categoriesOpen()"
+          [cdkConnectedOverlayHasBackdrop]="true"
+          [cdkConnectedOverlayWidth]="catTrigger.offsetWidth"
+          cdkConnectedOverlayBackdropClass="ff-transparent-backdrop"
+          (attach)="onCategoriesAttached()"
+          (backdropClick)="categoriesOpen.set(false)"
+          (detach)="categoriesOpen.set(false)"
+          (overlayKeydown)="onCategoriesKey($event, catTrigger)"
+        >
+          <div
+            id="note-categories-panel"
+            class="menu anim-pop p-2"
+            role="dialog"
+            aria-label="Catégories de l’idée"
+          >
+            @if (categories.data()?.length) {
+              <fieldset>
+                <legend class="sr-only-text">Catégories de l’idée</legend>
+                <div
+                  class="rounded-lg border border-line divide-y divide-[var(--line)] max-h-60 overflow-y-auto"
+                >
+                  @for (c of categories.data() ?? []; track c.id) {
+                    <label
+                      class="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-surface-2"
+                    >
+                      <input
+                        type="checkbox"
+                        class="size-4 flex-none accent-[var(--brand)]"
+                        [checked]="isChosen(c.id)"
+                        (change)="toggleCategory(c.id, $any($event.target).checked)"
+                      />
+                      <span class="size-2.5 rounded-full flex-none" [style.background]="c.color"></span>
+                      <span class="flex-1 min-w-0 truncate">{{ c.name }}</span>
+                    </label>
+                  }
+                </div>
+              </fieldset>
+              <p class="text-xs text-muted mt-1.5 px-1" aria-live="polite">
+                @if (categoryIds().length) {
+                  Une idée peut avoir plusieurs catégories : elle apparaît dans le filtre de
+                  chacune.
+                } @else {
+                  Aucune catégorie cochée : l’idée reste sans catégorie.
+                }
+              </p>
+              <div class="flex items-center justify-between gap-2 mt-2 px-1">
+                <a
+                  routerLink="/notes/categories"
+                  class="text-xs text-muted underline hover:text-fg"
+                  >Gérer les catégories</a
+                >
+                <span class="flex gap-1.5">
+                  @if (categoryIds().length) {
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="clearCategories()">
+                      Tout décocher
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    (click)="categoriesOpen.set(false); catTrigger.focus()"
+                  >
+                    OK
+                  </button>
+                </span>
+              </div>
+            } @else {
+              <p class="text-sm text-muted px-1 py-1">
+                Aucune catégorie pour l’instant.
+                <a routerLink="/notes/categories" class="underline hover:text-fg"
+                  >Créer une catégorie</a
+                >
+              </p>
+            }
+          </div>
+        </ng-template>
         <div>
           <label class="field-label" for="note-tags">Étiquettes</label>
           <input

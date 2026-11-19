@@ -33,20 +33,31 @@ final class NoteMapper {
         return c == null ? null : new NoteCategoryRef(c.getId(), c.getName(), c.getColor());
     }
 
+    static List<NoteCategoryRef> refs(Note n) {
+        return n.getCategories().stream().map(NoteMapper::ref).toList();
+    }
+
     static NoteCategoryResponse toResponse(NoteCategory c, long noteCount) {
         return new NoteCategoryResponse(c.getId(), c.getName(), c.getColor(), c.getCreatedAt(), noteCount);
     }
 
     static NoteSummary toSummary(Note n, OriginProgress progress) {
         OriginProgress p = progress == null ? new OriginProgress(0, 0) : progress;
-        return new NoteSummary(n.getId(), n.getTitle(), excerpt(n.getContent()), ref(n.getCategory()), tags(n),
+        List<NoteCategoryRef> categories = refs(n);
+        return new NoteSummary(n.getId(), n.getTitle(), excerpt(n.getContent()), first(categories), categories, tags(n),
                 n.isFavorite(), n.getCreatedAt(), n.getUpdatedAt(), p.total(), p.done(), n.getArchivedAt(), reason(n),
                 n.getPurgeAt());
     }
 
     static NoteResponse toResponse(Note n, List<TaskResponse> tasks) {
-        return new NoteResponse(n.getId(), n.getTitle(), n.getContent(), ref(n.getCategory()), tags(n), n.isFavorite(),
+        List<NoteCategoryRef> categories = refs(n);
+        return new NoteResponse(n.getId(), n.getTitle(), n.getContent(), first(categories), categories, tags(n),
+                n.isFavorite(),
                 n.getCreatedAt(), n.getUpdatedAt(), n.getVersion(), tasks, n.getArchivedAt(), reason(n), n.getPurgeAt());
+    }
+
+    private static NoteCategoryRef first(List<NoteCategoryRef> categories) {
+        return categories.isEmpty() ? null : categories.getFirst();
     }
 
     private static String reason(Note n) {

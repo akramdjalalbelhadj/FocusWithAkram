@@ -33,7 +33,13 @@ final class NoteSpecifications {
             ps.add(Boolean.TRUE.equals(f.archived()) ? cb.isNotNull(root.get("archivedAt"))
                     : cb.isNull(root.get("archivedAt")));
             if (f.categoryId() != null) {
-                ps.add(cb.equal(root.get("category").get("id"), f.categoryId()));
+                // Sous-requete : une idee rangee dans plusieurs categories n'apparait qu'une fois.
+                Subquery<UUID> inCategory = query.subquery(UUID.class);
+                Root<Note> cn = inCategory.from(Note.class);
+                Join<Note, NoteCategory> category = cn.join("categories");
+                inCategory.select(cn.get("id")).where(cb.equal(cn.get("id"), root.get("id")),
+                        cb.equal(category.get("id"), f.categoryId()));
+                ps.add(cb.exists(inCategory));
             }
             if (f.tag() != null && !f.tag().isBlank()) {
                 Join<Note, String> tag = root.join("tags");

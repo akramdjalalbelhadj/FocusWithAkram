@@ -23,7 +23,10 @@ export interface NoteSummary {
   id: string;
   title: string;
   excerpt: string;
+  /** Premiere categorie (ancien contrat) ; voir `categories`. */
   category: NoteCategoryRef | null;
+  /** Toutes les categories de l'idee (aucune, une ou plusieurs), par nom. */
+  categories: NoteCategoryRef[];
   tags: string[];
   favorite: boolean;
   createdAt: string;
@@ -44,7 +47,10 @@ export interface Note {
   id: string;
   title: string;
   content: string;
+  /** Premiere categorie (ancien contrat) ; voir `categories`. */
   category: NoteCategoryRef | null;
+  /** Toutes les categories de l'idee (aucune, une ou plusieurs), par nom. */
+  categories: NoteCategoryRef[];
   tags: string[];
   favorite: boolean;
   createdAt: string;
@@ -59,16 +65,23 @@ export interface Note {
 export interface CreateNoteInput {
   title: string;
   content?: string;
+  /** Ancienne forme : une seule categorie. */
   categoryId?: string | null;
+  /** Categories de l'idee (prioritaire sur `categoryId`). */
+  categoryIds?: string[];
   tags?: string[];
   favorite?: boolean;
 }
 
-/** Modification partielle : un champ absent est conserve, `categoryId: null` retire la categorie. */
+/**
+ * Modification partielle : un champ absent est conserve. `categoryIds` remplace la liste des categories (`[]` les
+ * retire toutes) ; `categoryId` (ancienne forme) n'en garde qu'une, `null` les retire.
+ */
 export interface NotePatch {
   title?: string;
   content?: string;
   categoryId?: string | null;
+  categoryIds?: string[];
   tags?: string[];
   favorite?: boolean;
 }
@@ -77,6 +90,7 @@ export type NoteSort = "updatedAt" | "createdAt" | "title";
 
 export interface NoteFilters {
   q?: string;
+  /** Idees ayant cette categorie (parmi d'autres eventuellement). */
   categoryId?: string;
   tag?: string;
   favorite?: boolean;
